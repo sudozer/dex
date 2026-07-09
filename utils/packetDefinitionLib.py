@@ -11,10 +11,10 @@ CONFIG = CFGLOADER.loadGlobalConfig
 
 
 class PacketDefinitionUtility():
+
     def __init__(self,logLevel=logging.WARNING):
         self.logger = logging.getLogger(__name__)
         logging.basicConfig(filename=CONFIG()['logBasepath'], encoding='utf-8', level=logLevel)
-
 
     def addBitstructStrings(self,pktDefPath):
         with open(pktDefPath,'r') as f:
@@ -143,12 +143,12 @@ class PacketDefinitionUtility():
         polarSchema = {}
         if 'fields' in defDict:
             for field in defDict['fields']:
-                polarSchema[f"{definitionPath}::{field['fieldName']}"] =  self.writePolarSchemaField(field)
+                polarSchema[f"{definitionPath}__{field['fieldName']}"] =  self.writePolarSchemaField(field)
         else:
             for pktDef in defDict:
                 fields = defDict[pktDef]['fields']
                 for field in fields:
-                    polarSchema[f"{definitionPath}::{pktDef}::{field['fieldName']}"] = self.writePolarSchemaField(field)
+                    polarSchema[f"{definitionPath}__{pktDef}__{field['fieldName']}"] = self.writePolarSchemaField(field)
         return polarSchema
 
     def writePolarSchemaField(self,field):
@@ -167,7 +167,6 @@ class PacketDefinitionUtility():
         else:
             schemaDict['convertedValue'] = self.primitive2polars(field['conversion']['convertedType'])
         return schemaDict
-
 
     def primitive2polars(self,datatype):
         match datatype:
@@ -209,18 +208,22 @@ class PacketDefinitionUtility():
             self.logger.error(e)
             self.logger.error(f"\n\nValidation of definition file: {definitionPath} failed: Unable to load json packet definition.")
         #validate fields in either top level of dict or just one level down
-
         if 'fields' in defDict:
             validFile = self.validateFields(defDict)
+            if validFile:
+                defDict['totalBitLength'] = self.sumBitLengths(defDict['fields'])
         else:
             for pktDef in defDict:
                 pktDict = defDict[pktDef]
                 if 'fields' in pktDict:
                     validFile = self.validateFields(pktDict)
+                    if validFile:
+                        pktDict['totalBitLength'] = self.sumBitLengths(pktDict['fields'])
                 else:
                     self.logger.error(f"Validation error:\n\n\"fields\" key not present in definition file: {definitionPath}")
                     self.logger.error(f"\"fields\" key must be present in either the top level of the json file or in every field one level down.")
-
+        if validFile:
+            json.dump(defDict,open(definitionPath,'w'),indent=4)
         return validFile
 
     def validateFields(self,defDict):
@@ -231,7 +234,7 @@ class PacketDefinitionUtility():
         return validFields
 
     def validateField(self,field,path_=""):
-        #each field must have required keys:
+        #enforce database_safe naming, cant start with a number and only _ is allowed
         validationErrors = []
         requiredKeys = [
             "fieldName",
@@ -339,3 +342,11 @@ class PacketDefinitionUtility():
                 self.logger.error(error)
             return False, validationErrors
         return True, validationErrors
+    
+    def sumBitLengths(self,fields):
+        totalBits = 0
+        for field in fields:
+            if 'variableLength' in field:
+                return 'variable'
+            totalBits += field['bitLength']
+        return totalBits

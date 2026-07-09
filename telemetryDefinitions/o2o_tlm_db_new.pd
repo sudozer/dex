@@ -1342,7 +1342,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 928
     },
     "4358": {
         "packetName": "ce_orionOpNav",
@@ -1715,7 +1716,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 1776
     },
     "4357": {
         "packetName": "ce_tempSensors",
@@ -2768,7 +2770,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 592
     },
     "8448": {
         "packetName": "mm_adcSummary",
@@ -2889,7 +2892,7 @@
                 "bitstructType": "u16"
             },
             {
-                "fieldName": "12vMon",
+                "fieldName": "d12vMon",
                 "type": "uint16_t",
                 "description": "12V_MON_ADC",
                 "units": "count",
@@ -3672,7 +3675,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 1840
     },
     "8449": {
         "packetName": "mm_alarmCleared",
@@ -3859,7 +3863,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 144
     },
     "8450": {
         "packetName": "mm_alarmRaised",
@@ -4223,7 +4228,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 1200
     },
     "8451": {
         "packetName": "mm_dataSummaryCumulative",
@@ -4378,7 +4384,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 1008
     },
     "8452": {
         "packetName": "mm_dataSummaryPeriodic",
@@ -4642,7 +4649,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 624
     },
     "8700": {
         "packetName": "mm_derivedStats",
@@ -4692,7 +4700,8 @@
                 "bitLength": 32,
                 "bitstructType": "f32"
             }
-        ]
+        ],
+        "totalBitLength": 192
     },
     "8453": {
         "packetName": "mm_healthStatus",
@@ -5206,7 +5215,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 432
     },
     "8455": {
         "packetName": "mm_miscSummary",
@@ -5336,7 +5346,7 @@
                 "bitstructType": "u8u8u8u8"
             },
             {
-                "fieldName": "12vMon",
+                "fieldName": "d12vMon",
                 "type": "uint16_t",
                 "description": "12v voltage monitor.",
                 "units": "mV",
@@ -6247,7 +6257,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 1008
     },
     "8454": {
         "packetName": "mm_spacewireInterface",
@@ -6439,7 +6450,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 400
     },
     "8456": {
         "packetName": "mm_systemInfoSummary",
@@ -6805,7 +6817,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 880
     },
     "30000": {
         "packetName": "ops_derivedStats",
@@ -7367,7 +7380,8 @@
                 "bitLength": 32,
                 "bitstructType": "f32"
             }
-        ]
+        ],
+        "totalBitLength": 2128
     },
     "30001": {
         "packetName": "pointing_derivedStats",
@@ -7683,7 +7697,8 @@
                 "bitLength": 8,
                 "bitstructType": "u8"
             }
-        ]
+        ],
+        "totalBitLength": 2320
     },
     "4534": {
         "packetName": "ce_cfdpPduTlm",
@@ -7699,7 +7714,8 @@
                 "bitLength": 3872,
                 "bitstructType": "t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8"
             }
-        ]
+        ],
+        "totalBitLength": 3872
     },
     "4361": {
         "packetName": "ce_dspStatus",
@@ -7941,7 +7957,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 784
     },
     "4359": {
         "packetName": "ce_errIrqCounters",
@@ -8070,7 +8087,7 @@
                 "bitstructType": "u32"
             },
             {
-                "fieldName": "numRecheckerrors",
+                "fieldName": "numRecheckerrors2",
                 "type": "uint32_t",
                 "description": "Number of reported Recheck Errors since power on or last error counter clear",
                 "units": "count",
@@ -8190,7 +8207,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 944
     },
     "16896": {
         "packetName": "ce_fillerPacket",
@@ -8202,13 +8220,14 @@
                 "fieldName": "fillerField",
                 "type": "uint8_t",
                 "variableLength": {
-                    "lengthField": "/home/jacob/share/next/packetDefinitions/primaryHeader.hd::PacketDataLength",
+                    "lengthField": "/home/jacob/share/next/packetDefinitions/primaryHeader.hd__PacketDataLength",
                     "lengthFieldOffset": -11,
                     "lengthInBits": false
                 },
                 "bitstructType": "u8"
             }
-        ]
+        ],
+        "totalBitLength": "variable"
     },
     "4353": {
         "packetName": "ce_hopaHtrsCtrlStatus",
@@ -8518,7 +8537,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 336
     },
     "4530": {
         "packetName": "ce_logText",
@@ -8551,7 +8571,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 1072
     },
     "4360": {
         "packetName": "ce_miscStatus",
@@ -8804,7 +8825,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 560
     },
     "4533": {
         "packetName": "ce_opticalModule",
@@ -9453,7 +9475,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 1776
     },
     "4356": {
         "packetName": "ce_pwrMonitor",
@@ -9934,7 +9957,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 496
     },
     "4354": {
         "packetName": "ce_spaceWire",
@@ -10053,7 +10077,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 208
     },
     "4532": {
         "packetName": "ce_stateMachine",
@@ -10468,7 +10493,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 208
     },
     "4531": {
         "packetName": "ce_versionInfo",
@@ -10622,7 +10648,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 432
     },
     "20480": {
         "packetName": "gfx_cfdpInternalStatus",
@@ -10728,7 +10755,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 224
     },
     "20481": {
         "packetName": "gfx_cfdpTransStatus",
@@ -10962,7 +10990,8 @@
                 "bitLength": 1024,
                 "bitstructType": "t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8t8"
             }
-        ]
+        ],
+        "totalBitLength": 2592
     },
     "20501": {
         "packetName": "mots_highRateTlm",
@@ -11013,7 +11042,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 24096
     },
     "20500": {
         "packetName": "mots_lowRateTlm",
@@ -11215,7 +11245,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 536
     },
     "16640": {
         "packetName": "om_attitude",
@@ -11530,7 +11561,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 496
     },
     "16641": {
         "packetName": "om_pointing",
@@ -12399,7 +12431,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 2384
     },
     "16642": {
         "packetName": "om_pointingCal",
@@ -12684,7 +12717,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 1376
     },
     "16650": {
         "packetName": "om_quadDemod",
@@ -12748,7 +12782,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 208
     },
     "12545": {
         "packetName": "st_extra",
@@ -13563,7 +13598,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 1072
     },
     "12544": {
         "packetName": "st_healthStatus",
@@ -14770,7 +14806,8 @@
                 "bitLength": 32,
                 "bitstructType": "u32"
             }
-        ]
+        ],
+        "totalBitLength": 1072
     },
     "41": {
         "packetName": "wsc",
@@ -25417,7 +25454,8 @@
                 "bitLength": 32,
                 "bitstructType": "s32"
             }
-        ]
+        ],
+        "totalBitLength": 67160
     },
     "42": {
         "packetName": "tmf",
@@ -28605,34 +28643,39 @@
                 "bitLength": 32,
                 "bitstructType": "s32"
             }
-        ]
+        ],
+        "totalBitLength": 19976
     },
     "0": {
         "packetName": "begin",
         "packetId": 0,
         "apid": 27,
         "description": "Begin Session Packet",
-        "fields": []
+        "fields": [],
+        "totalBitLength": 0
     },
     "253": {
         "packetName": "terminate",
         "packetId": 253,
         "apid": 27,
         "description": "Terminate Packet",
-        "fields": []
+        "fields": [],
+        "totalBitLength": 0
     },
     "254": {
         "packetName": "heartbeat",
         "packetId": 254,
         "apid": 27,
         "description": "Heartbeat Packet",
-        "fields": []
+        "fields": [],
+        "totalBitLength": 0
     },
     "255": {
         "packetName": "end",
         "packetId": 255,
         "apid": 27,
         "description": "End Session Packet",
-        "fields": []
+        "fields": [],
+        "totalBitLength": 0
     }
 }

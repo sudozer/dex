@@ -1,5 +1,9 @@
 from postgresAdapter import PGConnection
 import pdb
 connection = PGConnection()
-pdb.set_trace()
-connection.createDatabase()
+try:
+    connection.createDatabase()
+except Exception as E:
+    print(E)
+connection.initPacketTable()
+connection.initDatatagTable()

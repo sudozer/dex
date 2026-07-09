@@ -57,7 +57,6 @@ class PolarsStructures():
         return dataframeDict
     
     def field2Dataframe(self,fieldName,fieldDict,metadata):
-
         dfDict = {
             "packetUUID":metadata['packetUUID'],
             "primaryTimestamp":datetime.datetime.strptime(metadata['primaryTimestamp'],self.datetimeFormat),

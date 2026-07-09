@@ -9,14 +9,6 @@ class OrbitProp:
         self.ephemeris = []
         self.latestState = None
 
-    def addEph(self, x, y, z, vx, vy, vz, timestamp):
-        newEph = {"x": x, "y": y, "z": z, "vx": vx, "vy": vy, "vz": vz, "timestamp": satkit.time.strptime(timestamp,self.dateFormatString)}
-        self.ephemeris = self.ephemeris.append(newEph)
-        if timestamp > self.ephemeris[-1]['timestamp']:
-            self.updateEph(newEph)
-        else:
-            self.ephemeris.sort('timestamp')
-
     def updateEph(self,eph):
         self.latestState, self.latestTimestamp = self.packArray(eph)
 
@@ -34,6 +26,7 @@ class OrbitProp:
                 try:
                     #if the first element is a timestamp, than this is a data row
                     dataDict = {}
+                    dataDict["source"] = fname
                     dataDict["timestamp"] = satkit.time.strptime(row[0], self.dateFormatString)
                     dataDict["x"] = float(row[1]) * 1000
                     dataDict["y"] = float(row[2]) * 1000

@@ -1,19 +1,19 @@
 {
     "fields": [
         {
-            "fieldName": "Version Number",
+            "fieldName": "VersionNumber",
             "type": "uint",
             "bitLength": 3,
             "bitstructType": "u3"
         },
         {
-            "fieldName": "Packet Type",
+            "fieldName": "PacketType",
             "type": "uint",
             "bitLength": 1,
             "bitstructType": "u1"
         },
         {
-            "fieldName": "Secondary Header Flag",
+            "fieldName": "SecondaryHeaderFlag",
             "type": "uint",
             "bitLength": 1,
             "bitstructType": "u1"
@@ -25,19 +25,19 @@
             "bitstructType": "u11"
         },
         {
-            "fieldName": "Sequence Flags",
+            "fieldName": "SequenceFlags",
             "type": "uint",
             "bitLength": 2,
             "bitstructType": "u2"
         },
         {
-            "fieldName": "Packet Sequence Count",
+            "fieldName": "PacketSequenceCount",
             "type": "uint",
             "bitLength": 14,
             "bitstructType": "u14"
         },
         {
-            "fieldName": "Packet Data Length",
+            "fieldName": "PacketDataLength",
             "type": "uint",
             "bitLength": 16,
             "bitstructType": "u16"
@@ -64,5 +64,6 @@
             "description": "Secondary header data control fields, per ISS SSP 52050.",
             "bitstructType": "u8u8u8u8u8"
         }
-    ]
+    ],
+    "totalBitLength": 128
 }

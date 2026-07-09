@@ -10,7 +10,6 @@ from loadConfig import Configs
 cfgLoader = Configs()
 CONFIG = cfgLoader.loadGlobalConfig
 
-from telemetryHandler import TelemetryHandler
 from packetReceiver import PktReceiver
 from dynamicLengthFields import findFieldLength
 
@@ -20,7 +19,6 @@ class HexDumpReader(PktReceiver):
         self.logger = logging.getLogger(__name__)
         logging.basicConfig(filename=CONFIG()['logBasepath'], encoding='utf-8', level=logLevel)
         self.packetType = packetType
-        self.telemetryHandler = TelemetryHandler(packetType,logLevel)
         self.structure = CONFIG()['telemetryStructures'][packetType]
         self.hexTriggerSequences = hexTriggerSequences
         self.decodedBytes = 0
@@ -31,15 +29,14 @@ class HexDumpReader(PktReceiver):
             data = f.read()
         #find the expected packet length
         #a little wacky hacky
-        decoder =  self.telemetryHandler.decoder
-        headerTemplate = decoder.assembleHeaderTemplate(CONFIG()['telemetryStructures'][self.packetType])
+
+        headerTemplate = self.decoder.assembleHeaderTemplate(CONFIG()['telemetryStructures'][self.packetType])
         #count bits in header to find packet id
         headerBitLength = 0
         for field in headerTemplate:
             headerBitLength += field['bitLength']
 
         headerByteLength = headerBitLength // 8 + 1
-
         dataIndex = 0
         while dataIndex < len(data):
             packetRead = False
@@ -47,7 +44,7 @@ class HexDumpReader(PktReceiver):
 
                 if data[dataIndex:dataIndex + len(trigger)] == trigger:
                     hexHdr = data[dataIndex:dataIndex + headerByteLength]
-                    pktTemplate = decoder.createPacketTemplate(deepcopy(self.structure),hexHdr)
+                    pktTemplate, components = self.decoder.createPacketTemplate(deepcopy(self.structure),hexHdr)
                     if not pktTemplate:
                         self.logger.error(f"Unable to read packet at index: {dataIndex} with structure {self.structure} Logging malformed packet for analysis.")
                         self.brokenPackets(hexHdr,deepcopy(self.structure))
@@ -55,6 +52,7 @@ class HexDumpReader(PktReceiver):
                     for field in pktTemplate:
                         if 'variableLength' in field:
                             field = findFieldLength(data[dataIndex:dataIndex + pktLen],pktTemplate,field)
+                        # pdb.set_trace()
                         pktLen += field['bitLength']
                     if pktLen % 8 != 0:
                         self.logger.warning(f"Packet length in bits {pktLen} is not a whole number of bytes. Check packet definitions for {self.packetType}.")
@@ -62,7 +60,7 @@ class HexDumpReader(PktReceiver):
                     else:
                         pktLenBytes = int(pktLen / 8)
                     packetHex = data[dataIndex:dataIndex + int(pktLenBytes)]
-                    packet = self.telemetryHandler.decodeConvertStore(packetHex)
+                    packet = self.decodeConvertStore(packetHex)
                     packetRead = True
                     break
             

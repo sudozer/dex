@@ -3,15 +3,24 @@ from psycopg import sql
 import json
 from pathlib import Path
 import pdb
+from datetime import datetime
 from loadConfig import Configs
 cfgLoader = Configs()
 CONFIG = cfgLoader.loadGlobalConfig
 
 class PGConnection():
     def __init__(self):
-        self.pgInfo = CONFIG()['postgres']
+        self.pgInfo = CONFIG()['storage']['postgres']
+        self.storageLevel = CONFIG()['storage']['storageLevel']
+        self.datetimeFormat = CONFIG()['datetimeFormat']
         self.connectionString = f"host={self.pgInfo['host']} dbname={self.pgInfo['dbName']} user={self.pgInfo['user']} password={self.pgInfo['password']}"
         self.loadDefinitions()
+
+    def openConnection(self):
+        #some of the functions in this library are made with a different connection string
+        #the default connection string used here connects for writing records
+        self.conn = psycopg.connect(self.connectionString)
+
     def createDexUser(self):
         #must be run as postgres
         pdb.set_trace()
@@ -41,7 +50,6 @@ class PGConnection():
             conn.close()
 
     def createDatabase(self):
-        pdb.set_trace()
         dbCreationString = f"host={self.pgInfo['host']} dbname=postgres user={self.pgInfo['user']} password={self.pgInfo['password']}"
         with psycopg.connect(dbCreationString, autocommit=True) as conn:
             with conn.cursor() as cur:
@@ -53,9 +61,16 @@ class PGConnection():
             with conn.cursor() as cur:
                 cur.execute("""
                 CREATE TABLE IF NOT EXISTS packets (
-                packetID UUID PRIMARY KEY,
+                packetUUID UUID PRIMARY KEY,
+                rawPacket BYTEA NOT NULL
+                );
+                """)
+        
+                cur.execute("""
+                CREATE TABLE IF NOT EXISTS packetMetadata (
+                packetUUID UUID PRIMARY KEY,
                 primaryTimestamp TIMESTAMPTZ NOT NULL,
-                telemetryStructure VARCHAR(30) NOT NULL,
+                telemetryStructure TEXT NOT NULL,
                 components TEXT NOT NULL
                 );
                 """)
@@ -64,28 +79,12 @@ class PGConnection():
         with psycopg.connect(self.connectionString) as conn:
             with conn.cursor() as cur:
                 cur.execute("""
-      component                CREATE TABLE IF NOT EXISTS datatags (
+                CREATE TABLE IF NOT EXISTS datatags (
                 tagID INT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
                 primaryTimestamp TIMESTAMPTZ NOT NULL,
-                telemetryStructure VARCHAR(30) NOT NULL,
-          s TEXT NOT NULL
+                description TEXT NOT NULL
                 );
                 """)
-
-    def initFieldTable(self,key,storageLevel=1):
-        pdb.set_trace()
-        if storageLevel == 1:
-            queryString = f"""
-                CREATE TABLE IF NOT EXISTS {key}(
-                packetID UUID PRIMARY KEY,
-                primaryTimestamp TIMESTAMPTZ NOT NULL,
-                rawBits BIT({field['bitLength']}) NOT NULL,
-                );
-                """
-
-        with psycopg.connect(self.connectionString) as conn:
-            with conn.cursor() as cur:
-                cur.execute(queryString)
 
     def loadDefinitions(self):
 
@@ -100,23 +99,25 @@ class PGConnection():
         for telemetryDefinitionFile in files:
             self.telemetryDefinitions[telemetryDefinitionFile.name] = json.load(open(telemetryDefinitionFile,'r'))
 
-    def addRecords(self,fields,storageLevel=1,conn = None):
+    def addPacket(self,packet,rawPacket):
+       
+        metadata = packet['metadata']
+        # Insert into packets table
+        packets_query = "INSERT INTO packets (packetUUID, rawPacket) VALUES (%s, %s);"
+        packets_values = [metadata['packetUUID'], rawPacket]
         
-        openConnection = True
-        if not conn:
-            openConnection = False
-            conn = psycopg.connect(self.connectionString)
+        # Insert into packetMetadata table
+        metadata_query = "INSERT INTO packetMetadata (packetUUID, primaryTimestamp, telemetryStructure, components) VALUES (%s, %s, %s, %s);"
+        metadata_values = [
+            metadata['packetUUID'],
+            datetime.strptime(metadata['primaryTimestamp'], self.datetimeFormat),
+            metadata['telemetryStructure'],
+            json.dumps(metadata['components']) if isinstance(metadata['components'], list) else metadata['components']
+        ]
+        with self.conn.cursor() as cur:
+            cur.execute(metadata_query, metadata_values)
+            cur.execute(packets_query, packets_values)
         
-        key = f"{fields[0]['source']}::{fields[0]['fieldName']}"
-        cur = conn.cursor()
-
-        if storageLevel == 1:
-            queryString = f"INSERT INTO {key} (packetID,primaryTimestamp,rawBits) VALUES (%s, %s, %s)"
-            data = [(x['packetUUID'],x['primaryTimestamp'],x['rawBits']) for x in fields]
+        self.conn.commit()
+            
         
-        cur.executemany(queryString,data)
-        conn.commit()
-        
-        if not openConnection:
-            cur.close()
-            conn.close()

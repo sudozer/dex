@@ -55,5 +55,6 @@
             "description": "The program specific ID used by the controller electronics to discriminate packets.",
             "bitstructType": "u16"
         }
-    ]
+    ],
+    "totalBitLength": 96
 }

@@ -10,6 +10,7 @@ import pdb
 sys.path.append('../utils')
 from dataStructures import PolarsStructures
 from loadConfig import Configs
+from postgresAdapter import PGConnection
 cfgLoader = Configs()
 CONFIG = cfgLoader.loadGlobalConfig
 
@@ -22,25 +23,30 @@ class Storage():
         self.storageLevel = cfg['storage']['storageLevel']
         self.transientStorageBytes = cfg['storage']['transientWriteSizeBytes']
         self.transientStoragePath = cfg['storage']['transientStoragePath']
-        self.storageConfig = cfg['storage'][cfg['storage']['activeStorageMethod']]
         self.dataStructureConversion = PolarsStructures(logLevel)
         if self.storageMethod == "parquet":
             self.logger.info(f"Storage Initiated: writing data to parquet files every {self.transientStorageBytes} bytes.  Files will be written in: {self.storageConfig['parquetBaseDirectory']}")
-    
-    def storePacket(self,packet):
+        
+        if 'postgres' in self.storageMethod:
+            self.database = PGConnection()
+            self.database.openConnection()
+
+    def storePacket(self,packet,rawPacket):
         #generate a unique packet identifier to accompany the fields if the packet needs to be reconstructed
-        if not 'metadata' in packet:
-            packet['metadata'] = {'packetUUID': uuid6().int}
-        else:
-            packet['metadata']['packetUUID'] = uuid6().int
+        packet['metadata']['packetUUID'] = uuid6()
+        # packet['metadata']['components'] = self.findComponents(packet)
         #convert packet datastructure to polars dataframe
-        fieldDataFrames = self.dataStructureConversion.packetDict2Dataframe(packet)
-        #write to transient storage 
-        pdb.set_trace()
+        #fieldDataFrames = self.dataStructureConversion.packetDict2Dataframe(packet)
+        #write to transient storage
+        #write to permanent storage after transient storage fills
+        match self.storageMethod:
+            case "postgresDirect":
+                self.database.addPacket(packet,rawPacket)
 
     def initTransientStorage(self):
         self.transientStorage = open(self.transientStoragePath,'w')
-    
+    def writeTransientStorage(self,fields):
+        pass
     def writePermanentStorage(self,transientFilePath):
         if self.storageMethod == "parquet":
             storageFunction = self.storeParquet

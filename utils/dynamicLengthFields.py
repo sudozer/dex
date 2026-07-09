@@ -16,7 +16,7 @@ logging.basicConfig(filename=CONFIG()['logBasepath'], encoding='utf-8', level=lo
 def findFieldLength(packet,template,field):
     lengthField = field['variableLength']['lengthField']
     lengthFieldOffset = field['variableLength']['lengthFieldOffset']
-    fieldName = lengthField.split('::')[-1]
+    fieldName = lengthField.split('__')[-1]
     lengthFieldIndex = -1
     i=0
     for field in template:

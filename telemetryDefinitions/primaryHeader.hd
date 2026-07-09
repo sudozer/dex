@@ -42,5 +42,6 @@
             "bitLength": 16,
             "bitstructType": "u16"
         }
-    ]
+    ],
+    "totalBitLength": 48
 }

@@ -11,7 +11,7 @@ add methods to handle new definitions and remove them
 add methods to build and edit telemetry structures
 add methods to add and remove fields to telemetry definitions
 add methods to define and edit conversions and limits
-"""
+add methods to link dynamic length fields and link packet telemetry structures"""
 from PySide6.QtGui import QColor #for colors
 from PySide6.QtCore import QFile, Qt
 from PySide6.QtUiTools import QUiLoader

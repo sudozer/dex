@@ -1,8 +1,6 @@
 import json
 import sys
 import pdb
-sys.path.append('../packetDefinitions')
-sys.path.append('../utils')
 
 from loadConfig import Configs
 CFGLOADER = Configs()

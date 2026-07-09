@@ -8,7 +8,8 @@ import sys
 import bitstruct
 import logging
 import pdb
-from copy import deepcopy
+from pathlib import Path
+from copy import deepcopy, copy
 sys.path.append('../utils')
 sys.path.append('../conversions')
 
@@ -32,25 +33,25 @@ class Decoder():
         else:
             self.structureName = structureName
 
-
     def readPacket(self,hexPacket):
         structureName = self.structureName
         self.logger.debug(f'received packet:\n\n{hexPacket}\n\ndecoding with structure:\n\n{structureName}')
         structure = deepcopy(self.packetStructures[structureName])
-        pktTemplate = self.createPacketTemplate(structure,hexPacket)
-        packet = self.readFromTemplate(hexPacket,pktTemplate)
+        pktTemplate, components = self.createPacketTemplate(structure,hexPacket)
+        packet, order = self.readFromTemplate(hexPacket,pktTemplate)
         #packet = self.fieldConverter.convertFields(packet)
-        return packet
+        return packet, components, order
     
     def findPacketType(self,hexPacket,structure):
         #if packetIdentifier is present in packet structure, a static header field must identify the packet type. Use this to determine how to interpret the rest of the packet.
         #This is for cases where multiple packet types are sent over the same channel and need to be differentiated.
+        packetComponents = copy(structure['format'])
         packetTemplate = self.assembleHeaderTemplate(structure)
-        partialPacket = self.readFromTemplate(hexPacket,packetTemplate,False)
+        partialPacket,partialPacketOrder = self.readFromTemplate(hexPacket,packetTemplate,False)
         idFile = structure['format'][structure['packetIdentifier']['identifierSourceIndex']]
         idField = structure['packetIdentifier']['field']
-        #pktID = self.fieldInterpreter.convertFromBits(partialPacket[idFile + "::" +idField])
-        pktID = partialPacket[f"{idFile}::{idField}"]['rawValue']
+        #pktID = self.fieldInterpreter.convertFromBits(partialPacket[idFile + "__" +idField])
+        pktID = partialPacket[f"{idFile}__{idField}"]['rawValue']
         #packet identifier retrieved, assemble packet structure
         packetFile = structure['format'][structure['packetIdentifier']['packetDefinitionsIndex']]
         with open(packetFile) as f:
@@ -58,6 +59,12 @@ class Decoder():
             try:
                 dynamicStructureComponent = pktDef[str(pktID)]
                 dynamicStructureComponent['fileSource'] = packetFile
+                components = []
+                for component in packetComponents:
+                    if component == packetFile:
+                        components.append(Path(component).stem + f"__{pktID}")
+                    else:
+                        components.append(Path(component).stem)
             except KeyError:
                 self.logger.error(f"Packet ID {pktID} not found in packet definition file {packetFile}.")
                 self.logger.error(f"Available packet IDs in {packetFile}: {list(pktDef.keys())}")
@@ -66,7 +73,7 @@ class Decoder():
         #build dynamic packet template
 
         structure['format'][structure['packetIdentifier']['packetDefinitionsIndex']] = dynamicStructureComponent
-        return structure
+        return structure, components
         
     def assembleHeaderTemplate(self,structure):
         #assemble a packet template for just the static header fields that identify the packet type, based on the packetIdentifier settings in globalConfig.
@@ -114,33 +121,35 @@ class Decoder():
         #or a dict containing the field name, type, and bit length of a dynamic component of the packet.
 
         #determine whether packet is static or dynamically defined.
+
         if 'packetIdentifier' in structure:
             #dynamic packet structure, need to determine packet type based on static header field before creating packet template
-            structure = self.findPacketType(hexPacket,structure)
+            structure, components = self.findPacketType(hexPacket,structure)
             if not structure:
                 self.logger.error('Unable to interpret packet: Unable to resolve packet structure')
                 return False
+        else:
+            components = [Path(component).stem for component in structure['format']]    
         packetTemplate = []
+
         packetFormat = structure['format']
         for pktdef in packetFormat:
             if type(pktdef) == str:
 
                 #static component of packet, read in from file
-                defSource = pktdef
                 with open(pktdef) as f:
                     staticComponent = json.load(f)
                     for field in staticComponent['fields']:
-                        field['definitionSource'] = pktdef
+                        field['definitionSource'] = Path(pktdef).stem
                         packetTemplate.append(field)
             
             elif type(pktdef) == dict:
 
                 #dynamic component of packet, defined by field name, type, and bit length
                 for field in pktdef['fields']:
-                    field['definitionSource'] = f"{pktdef['fileSource']}::{pktdef['packetId']}"
+                    field['definitionSource'] = f"{Path(pktdef['fileSource']).stem}__{pktdef['packetId']}"
                     packetTemplate.append(field)
-        
-        return packetTemplate
+        return packetTemplate, components
     
     def readFromTemplate(self,hexPacket,packetTemplate, verifyLength=True):
         #given a binary packet and a packet template, read the fields from the binary packet according to the template and return a dict containing the field names and values.
@@ -148,6 +157,7 @@ class Decoder():
 
         expectedBitNum = 0
         interpretedFields = {}
+        order = []
         bitstructString = ''
         binaryPacket = self.convertBinary(hexPacket)
         for field in packetTemplate:
@@ -159,7 +169,7 @@ class Decoder():
             expectedBitNum += field['bitLength']
         
         if expectedBitNum/8 > len(hexPacket):
-            self.logger.error("Packet is too short to deserialize with provided template:\nPacket:\n\n{hexPacket}\n\nTemplate:\n\n{packetTemplate}")
+            self.logger.error(f"Packet is too short to deserialize with provided template:\nPacket:\n\n{hexPacket}\n\nTemplate:\n\n{packetTemplate}")
             return False
         
         elif expectedBitNum/8 < len(hexPacket) and verifyLength:
@@ -197,10 +207,12 @@ class Decoder():
                     #if field is not an array
                     field['rawValue'] = packetValues[i]
                     i+=1
-                interpretedFields[f'{defSource}::{fieldName}'] = field
+                fieldKey = f"{defSource}__{fieldName}"
+                interpretedFields[fieldKey] = field
+                order.append(fieldKey)
             except:
                 pdb.set_trace()
-        return interpretedFields
+        return interpretedFields, order
     
     def convertBinary(self,packet):
         if type(packet) == bytes:

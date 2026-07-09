@@ -4,44 +4,54 @@
     "parentPath":"/home/jacob/share/next/",
     "logBasepath": "/home/jacob/share/next/logs/ActiveLog.log",
     "guiTheme":"dark_cyan.xml",
+    "hostOS": "linux",
     "telemetryDefinitionsBasepath": "/home/jacob/share/next/telemetryDefinitions/",
     "telemetryStructures":{
         "dataviewer":{
             "format":
-                ["/home/jacob/share/next/packetDefinitions/dvHeader.hd",
-                "/home/jacob/share/next/packetDefinitions/primaryHeader.hd",
-                "/home/jacob/share/next/packetDefinitions/secondaryHeader.hd",
-                "/home/jacob/share/next/packetDefinitions/o2o_tlm_db_new.pd"],
+                ["/home/jacob/share/next/telemetryDefinitions/dvHeader.hd",
+                "/home/jacob/share/next/telemetryDefinitions/primaryHeader.hd",
+                "/home/jacob/share/next/telemetryDefinitions/secondaryHeader.hd",
+                "/home/jacob/share/next/telemetryDefinitions/o2o_tlm_db_new.pd"],
             "packetIdentifier":
                 {
                 "identifierSourceIndex":2,
                 "field":"packetId",
                 "packetDefinitionsIndex":3,
-                "description":"/home/jacob/share/next/packetDefinitions/secondaryHeader.hd contains a field called packetId "
+                "description":"/home/jacob/share/next/telemetryDefinitions/secondaryHeader.hd contains a field called packetId "
                 }
             },
         "telemetry":{
             "format":
-                ["/home/jacob/share/next/packetDefinitions/primaryHeader.hd",
-                "/home/jacob/share/next/packetDefinitions/secondaryHeader.hd",
-                "/home/jacob/share/next/packetDefinitions/o2o_tlm_db_new.pd"],
+                ["/home/jacob/share/next/telemetryDefinitions/primaryHeader.hd",
+                "/home/jacob/share/next/telemetryDefinitions/secondaryHeader.hd",
+                "/home/jacob/share/next/telemetryDefinitions/o2o_tlm_db_new.pd"],
             "packetIdentifier":
                 {
                 "identifierSourceIndex":1,
                 "field":"packetId",
                 "packetDefinitionsIndex":2,
-                "description":"/home/jacob/share/next/packetDefinitions/secondaryHeader.hd contains a field called packetId "
+                "description":"/home/jacob/share/next/telemetryDefinitions/secondaryHeader.hd contains a field called packetId "
                 }
             }
     },
     "storage":{
-        "storageLevel":3,
+        "storageLevel":1,
         "polarsSchemaPath":"/home/jacob/share/next/config/polarsSchemas.json",
-        "activeStorageMethod":"parquet",
+        "activeStorageMethod":"postgresDirect",
         "transientWriteSizeBytes":500000,
         "transientStoragePath":"/home/jacob/share/next/storage/transientStorage",
+        
+        
         "parquet":{
             "parquetBaseDirectory":"/home/jacob/share/next/storage/parquetMissionData"
-        }
+        },
+
+        "postgres":{
+        "host":"localhost",
+        "user":"dex",
+        "password":"easypass",
+        "dbName":"o2o"
+        }  
     }
 }
