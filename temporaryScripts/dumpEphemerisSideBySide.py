@@ -48,7 +48,7 @@ def calculate_ephemeris_differences(predict_row, asflown_row):
 ascPath = Path('../ascFiles')
 productPath = Path('../dataProducts/ephemerisComparison.csv')
 asFlownData = OrbitProp()
-asFlownData.readASC("../ascFiles/asFlown.asc")
+asFlownData.readASC("../ascFiles/art2_asFlown.oem")
 files = [f for f in ascPath.iterdir() if f.is_file() and f.suffix == '.asc']
 
 # Store ephemeris with source filenames
@@ -67,7 +67,7 @@ ephemerisWithSource.sort(key=lambda x: x['timestamp'])
 
 with open(productPath,'w',newline='') as outFile:
     writer = csv.writer(outFile)
-    writer.writerow(['source_file','predict_timestamp','predict_ICRF_X','predict_ICRF_Y','predict_ICRF_Z','predict_ICRF_VX','predict_ICRF_VY','predict_ICRF_VZ','asFlown_Timestamp','asFlown_ICRF_X','asFlown_ICRF_Y','asFlown_ICRF_Z','asFlown_ICRF_VX','asFlown_ICRF_VY','asFlown_ICRF_VZ','time_diff_sec','abs_pos_diff_km','abs_vel_diff_km_s','radial_pos_diff_km','tangential_pos_diff_km','radial_vel_diff_km_s','tangential_vel_diff_km_s'])
+    writer.writerow(['source_file','prediction_creation_datestamp','predict_timestamp','predict_ICRF_X','predict_ICRF_Y','predict_ICRF_Z','predict_ICRF_VX','predict_ICRF_VY','predict_ICRF_VZ','asFlown_Timestamp','asFlown_ICRF_X','asFlown_ICRF_Y','asFlown_ICRF_Z','asFlown_ICRF_VX','asFlown_ICRF_VY','asFlown_ICRF_VZ','time_diff_sec','abs_pos_diff_km','abs_vel_diff_km_s','radial_pos_diff_km','tangential_pos_diff_km','radial_vel_diff_km_s','tangential_vel_diff_km_s'])
     
     firstPredictTimestamp = ephemerisWithSource[0]['timestamp']
     asFlowni = 0
@@ -76,14 +76,16 @@ with open(productPath,'w',newline='') as outFile:
 
     for row in ephemerisWithSource:
         source_file = row['_source_file']
-        rowlist = [source_file, row['timestamp'],row['x'],row['y'],row['z'],row['vx'],row['vy'],row['vz']]
-        if asFlowni < len(asFlownData.ephemeris) and asFlownData.ephemeris[asFlowni]['timestamp'] < row['timestamp']:
-            asFlown = asFlownData.ephemeris[asFlowni]
-            asFlownList = [asFlown['timestamp'],asFlown['x'],asFlown['y'],asFlown['z'],asFlown['vx'],asFlown['vy'],asFlown['vz']]
-            
-            diff_list = calculate_ephemeris_differences(row, asFlown)
+        rowlist = [source_file,row['creationDate'], row['timestamp'],row['x'],row['y'],row['z'],row['vx'],row['vy'],row['vz']]
+        asFlown = None
 
-            writer.writerow(rowlist + asFlownList + diff_list)
+        while asFlowni < len(asFlownData.ephemeris) and asFlownData.ephemeris[asFlowni]['timestamp'] < row['timestamp']:
+            asFlown = asFlownData.ephemeris[asFlowni]
             asFlowni += 1
+
+        if asFlown is not None:
+            asFlownList = [asFlown['timestamp'],asFlown['x'],asFlown['y'],asFlown['z'],asFlown['vx'],asFlown['vy'],asFlown['vz']]
+            diff_list = calculate_ephemeris_differences(row, asFlown)
+            writer.writerow(rowlist + asFlownList + diff_list)
         else:
-            writer.writerow(rowlist)
+            writer.writerow(rowlist + [''] * 8 + [''] * 7)

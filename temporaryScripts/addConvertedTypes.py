@@ -19,4 +19,4 @@ for ts in telemetryStructures:
             fileList.append(file_)
 
 for file_ in fileList:
-    pktDefLib.addConvertedTypes(file_)
+    pktDefLib.addConvertedTypes(CFGLOADER.getPath(file_))

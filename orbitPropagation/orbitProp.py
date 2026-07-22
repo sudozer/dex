@@ -24,9 +24,13 @@ class OrbitProp:
             reader = csv.reader(f, delimiter=' ')
             for row in reader:
                 try:
+                    if 'CREATION_DATE' in row[0]:
+                        creationDate = row[2]
+                        continue
                     #if the first element is a timestamp, than this is a data row
                     dataDict = {}
                     dataDict["source"] = fname
+                    dataDict['creationDate'] = creationDate
                     dataDict["timestamp"] = satkit.time.strptime(row[0], self.dateFormatString)
                     dataDict["x"] = float(row[1]) * 1000
                     dataDict["y"] = float(row[2]) * 1000

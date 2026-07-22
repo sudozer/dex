@@ -9,4 +9,4 @@ CONFIG = CFGLOADER.loadGlobalConfig
 pktDefUtil = PacketDefinitionUtility()
 for packetType in CONFIG()['telemetryStructures']:
     for pktDefFile in CONFIG()['telemetryStructures'][packetType]['format']:
-        pktDefUtil.addBitstructStrings(pktDefFile)
+        pktDefUtil.addBitstructStrings(CFGLOADER.getPath(pktDefFile))

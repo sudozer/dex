@@ -8,8 +8,8 @@ CFGLOADER = Configs()
 CONFIG = CFGLOADER.loadGlobalConfig
 logger = logging.getLogger(__name__)
 logLevel = logging.ERROR
-from brokenPackets import BrokenPackets
-logging.basicConfig(filename=CONFIG()['logBasepath'], encoding='utf-8', level=logLevel)
+
+logging.basicConfig(filename=CFGLOADER.getPath(CONFIG()['logBasepath']), encoding='utf-8', level=logLevel)
 
 #hell
 
@@ -27,7 +27,7 @@ def findFieldLength(packet,template,field):
     if lengthFieldIndex == -1:
         errStr = f"Unable to find specified length field {fieldName} in packet template:\n{template}"
         logging.error(errStr)
-        BrokenPackets().logBrokenPacket(packet,template,errStr)
+        raise Exception()
     templateToLengthField = template[0:lengthFieldIndex+1]
     i = 0
     bitstructString = ""
@@ -71,7 +71,7 @@ def findFieldLength(packet,template,field):
     if field['bitLength'] % baseSize:
         errStr = f"Incorrect data basetype or bit length:\nBasesize (derived from bitstructType): {baseSize}\nCalculated bitLength: {field['bitLength']}"
         logging.error(errStr)
-        BrokenPackets().logBrokenPacket(packet,template,errStr)
+        raise Exception()
     field['arrayLength'] = int(field['bitLength'] / baseSize)
     field['bitstructType'] = field['bitstructType'] * field['arrayLength']
     return field

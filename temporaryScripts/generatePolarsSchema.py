@@ -22,8 +22,8 @@ for tsname in cfg['telemetryStructures']:
 polarsSchema = {}
 for fpath in fieldDefFiles:
 
-    polarsSchema = polarsSchema | pktDefLib.writePolarSchema(fpath)
+    polarsSchema = polarsSchema | pktDefLib.writePolarSchema(CFGLOADER.getPath(fpath))
 
-with open(cfg['storage']['polarsSchemaPath'],'w') as f:
+with open(CFGLOADER.getPath(cfg['storage']['polarsSchemaPath']),'w') as f:
     json.dump(polarsSchema,f,indent=4)
 

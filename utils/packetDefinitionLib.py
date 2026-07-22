@@ -14,7 +14,7 @@ class PacketDefinitionUtility():
 
     def __init__(self,logLevel=logging.WARNING):
         self.logger = logging.getLogger(__name__)
-        logging.basicConfig(filename=CONFIG()['logBasepath'], encoding='utf-8', level=logLevel)
+        logging.basicConfig(filename=CFGLOADER.getPath(CONFIG()['logBasepath']), encoding='utf-8', level=logLevel)
 
     def addBitstructStrings(self,pktDefPath):
         with open(pktDefPath,'r') as f:

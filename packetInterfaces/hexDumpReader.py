@@ -17,7 +17,7 @@ class HexDumpReader(PktReceiver):
     def __init__(self,packetType,hexTriggerSequences,logLevel=logging.WARNING):
         super().__init__(packetType,logLevel)
         self.logger = logging.getLogger(__name__)
-        logging.basicConfig(filename=CONFIG()['logBasepath'], encoding='utf-8', level=logLevel)
+        logging.basicConfig(filename=cfgLoader.getPath(CONFIG()['logBasepath']), encoding='utf-8', level=logLevel)
         self.packetType = packetType
         self.structure = CONFIG()['telemetryStructures'][packetType]
         self.hexTriggerSequences = hexTriggerSequences
@@ -47,7 +47,6 @@ class HexDumpReader(PktReceiver):
                     pktTemplate, components = self.decoder.createPacketTemplate(deepcopy(self.structure),hexHdr)
                     if not pktTemplate:
                         self.logger.error(f"Unable to read packet at index: {dataIndex} with structure {self.structure} Logging malformed packet for analysis.")
-                        self.brokenPackets(hexHdr,deepcopy(self.structure))
                     pktLen = 0
                     for field in pktTemplate:
                         if 'variableLength' in field:

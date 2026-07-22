@@ -136,12 +136,13 @@ class PacketDefinitionEditor(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Packet Definition Editor")
-        mainGuiPath = Path('ui')
-        mainGuiPath = mainGuiPath / 'packetDefinitionBuilder.ui'
+        
+        self.mainGuiPath = cfgLoader.getPath('apps/packetDefinitionEditor/ui/packetDefinitionBuilder.ui') 
+        self.limitsGuiPath = cfgLoader.getPath('apps/packetDefinitionEditor/ui/limitSetter.ui') 
+        self.conversionsGuiPath = cfgLoader.getPath('apps/packetDefinitionEditor/ui/conversions.ui') 
 
         self.pktDefUtil = PacketDefinitionUtility()
-
-        ui_file = QFile(mainGuiPath)
+        ui_file = QFile(self.mainGuiPath)
         ui_file.open(QFile.ReadOnly)
         loader = QUiLoader()
         ui_file.close()
@@ -207,7 +208,7 @@ class PacketDefinitionEditor(QMainWindow):
 
     def populateTelemetryDefinitions(self):
         self.ui.telemetryDefinitionsTree.clear()
-        tdefPath = Path(CONFIG()['telemetryDefinitionsBasepath'])
+        tdefPath = Path(cfgLoader.getPath(CONFIG()['telemetryDefinitionsBasepath']))
 
         files = [f for f in tdefPath.rglob('*') if f.is_file() and f.suffix in ('.hd')]
         self.telemetryDefinitions = {}
@@ -512,7 +513,7 @@ class PacketDefinitionEditor(QMainWindow):
 
     def saveTelemetryDefinition(self, sourceFile):
         defDict = self.telemetryDefinitions[sourceFile]
-        savePath = Path(CONFIG()['telemetryDefinitionsBasepath']) / sourceFile
+        savePath = Path(cfgLoader.getPath(CONFIG()['telemetryDefinitionsBasepath'])) / sourceFile
         with open(savePath,'w') as f:
             json.dump(defDict,f,indent=4)
 

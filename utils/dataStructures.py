@@ -4,6 +4,7 @@ import pdb
 import logging
 import datetime
 from time import perf_counter
+from pathlib import Path
 
 from loadConfig import Configs
 cfgLoader = Configs()
@@ -12,14 +13,24 @@ CONFIG = cfgLoader.loadGlobalConfig
 class PolarsStructures():
     def __init__(self,logLevel=logging.WARNING):
         self.logger = logging.getLogger(__name__)
-        logging.basicConfig(filename=CONFIG()['logBasepath'], encoding='utf-8', level=logLevel)
+        if not self.logger.handlers:
+            self.logger.addHandler(logging.NullHandler())
+        self.logger.setLevel(logLevel)
         self.loadPolarsSchema()
         self.datetimeFormat = CONFIG()['datetimeFormat']
 
     def loadPolarsSchema(self):
-        schemaPath = CONFIG()['storage']['polarsSchemaPath']
-        self.logger.info("Loading polars storage schema from {schemaPath}...")
+        schemaPath = Path(cfgLoader.getPath(CONFIG()['storage']['polarsSchemaPath']))
+        if not schemaPath.is_absolute():
+            schemaPath = (Path(__file__).resolve().parent.parent / schemaPath).resolve()
+        self.logger.info(f"Loading polars storage schema from {schemaPath}...")
         start = perf_counter()
+        if not schemaPath.exists():
+            self.logger.warning(f"Polars schema file not found at {schemaPath}; continuing without schema initialization")
+            self.schemaDict = {}
+            self.liveDataDict = {}
+            self.liveDataVariableFields = {}
+            return self.liveDataDict, self.liveDataDict
         with open(schemaPath,'r') as f:
             self.schemaDict = json.load(f)
         for fieldID in self.schemaDict:

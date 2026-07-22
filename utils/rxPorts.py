@@ -13,7 +13,7 @@ class UDPRXPort(socket.socket):
     def __init__(self,IP,port,packetRXCallback,logLevel=logging.WARNING, stopFlag=threading.Event()):
         super().__init__(socket.AF_INET, socket.SOCK_DGRAM)
         self.logger = logging.getLogger(__name__)
-        logging.basicConfig(filename=CONFIG()['logBasepath'], encoding='utf-8', level=logLevel)
+        logging.basicConfig(filename=cfgLoader.getPath(CONFIG()['logBasepath']), encoding='utf-8', level=logLevel)
         self.bind((IP, port))
         self.logger.info(f'UDP RX Port initialized and bound to port {port}')
         self.packetRXCallback = packetRXCallback
@@ -37,7 +37,7 @@ class TCPClient(socket.socket):
     def __init__(self,host,port,packetRXCallback,logLevel=logging.WARNING, stopFlag=threading.Event()):
         super().__init__(socket.AF_INET, socket.SOCK_STREAM)
         self.logger = logging.getLogger(__name__)
-        logging.basicConfig(filename=CONFIG()['logBasepath'], encoding='utf-8', level=logLevel)
+        logging.basicConfig(filename=cfgLoader.getPath(CONFIG()['logBasepath']), encoding='utf-8', level=logLevel)
         self.logger.info(f'Attempting to connect to TCP server at {host}:{port}')
         self.connect((host, port))
         self.logger.info(f'Connected to TCP server at {host}:{port}')
