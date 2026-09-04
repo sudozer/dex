@@ -1,0 +1,56 @@
+{
+    "datetimeFormat": "%Y-%m-%d_%H:%M:%S.%f %Z",
+    "datetimeFileFormat": "%Y-%m-%d_%H-%M-%S%Z",
+    "datetimeDayOfYearFormat": "%Y-%j_%H:%M:%S.%f %Z",
+    "parentPath": "C:\\Users\\jmgrego2\\Desktop\\vmshare\\dex",
+    "logBasepath": "logs/ActiveLog.log",
+    "guiTheme": "dark_cyan.xml",
+    "hostOS": "linux",
+    "telemetryDefinitionsBasepath": "telemetryDefinitions/",
+    "malformedPacketPath": "malformedPackets/malformedPacketStorage",
+    "autoLaunchMalformedPacketHandler": false,
+    "telemetryStructures": {
+        "dataviewer": {
+            "format": [
+                "telemetryDefinitions/dvHeader.hd",
+                "telemetryDefinitions/primaryHeader.hd",
+                "telemetryDefinitions/secondaryHeader.hd",
+                "telemetryDefinitions/o2o_tlm_db_new.pd"
+            ],
+            "packetIdentifier": {
+                "identifierSourceIndex": 2,
+                "field": "packetId",
+                "packetDefinitionsIndex": 3,
+                "description": "telemetryDefinitions/secondaryHeader.hd contains a field called packetId "
+            }
+        },
+        "telemetry": {
+            "format": [
+                "telemetryDefinitions/primaryHeader.hd",
+                "telemetryDefinitions/secondaryHeader.hd",
+                "telemetryDefinitions/o2o_tlm_db_new.pd"
+            ],
+            "packetIdentifier": {
+                "identifierSourceIndex": 1,
+                "field": "packetId",
+                "packetDefinitionsIndex": 2,
+                "description": "telemetryDefinitions/secondaryHeader.hd contains a field called packetId "
+            }
+        }
+    },
+    "storage": {
+        "polarsSchemaPath": "config/polarsSchemas.json",
+        "activeStorageMethod": "parquet",
+        "transientWriteSizeBytes": 500000,
+        "transientStoragePath": "store/transientStorage",
+        "parquet": {
+            "parquetBaseDirectory": "store/parquetMissionData"
+        },
+        "postgres": {
+            "host": "localhost",
+            "user": "dex",
+            "password": "easypass",
+            "dbName": "o2o"
+        }
+    }
+}

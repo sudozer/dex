@@ -17,6 +17,12 @@ class Configs():
             json.dump(config, f, indent=4)
         self.globalCongfig = config
         return config
+
+    def configWrite(self, configDict):
+        with open(self.global_config_path,'w') as f:
+            json.dump(configDict, f, indent=4)
+        self.globalCongfig = configDict
+        return configDict
     
     def getPath(self,path):
         """

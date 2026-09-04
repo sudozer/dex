@@ -1,57 +1,38 @@
 {
-    "datetimeFormat":"%Y-%m-%d_%H:%M:%S.%f %Z",
-    "datetimeDayOfYearFormat":"%Y-%j_%H:%M:%S.%f %Z",
-    "parentPath":"/home/jacob/share/next/",
-    "logBasepath": "/home/jacob/share/next/logs/ActiveLog.log",
-    "guiTheme":"dark_cyan.xml",
+    "version": "0.0.0",
+    "datetimeFormat": "%Y-%m-%d_%H:%M:%S.%f %Z",
+    "datetimeFileFormat": "%Y-%m-%d_%H-%M-%S%Z",
+    "datetimeDayOfYearFormat": "%Y-%j_%H:%M:%S.%f %Z",
+    "parentPath": "C:\\Users\\jmgrego2\\Desktop\\vmshare\\dex",
+    "logBasepath": "logs/ActiveLog.log",
+    "guiTheme": "dark_cyan.xml",
     "hostOS": "linux",
-    "telemetryDefinitionsBasepath": "/home/jacob/share/next/telemetryDefinitions/",
-    "telemetryStructures":{
-        "dataviewer":{
-            "format":
-                ["/home/jacob/share/next/telemetryDefinitions/dvHeader.hd",
-                "/home/jacob/share/next/telemetryDefinitions/primaryHeader.hd",
-                "/home/jacob/share/next/telemetryDefinitions/secondaryHeader.hd",
-                "/home/jacob/share/next/telemetryDefinitions/o2o_tlm_db_new.pd"],
-            "packetIdentifier":
-                {
-                "identifierSourceIndex":2,
-                "field":"packetId",
-                "packetDefinitionsIndex":3,
-                "description":"/home/jacob/share/next/telemetryDefinitions/secondaryHeader.hd contains a field called packetId "
-                }
-            },
-        "telemetry":{
-            "format":
-                ["/home/jacob/share/next/telemetryDefinitions/primaryHeader.hd",
-                "/home/jacob/share/next/telemetryDefinitions/secondaryHeader.hd",
-                "/home/jacob/share/next/telemetryDefinitions/o2o_tlm_db_new.pd"],
-            "packetIdentifier":
-                {
-                "identifierSourceIndex":1,
-                "field":"packetId",
-                "packetDefinitionsIndex":2,
-                "description":"/home/jacob/share/next/telemetryDefinitions/secondaryHeader.hd contains a field called packetId "
-                }
-            }
+    "telemetryDefinitionsBasepath": "telemetryDefinitions/",
+    "malformedPacketPath": "malformedPackets/malformedPacketStorage",
+    "autoLaunchMalformedPacketHandler": false,
+    "telemetryStructures": {
+        "splaser": {
+            "format": [
+                "telemetryDefinitions/splaserPacket.hd"
+            ]
+        }
     },
-    "storage":{
-        "storageLevel":1,
-        "polarsSchemaPath":"/home/jacob/share/next/config/polarsSchemas.json",
-        "activeStorageMethod":"postgresDirect",
-        "transientWriteSizeBytes":500000,
-        "transientStoragePath":"/home/jacob/share/next/storage/transientStorage",
-        
-        
-        "parquet":{
-            "parquetBaseDirectory":"/home/jacob/share/next/storage/parquetMissionData"
+    "storage": {
+        "polarsSchemaPath": "config/polarsSchemas.json",
+        "activeStorageMethod": "parquet",
+        "transientWriteSizeBytes": 500000,
+        "transientStoragePath": "store/transientStorage",
+        "parquet": {
+            "parquetBaseDirectory": "store/parquetMissionData"
         },
-
-        "postgres":{
-        "host":"localhost",
-        "user":"dex",
-        "password":"easypass",
-        "dbName":"o2o"
-        }  
+        "postgres": {
+            "host": "localhost",
+            "user": "dex",
+            "password": "easypass",
+            "dbName": "o2o"
+        }
+    },
+    "simulation": {
+        "splaser": {}
     }
 }

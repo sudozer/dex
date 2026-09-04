@@ -3,6 +3,7 @@ import pdb
 import json
 import os
 import copy
+import csv
 
 """
 TODO
@@ -17,7 +18,8 @@ from PySide6.QtCore import QFile, Qt
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (
     QApplication, 
-    QMainWindow, 
+    QMainWindow,
+    QMessageBox,
     QHeaderView,
     QFileDialog,
     QTreeWidget,
@@ -131,11 +133,9 @@ class FieldItem(QTreeWidgetItem):
         for parent in self.parentItems:
             parent.children.append(self)
 
-class PacketDefinitionEditor(QMainWindow):
+class PacketDefinitionEditor():
 
     def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Packet Definition Editor")
         
         self.mainGuiPath = cfgLoader.getPath('apps/packetDefinitionEditor/ui/packetDefinitionBuilder.ui') 
         self.limitsGuiPath = cfgLoader.getPath('apps/packetDefinitionEditor/ui/limitSetter.ui') 
@@ -145,9 +145,8 @@ class PacketDefinitionEditor(QMainWindow):
         ui_file = QFile(self.mainGuiPath)
         ui_file.open(QFile.ReadOnly)
         loader = QUiLoader()
-        ui_file.close()
-        loader = QUiLoader()
         self.ui = loader.load(ui_file)
+        ui_file.close()
         
         #apply_stylesheet(self.window, theme=CONFIG()['guiTheme'])
         self.ui.show()
@@ -200,6 +199,17 @@ class PacketDefinitionEditor(QMainWindow):
         self.ui.lengthInBitsComboBox.currentTextChanged.connect(self.fieldParameterChanged)
         self.ui.arrayLengthSpinBox.valueChanged.connect(self.fieldParameterChanged)
         self.ui.bitLengthSpinBox.valueChanged.connect(self.fieldParameterChanged)
+
+        self.ui.addTelemetryDefinitionButton.clicked.connect(self.addNewDefinition)
+        self.ui.importFromCsvButton.clicked.connect(self.addCSVDef)
+        self.ui.exportToCsvButton.clicked.connect(self.exportToCsv)
+        self.ui.exportCsvTemplate.clicked.connect(self.exportCSVTemplate)
+        self.ui.saveDefinitionButton.clicked.connect(self.saveTelemetryDefinitionUI)
+        self.ui.newPacketButton.clicked.connect(self.addNewPacket)
+        self.ui.removeDefinitionButton.clicked.connect(self.removeDefinition)
+        self.ui.newStructureButton.clicked.connect(self.addNewStructure)
+        self.ui.addTelemetrySelectionButton.clicked.connect(self.addTelemetryDefinitionToStructure)
+
 
     def loadDefsStructs(self):
         self.populateTelemetryDefinitions()
@@ -513,9 +523,163 @@ class PacketDefinitionEditor(QMainWindow):
 
     def saveTelemetryDefinition(self, sourceFile):
         defDict = self.telemetryDefinitions[sourceFile]
-        savePath = Path(cfgLoader.getPath(CONFIG()['telemetryDefinitionsBasepath'])) / sourceFile
+        savePath = cfgLoader.getPath(CONFIG()['telemetryDefinitionsBasepath']) / sourceFile
         with open(savePath,'w') as f:
             json.dump(defDict,f,indent=4)
+
+    def addCSVDef(self):
+        tlmDef = self.ui.telemetryDefinitionsTree.selectedItems()[0]
+        if not tlmDef:
+            QMessageBox.warning(None,"No telemetry definition selected","Plese select a telemetry definition from the definitions list or add a new one and select it.")
+            return
+        csvPath, _ = QFileDialog.getOpenFileName(
+            parent=None,
+            caption="Open CSV File",
+            filter="CSV Files (*.csv)"
+            )
+        
+        parentDef = tlmDef.parent()
+        if parentDef:
+            #packet Definition
+            telemetryDefinitionName = parentDef.text(0)
+            selectedKeyString = tlmDef.text(0).split(' - ')[0]
+            defDict = self.telemetryDefinitions[telemetryDefinitionName][selectedKeyString]
+        else:
+            telemetryDefinitionName = tlmDef.text(0)
+            defDict = self.telemetryDefinitions[telemetryDefinitionName]
+        fieldList = self.convertCSV(csvPath)
+        if fieldList:
+            defDict['fields'] = fieldList
+            self.saveTelemetryDefinition(telemetryDefinitionName)
+            self.telemetryDefinitionSelected()
+
+    def convertCSV(self,csvPath):
+        with open(csvPath,'r') as f:
+            reader = csv.reader(f)
+            fieldList = []
+            rownum = 0
+            next(reader,None)
+            for row in reader:
+                fieldDict = {
+                    "fieldName": row[0],
+                    "bitLength": int(row[1]),
+                    "type": row[2],
+                    "description": row[3],
+                    "units":row[4],
+                }
+
+                if len(row[5]) > 0 and int(row[5]) > 1:
+                    fieldDict['arrayLength'] = int(row[5])
+
+                fieldDict['bitstructType'] = self.pktDefUtil.createBitstructString(fieldDict)
+                if len(row[6]) > 0:
+                    fieldDict['conversion']={
+                        "conversionFunction": row[6],
+                        "conversionArgs": self.unpackConversionArgs(row[7])
+                    }
+                    #TODO for now just set enumeration outputs to string but maybe someday change so that it can handle other data types
+                    fieldDict['conversion']['convertedType'] = "char"
+
+                valid, errors = self.pktDefUtil.validateField(fieldDict)
+                if valid:
+                    fieldList.append(fieldDict)
+                else:
+                    self.csvConversionError(rownum,errors)
+                    return False
+
+                rownum += 1
+            return fieldList
+    
+    def unpackConversionArgs(self,argString):
+        argString = argString.replace(" ","")
+        keyValPairs = argString.split(';')
+        argDict = {}
+        for pair in keyValPairs:
+            if len(pair) > 0:
+                key, val = pair.split(':')
+                argDict[key] = val
+        return argDict
+    
+    def csvConversionError(self,row,errors):
+        emessage = ""
+        for e in errors:
+            emessage = emessage + e + '\n'
+        QMessageBox.warning(None, "CSV conversion error", emessage)
+
+    def exportToCsv(self):
+        #TODO support exporting back to a csv
+        pass
+
+    def exportCSVTemplate(self):
+        #TODO implement CSV template export
+        pass
+
+    def saveTelemetryDefinitionUI(self):
+        #TODO save a definition from ui (might just remove the button)
+        pass
+
+    def addNewPacket(self):
+        #TODO support adding new packets to a packet definition
+        pass
+    
+    def removeDefinition(self):
+        #TODO remove definition
+        pass
+
+    def addNewStructure(self):
+        dialogPath = cfgLoader.getPath('apps/packetDefinitionEditor/ui/newStructure.ui')
+        ui_file = QFile(dialogPath)
+        ui_file.open(QFile.ReadOnly)
+        loader = QUiLoader()
+        dialog = loader.load(ui_file)
+        ui_file.close()
+
+        if dialog.exec() == QDialog.Accepted:
+            newStructureName = dialog.structureName.text()
+            #TODO check for database safe naming
+            with open(cfgLoader.global_config_path,'r') as globalConfigFile:
+                globalConfigDict = json.load(globalConfigFile)
+            globalConfigDict['telemetryStructures'][newStructureName] = {'format':[]}
+            with open(cfgLoader.global_config_path,'w') as globalConfigFile:
+                json.dump(globalConfigDict, globalConfigFile, indent=4)
+            self.populateTelemetryStructures()
+
+    def addTelemetryDefinitionToStructure(self):
+        selectedDef = self.ui.telemetryDefinitionsTree.selectedItems()[0]
+        selectedStructure = self.ui.structureTree.selectedItems()[0]
+        if selectedDef == None or selectedStructure == None:
+            QMessageBox.warning(None,"Invalid Selection", "Please select both a telemetry definition and a structure to add it to.")
+            return
+
+        structureName = selectedStructure.text(0)
+        defName = selectedDef.text(0)
+
+        with open(cfgLoader.global_config_path,'r') as globalConfigFile:
+            globalConfigDict = json.load(globalConfigFile)
+        globalConfigDict['telemetryStructures'][structureName]['format'].append(f"telemetryDefinitions/{defName}")
+        #TODO link packet definitions properly
+        with open(cfgLoader.global_config_path,'w') as globalConfigFile:
+            json.dump(globalConfigDict, globalConfigFile, indent=4)
+        self.populateTelemetryStructures()
+
+    def removeStructureOrComponent(self):
+        #TODO depending on what is selected, remove either a component from a structure or an entire structure
+        pass
+
+    def addNewDefinition(self):
+        dialogPath = cfgLoader.getPath('apps/packetDefinitionEditor/ui/newDefinition.ui')
+        ui_file = QFile(dialogPath)
+        ui_file.open(QFile.ReadOnly)
+        loader = QUiLoader()
+        dialog = loader.load(ui_file)
+        ui_file.close()
+
+        if dialog.exec() == QDialog.Accepted:
+            newTlmDefName = dialog.telemetryDefinitionName.text()
+            newTlmDefType = '.pd' if dialog.telemetryDefinitionType.currentText() == "Packets" else '.hd'
+            self.telemetryDefinitions[newTlmDefName + newTlmDefType]= {}
+            self.saveTelemetryDefinition(newTlmDefName + newTlmDefType)
+            self.populateTelemetryDefinitions()
 
 if __name__ == '__main__':
     os.environ.pop("SESSION_MANAGER", None)

@@ -53,22 +53,9 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QPushButton" name="addPacketDefinitionFileButton">
-           <property name="maximumSize">
-            <size>
-             <width>120</width>
-             <height>16777215</height>
-            </size>
-           </property>
+          <widget class="QPushButton" name="addTelemetryDefinitionButton">
            <property name="text">
-            <string>Header Definition</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="addPacketDefinitionButton">
-           <property name="text">
-            <string>Packet Definition</string>
+            <string>New Telemetry Definition</string>
            </property>
           </widget>
          </item>
@@ -87,14 +74,17 @@
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="exportToCSVButton">
+          <widget class="QPushButton" name="exportToCsvButton">
            <property name="text">
             <string>Export To CSV</string>
            </property>
           </widget>
          </item>
          <item>
-          <widget class="QPushButton" name="pushButton_2">
+          <widget class="QPushButton" name="exportCsvTemplate">
+           <property name="toolTip">
+            <string>click to save a csv template to use for defining new telemetry definitions as a csv</string>
+           </property>
            <property name="text">
             <string>CSV Template</string>
            </property>
@@ -121,9 +111,6 @@
            </property>
           </widget>
          </item>
-         <item>
-          <widget class="QLineEdit" name="newPacketIdLineEdit"/>
-         </item>
         </layout>
        </item>
        <item>
@@ -136,7 +123,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton">
+        <widget class="QPushButton" name="removeDefinitionButton">
          <property name="minimumSize">
           <size>
            <width>150</width>

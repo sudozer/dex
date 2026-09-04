@@ -10,6 +10,7 @@ from loadConfig import Configs
 from decode import Decoder
 from convert import Converter
 from store import Storage
+from telemetryRetrieval import LiveTelemetry
 
 from malformedPacketHandler import MalformedPacketLogger, PacketProcessingError
 
@@ -30,6 +31,7 @@ class PktReceiver():
         self.storage = Storage(logLevel)
         self.packetStructure = packetStructure
         self.malformedPacketHandler = MalformedPacketLogger(logLevel)
+        self.liveTelemetry = LiveTelemetry()
 
         self.printPacketCounts = True
         self.acceptedPackets = 0
@@ -97,7 +99,8 @@ class PktReceiver():
             #self.malformedPacketHandler.logMalformedPacket(packet, packetTemplate=packetTemplate, errors=[{"stage": "convert", "message": str(exc)}], packetStructure=self.packetStructure, packetType=self.packetType, components=components, metadata=decodedPacket.get('metadata', {}))
             self.rx_malformed_packet()
             return
-        
+        pdb.set_trace()
+        self.liveTelemetry.pushPacket(convertedPacket)
         #store
         try:
             self.storage.storePacket(convertedPacket, packet)

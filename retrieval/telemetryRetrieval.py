@@ -6,10 +6,9 @@ from pathlib import Path
 import polars as pl
 import psycopg
 
-from decode.decode import Decoder
-from convert.convert import Converter
+from decode import Decoder
+from convert import Converter
 from loadConfig import Configs
-
 
 class TelemetryRetrieval:
     """Retrieve telemetry data from transient storage, parquet files, or PostgreSQL."""

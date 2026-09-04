@@ -96,3 +96,45 @@ class PolarsStructures():
         #polars wants this encapsulated in a list
         #in case multiple lists are simultaneously added
         return [[1 == '1' for bit in bitstring]]
+
+class DataDictionaries():
+    #helper class to load packets, etc. without having to read the json files everywhere
+    def __init__(self):
+        self.loadAllDicts()
+
+    def loadAllDicts(self):
+        self.loadStructures()
+        self.loadPacketTemplates()
+
+    def loadStructures(self):
+        self.structures = CONFIG()['telemetryStructures']
+
+    def loadPacketTemplates(self):
+        #read all structures and create a packet dictionary for each
+        self.packetTemplates = {}
+        #TODO support packet definitions instead of just header definitions
+        ##TODO support dynamic sized fields
+        for structureName, structure in self.structures.items():
+            if not 'packetIdentifier' in structure:
+                self.packetTemplates[structureName] = []
+                for file in structure['format']:
+                    with open(cfgLoader.getPath(file),'r') as file_:
+                        packetDict = json.load(file_)
+                        self.packetTemplates[structureName].extend(packetDict['fields'])
+            else:
+                packetFilePath = cfgLoader.getPath(structure['format'][structure['packetIdentifier']['packetDefinitionsIndex']])
+                with open(packetFilePath,'r') as packetDefFile:
+                    packetDefDict = json.load(packetDefFile)
+                for packetId, packetDef in packetDefDict.items():
+                    self.packetTemplates[f"{structureName}_{packetId}"] = []
+                    i = 0
+                    for file in structure['format']:
+                        with open(cfgLoader.getPath(file),'r') as file_:
+                            packetDict = json.load(file_)
+                        if i == structure['packetIdentifier']['packetDefinitionsIndex']:
+                            self.packetTemplates[f"{structureName}_{packetId}"].extend(packetDef['fields'])
+                        self.packetTemplates[f"{structureName}_{packetId}"].extend(packetDict['fields'])
+
+
+
+

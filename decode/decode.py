@@ -143,7 +143,7 @@ class Decoder():
             i += 1
         return packetTemplate
 
-    def createPacketTemplate(self, structure, hexPacket):
+    def createPacketTemplate(self, structure, hexPacket = b"\x00"):
         #based on the structure, return a packet template that defines which bits of the raw binary
         #packet correspond to which fields in the structure.
         #structure components are either a string filepath containing static components of the packet

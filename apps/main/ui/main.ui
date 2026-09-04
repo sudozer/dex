@@ -17,9 +17,9 @@
    <item>
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
-      <widget class="QTabWidget" name="tabWidget">
+      <widget class="QTabWidget" name="tabs">
        <property name="currentIndex">
-        <number>0</number>
+        <number>3</number>
        </property>
        <widget class="QWidget" name="tab">
         <attribute name="title">
@@ -31,14 +31,28 @@
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_4">
              <item>
-              <widget class="QLabel" name="label">
-               <property name="text">
-                <string>Packet Interfaces:</string>
+              <layout class="QHBoxLayout" name="horizontalLayout_10">
+               <property name="topMargin">
+                <number>8</number>
                </property>
-              </widget>
+               <item>
+                <widget class="QLabel" name="label">
+                 <property name="text">
+                  <string>Packet Interfaces:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="addNewPacketInterfaceButton">
+                 <property name="text">
+                  <string>Add New</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </item>
              <item>
-              <widget class="QTableWidget" name="tableWidget"/>
+              <widget class="QTableWidget" name="packetInterfaceTable"/>
              </item>
             </layout>
            </item>
@@ -52,7 +66,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QTableWidget" name="tableWidget_2"/>
+              <widget class="QTableWidget" name="displayWidgetTable"/>
              </item>
             </layout>
            </item>
@@ -89,23 +103,14 @@
                  </property>
                 </widget>
                </item>
-               <item>
-                <widget class="QPushButton" name="dataStartEventsButton">
-                 <property name="maximumSize">
-                  <size>
-                   <width>60</width>
-                   <height>16777215</height>
-                  </size>
-                 </property>
-                 <property name="text">
-                  <string>Events</string>
-                 </property>
-                </widget>
-               </item>
               </layout>
              </item>
              <item>
-              <widget class="QDateEdit" name="dateEdit"/>
+              <widget class="QDateTimeEdit" name="dateTimeEdit_2">
+               <property name="calendarPopup">
+                <bool>true</bool>
+               </property>
+              </widget>
              </item>
              <item>
               <layout class="QHBoxLayout" name="horizontalLayout_6">
@@ -119,23 +124,14 @@
                  </property>
                 </widget>
                </item>
-               <item>
-                <widget class="QPushButton" name="dataEndEventButton">
-                 <property name="maximumSize">
-                  <size>
-                   <width>60</width>
-                   <height>16777215</height>
-                  </size>
-                 </property>
-                 <property name="text">
-                  <string>Events</string>
-                 </property>
-                </widget>
-               </item>
               </layout>
              </item>
              <item>
-              <widget class="QDateTimeEdit" name="dateTimeEdit"/>
+              <widget class="QDateTimeEdit" name="dateTimeEdit">
+               <property name="calendarPopup">
+                <bool>true</bool>
+               </property>
+              </widget>
              </item>
              <item>
               <layout class="QHBoxLayout" name="horizontalLayout_7">
@@ -216,7 +212,7 @@
               </layout>
              </item>
              <item>
-              <widget class="QTableView" name="telemetryList"/>
+              <widget class="QTableView" name="exportTelemetryList"/>
              </item>
              <item>
               <layout class="QHBoxLayout" name="horizontalLayout_11">
@@ -224,14 +220,14 @@
                 <number>10</number>
                </property>
                <item>
-                <widget class="QLineEdit" name="lineEdit_2">
+                <widget class="QLineEdit" name="exportFilePath">
                  <property name="placeholderText">
                   <string>export file path</string>
                  </property>
                 </widget>
                </item>
                <item>
-                <widget class="QPushButton" name="pushButton_3">
+                <widget class="QPushButton" name="browseExportPath">
                  <property name="text">
                   <string>browse</string>
                  </property>
@@ -245,14 +241,14 @@
                 <number>10</number>
                </property>
                <item>
-                <widget class="QPushButton" name="pushButton_2">
+                <widget class="QPushButton" name="exportAsJsonButton">
                  <property name="text">
                   <string>JSON</string>
                  </property>
                 </widget>
                </item>
                <item>
-                <widget class="QPushButton" name="pushButton">
+                <widget class="QPushButton" name="exportAsCsvButton">
                  <property name="text">
                   <string>CSV</string>
                  </property>
@@ -282,26 +278,6 @@
               <number>8</number>
              </property>
              <item>
-              <widget class="QLabel" name="label_7">
-               <property name="text">
-                <string>Packets:</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <spacer name="horizontalSpacer">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item>
               <widget class="QLabel" name="label_9">
                <property name="text">
                 <string>IP:</string>
@@ -309,7 +285,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QLineEdit" name="lineEdit_4">
+              <widget class="QLineEdit" name="simIpAddressLineEdit">
                <property name="text">
                 <string>127.0.0.1</string>
                </property>
@@ -323,7 +299,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QLineEdit" name="lineEdit_3">
+              <widget class="QLineEdit" name="simPortLineEdit">
                <property name="maximumSize">
                 <size>
                  <width>50</width>
@@ -339,7 +315,7 @@
               </widget>
              </item>
              <item>
-              <widget class="QComboBox" name="comboBox">
+              <widget class="QComboBox" name="transferProtocolSelect">
                <item>
                 <property name="text">
                  <string>TCP</string>
@@ -353,7 +329,29 @@
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="pushButton_4">
+              <widget class="QComboBox" name="simPacketInterfaceDropdown">
+               <property name="minimumSize">
+                <size>
+                 <width>130</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <item>
+                <property name="text">
+                 <string>Select Interface</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item>
+              <widget class="Line" name="line_2">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="simPlayButton">
                <property name="text">
                 <string>Play</string>
                </property>
@@ -362,7 +360,14 @@
             </layout>
            </item>
            <item>
-            <widget class="QTreeWidget" name="treeWidget">
+            <widget class="QLabel" name="label_7">
+             <property name="text">
+              <string>Simulated Packets:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QTreeWidget" name="simulationPacketsTree">
              <column>
               <property name="text">
                <string notr="true">1</string>
@@ -373,6 +378,11 @@
           </layout>
          </item>
         </layout>
+       </widget>
+       <widget class="QWidget" name="tab_5">
+        <attribute name="title">
+         <string>Custom Displays</string>
+        </attribute>
        </widget>
        <widget class="QWidget" name="tab_4">
         <attribute name="title">

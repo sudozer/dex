@@ -1,0 +1,1016 @@
+{
+    "fields": [
+        {
+            "fieldName": "config_288",
+            "bitLength": 32,
+            "type": "uint32_t",
+            "description": "",
+            "units": "",
+            "bitstructType": "u32"
+        },
+        {
+            "fieldName": "config_crc",
+            "bitLength": 32,
+            "type": "uint32_t",
+            "description": "",
+            "units": "",
+            "bitstructType": "u32"
+        },
+        {
+            "fieldName": "config_counter",
+            "bitLength": 64,
+            "type": "uint64_t",
+            "description": "This field's recommended use is to detect stale packets.",
+            "units": "Count",
+            "bitstructType": "u64"
+        },
+        {
+            "fieldName": "config_0",
+            "bitLength": 32,
+            "type": "uint32_t",
+            "description": "",
+            "units": "",
+            "bitstructType": "u32"
+        },
+        {
+            "fieldName": "cmd_pkt_rx",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "1 if the Plaser Unit has received a Command Packet from the Space Vehicle in the last 100 ms. 0 otherwise. This rolls up the following four fields.",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "No",
+                    "1": "Yes"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "cmd_pkt_rx_via_if1",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "1 if the Plaser Unit has received a Command Packet from the Space Vehicle over the Control Interface of Plaser Unit 1 in the last 100 ms. 0 otherwise.",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "No",
+                    "1": "Yes"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "cmd_pkt_rx_via_if2",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "1 if the Plaser Unit has received a Command Packet from the Space Vehicle over the Control Interface of Plaser Unit 2 in the last 100 ms. 0 otherwise.",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "No",
+                    "1": "Yes"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "cmd_pkt_rx_via_if3",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "1 if the Plaser Unit has received a Command Packet from the Space Vehicle over the Control Interface of Plaser Unit 3 in the last 100 ms. 0 otherwise.",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "No",
+                    "1": "Yes"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "cmd_pkt_rx_via_if4",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "1 if the Plaser Unit has received a Command Packet from the Space Vehicle over the Control Interface of Plaser Unit 4 in the last 100 ms. 0 otherwise.",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "No",
+                    "1": "Yes"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "ctrl_enet_last_pkt_drop_status",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "Enum indicating the reason a control packet was dropped after being received at the Plaser Unit.",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "NoDrop",
+                    "1": "BadMessage",
+                    "2": "StaleMessage",
+                    "3": "BadCRC",
+                    "4": "BadFrame",
+                    "5": "BadElement"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "reboot_pending",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "1 if the Plaser Unit will reboot itself shortly. 0 otherwise.",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "No",
+                    "1": "Yes"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "reboot_reason",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "Enum indicating reason for pending re-boot (if any).",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "NoReboot",
+                    "1": "SoftwareUpdate",
+                    "2": "OverTemperature"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "plaser_unit_uptime",
+            "bitLength": 64,
+            "type": "uint64_t",
+            "description": "Time this Plaser Unit has been booted since the last reboot, in nano seconds.",
+            "units": "ns",
+            "bitstructType": "u64",
+            "conversion": {
+                "conversionFunction": "Convert ns to day/hour/minute/second string",
+                "conversionArgs": {},
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "plaser_unit_state",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "Enum indicating high level Plaser Unit state - more future states TBR.",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "LowPower",
+                    "1": "Idle",
+                    "2": "Active"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "laser_terminal_state",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "Enum indicating Laser Terminal state - TBR.",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "Idle",
+                    "1": "Active",
+                    "2": "Faulted"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "star_tracker_state",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "Enum indicating star tracker state - TBR.",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "Off",
+                    "1": "Active",
+                    "2": "Faulted"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "gnss_state",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "Enum indicating GNSS state - TBR.",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "Off",
+                    "1": "Active",
+                    "2": "Faulted"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "tlm_dl_requested",
+            "bitLength": 16,
+            "type": "uint16_t",
+            "description": "This counter increments each time the Plaser Unit requests a telemetry downlink",
+            "units": "Request Count",
+            "bitstructType": "u16"
+        },
+        {
+            "fieldName": "num_nw_pkt_rx",
+            "bitLength": 16,
+            "type": "uint16_t",
+            "description": "Number of Network Entry Packets received by the Plaser Unit from the Space Vehicle. This counter rolls over to 0 from maximum value.",
+            "units": "Packet Count",
+            "bitstructType": "u16"
+        },
+        {
+            "fieldName": "num_nw_pkt_valid",
+            "bitLength": 16,
+            "type": "uint16_t",
+            "description": "Number of received Network Entry Packets that were successfullly parsed by the Plaser Unit. This counter rolls over to 0 from maximum value.",
+            "units": "Packet Count",
+            "bitstructType": "u16"
+        },
+        {
+            "fieldName": "nw_entry_pkt_hash",
+            "bitLength": 32,
+            "type": "uint32_t",
+            "description": "The first 32 bits of the sha256 hash of the software update file fetched, in big-endian format. Initially 0 before a network packet entry packet is received.",
+            "units": "Hash",
+            "bitstructType": "u32",
+            "conversion": {
+                "conversionFunction": "hex",
+                "conversionArgs": {},
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "next_nw_expected_timestamp",
+            "bitLength": 64,
+            "type": "uint64_t",
+            "description": "GPS time in nanoseconds. Indicates the next expected timestamp at which the Plaser Unit has a network path to ground (see Network operational), or the current time if the Plaser Unit currently expects network connectivity. This timestamp is a prediction and is limited by SpaceX internal look-ahead duration.",
+            "units": "gps_ns",
+            "bitstructType": "u64",
+            "conversion": {
+                "conversionFunction": "Convert GPS time to YYYY-MM-DD HH:MM:SS.s format",
+                "conversionArgs": {},
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "next_nw_expected_duration",
+            "bitLength": 32,
+            "type": "float",
+            "description": "Expected duration for the next contiguous period of Plaser Unit network connectivity to ground (see Next Network Operational Expected Timestamp), or expected remaining duration if the Plaser Unit currently expects network connectivity. This duration is a prediction and is limited by SpaceX internal look-ahead duration.",
+            "units": "s",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "target_ephemeris_staleness",
+            "bitLength": 32,
+            "type": "float",
+            "description": "Indicates how stale (in seconds) the ephemerides are for the currently active Laser Terminal target. This is the difference between the current time and the ephemeris timestamp of the satellite which the terminal is currently targeting, or -1 if the terminal has no target assigned.",
+            "units": "s",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "plaser_unit_gnc_valid",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "1 if navigation information coming from the Plaser Unit should be trusted and used by the Laser Terminal. 0 otherwise",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "No",
+                    "1": "Yes"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "vehicle_attitude_valid",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "Plaser will indicate here whether its received attitude is valid or not.",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "No",
+                    "1": "Yes"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "vehicle_ephemeris_valid",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "Plaser will indicate here whether its received ephemeris is valid or not.",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "No",
+                    "1": "Yes"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "vehicle_sw_update_fetch_enabled",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "1 if software update fetch from Space Vehicle is enabled. 0 otherwise.",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "Off",
+                    "1": "On"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "vehicle_sw_update_fetch_bytes",
+            "bitLength": 32,
+            "type": "uint32_t",
+            "description": "Progress meter for software update fetch from the Space Vehicle: number of bytes fetched so far.",
+            "units": "Byte Count",
+            "bitstructType": "u32"
+        },
+        {
+            "fieldName": "vehicle_sw_update_enabled",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "1 if software update via Space Vehicle is enabled. 0 otherwise.",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "Off",
+                    "1": "On"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "vehicle_sw_update_status",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "The Space Vehicle should not take action in response to any of these. This status is purely informational.",
+            "units": "Enum",
+            "bitstructType": "u8"
+        },
+        {
+            "fieldName": "vehicle_sw_update_hash",
+            "bitLength": 64,
+            "type": "uint64_t",
+            "description": "The first 64 bits of the sha256 hash of the software update file fetched, in a big-endian format. Initially 0 before a software update fetch has completed",
+            "units": "Hash",
+            "bitstructType": "u64",
+            "conversion": {
+                "conversionFunction": "hex",
+                "conversionArgs": {},
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "debug_pkt_rx",
+            "bitLength": 16,
+            "type": "uint16_t",
+            "description": "Number of debug commands received by the Plaser Unit. This counter rolls over to 0 from maximum value.",
+            "units": "Packet Count",
+            "bitstructType": "u16"
+        },
+        {
+            "fieldName": "debug_pkt_acc",
+            "bitLength": 16,
+            "type": "uint16_t",
+            "description": "Number of debug commands accepted by the Plaser Unit. This counter rolls over to 0 from maximum value.",
+            "units": "Packet Count",
+            "bitstructType": "u16"
+        },
+        {
+            "fieldName": "last_debug_pkt_status",
+            "bitLength": 64,
+            "type": "uint64_t",
+            "description": "Possible debug status TBR.",
+            "units": "",
+            "bitstructType": "u64"
+        },
+        {
+            "fieldName": "debug_pkt_hash",
+            "bitLength": 64,
+            "type": "uint64_t",
+            "description": "The first 64 bits of the sha256 hash of the last debug command received, in big-endian format. 0 if no debug command has been received.",
+            "units": "Hash",
+            "bitstructType": "u64",
+            "conversion": {
+                "conversionFunction": "hex",
+                "conversionArgs": {},
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "bus_voltage",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "V",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "bus_current",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "A",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "board_heater_enabled",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "Off",
+                    "1": "On"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "board_heater_current",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "A",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "cp_voltage",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "V",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "cp_current",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "A",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "cfp2_voltage",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "V",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "cfp2_current",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "A",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "board_temp",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "C",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "lb_cpu_temp",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "C",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "cp_cpu_temp",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "C",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "cfp2_temp",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "C",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "om_bus_voltage",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "V",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "om_bus_current",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "A",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "om_12v_voltage",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "V",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "om_12v_current",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "A",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "cp_stg1_motor_position",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "cp_stg2_motor_position",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "cp_stg1_motor_velocity",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "cp_stg2_motor_velocity",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "main_cpu_temp",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "C",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "launch_lock_deploy_current",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "A",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "edfa_cpu_temp",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "C",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "edfa_hp_pump_temp",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "C",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "edfa_heater_enabled",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "Off",
+                    "1": "On"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "edfa_heater_current",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "A",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "om_heater_enabled",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "Off",
+                    "1": "On"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "om_heater_voltage",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "C",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "om_heater_current",
+            "bitLength": 32,
+            "type": "float",
+            "description": "",
+            "units": "A",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "selftest_state",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "NotRun",
+                    "1": "inProgress",
+                    "2": "Succeeded",
+                    "3": "Failed"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "selftest_results",
+            "bitLength": 64,
+            "type": "uint64_t",
+            "description": "",
+            "units": "Bitmask",
+            "bitstructType": "u64"
+        },
+        {
+            "fieldName": "ptp_time_tx_id",
+            "bitLength": 64,
+            "type": "uint64_t",
+            "description": "The PTP id of the LaserBridge's time transmitter clock.",
+            "units": "",
+            "bitstructType": "u64"
+        },
+        {
+            "fieldName": "ptp_time_tx_offset",
+            "bitLength": 64,
+            "type": "int64_t",
+            "description": "Estimated offset of the Plaser Unit's PTP time from the PTP time transmitter clock's time, in ns.",
+            "units": "",
+            "bitstructType": "s64"
+        },
+        {
+            "fieldName": "ptp_lb_id",
+            "bitLength": 64,
+            "type": "uint64_t",
+            "description": "The PTP id of the LaserBridge's clock.",
+            "units": "",
+            "bitstructType": "u64"
+        },
+        {
+            "fieldName": "ptp_timestamp",
+            "bitLength": 64,
+            "type": "uint64_t",
+            "description": "the current time according to the Plaser Unit's PTP clock, in nanoseconds since TAI epoch.",
+            "units": "ns",
+            "bitstructType": "u64"
+        },
+        {
+            "fieldName": "ud_enet_low_speed_link_up",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "Indicates to the Space Vehicle that the User Data Low Speed Ethernet link is up. Values are 1 (up) or 0 (down).",
+            "units": "Enum",
+            "bitstructType": "u8"
+        },
+        {
+            "fieldName": "ud_enet_high_speed_link_up",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "Indicates to the Space Vehicle that the User Data High Speed QSFP Ethernet link is up. Values are 1 (up) or 0 (down).",
+            "units": "Enum",
+            "bitstructType": "u8"
+        },
+        {
+            "fieldName": "ud_enet_high_speed_active_optical_link_up",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "Indicates to the Space Vehicle that the User Data High Speed Active Optical Transceivers Ethernet links are up. Bit 0: Lane 0 up, Bit 1: Lane 1 up, Bit 2: Lane 2 up, Bit 3: Lane 3 up",
+            "units": "Bitmask",
+            "bitstructType": "u8"
+        },
+        {
+            "fieldName": "ud_cross_strap_1_up",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "Some Plaser System configurations may cross-strap LaserBridges. Values are 1 (up) or 0 (down).",
+            "units": "Enum",
+            "bitstructType": "u8"
+        },
+        {
+            "fieldName": "ud_cross_strap_2_up",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "Some Plaser System configurations may cross-strap LaserBridges. Values are 1 (up) or 0 (down).",
+            "units": "Enum",
+            "bitstructType": "u8"
+        },
+        {
+            "fieldName": "ud_cross_strap_3_up",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "Some Plaser System configurations may cross-strap LaserBridges. Values are 1 (up) or 0 (down).",
+            "units": "Enum",
+            "bitstructType": "u8"
+        },
+        {
+            "fieldName": "ud_enet_packets_from_vehicle",
+            "bitLength": 64,
+            "type": "uint64_t",
+            "description": "Number of user data packets received from Space Vehicle",
+            "units": "Packet Count",
+            "bitstructType": "u64"
+        },
+        {
+            "fieldName": "ud_enet_packets_to_vehicle",
+            "bitLength": 64,
+            "type": "uint64_t",
+            "description": "Number of user data packets sent to the Space Vehicle",
+            "units": "Packet Count",
+            "bitstructType": "u64"
+        },
+        {
+            "fieldName": "ud_enet_packets_rx_frames_dropped",
+            "bitLength": 64,
+            "type": "uint64_t",
+            "description": "Number of user data RX frames dropped.",
+            "units": "Packet Count",
+            "bitstructType": "u64"
+        },
+        {
+            "fieldName": "network_operational",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "1 if this Plaser Unit has a network path to ground. 0 otherwise",
+            "units": "Enum",
+            "bitstructType": "u8",
+            "conversion": {
+                "conversionFunction": "lookupTable",
+                "conversionArgs": {
+                    "0": "No",
+                    "1": "Yes"
+                },
+                "convertedType": "char"
+            }
+        },
+        {
+            "fieldName": "pop_ping_round_trip_time",
+            "bitLength": 32,
+            "type": "float",
+            "description": "Round trip ping time to a SpaceX Point of Presence, in ms. This value is -1.0 if there is no connection to a PoP.",
+            "units": "ms",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "ud_ol0_ber",
+            "bitLength": 32,
+            "type": "float",
+            "description": "Defaults to 0 if the Plaser System configuration does not have a User Data Optical Lane 0.",
+            "units": "",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "ud_ol0_rssi",
+            "bitLength": 32,
+            "type": "float",
+            "description": "Defaults to 0 if the Plaser System configuration does not have a User Data Optical Lane 0.",
+            "units": "",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "ud_ol0_los",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "Defaults to 0 if the Plaser System configuration does not have a User Data Optical Lane 0.",
+            "units": "",
+            "bitstructType": "u8"
+        },
+        {
+            "fieldName": "ud_ol1_ber",
+            "bitLength": 32,
+            "type": "float",
+            "description": "Defaults to 0 if the Plaser System configuration does not have a User Data Optical Lane 1.",
+            "units": "",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "ud_ol1_rssi",
+            "bitLength": 32,
+            "type": "float",
+            "description": "Defaults to 0 if the Plaser System configuration does not have a User Data Optical Lane 1.",
+            "units": "",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "ud_ol1_los",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "Defaults to 0 if the Plaser System configuration does not have a User Data Optical Lane 1.",
+            "units": "",
+            "bitstructType": "u8"
+        },
+        {
+            "fieldName": "ud_ol2_ber",
+            "bitLength": 32,
+            "type": "float",
+            "description": "Defaults to 0 if the Plaser System configuration does not have a User Data Optical Lane 2.",
+            "units": "",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "ud_ol2_rssi",
+            "bitLength": 32,
+            "type": "float",
+            "description": "Defaults to 0 if the Plaser System configuration does not have a User Data Optical Lane 2.",
+            "units": "",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "ud_ol2_los",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "Defaults to 0 if the Plaser System configuration does not have a User Data Optical Lane 2.",
+            "units": "",
+            "bitstructType": "u8"
+        },
+        {
+            "fieldName": "ud_ol3_ber",
+            "bitLength": 32,
+            "type": "float",
+            "description": "Defaults to 0 if the Plaser System configuration does not have a User Data Optical Lane 3.",
+            "units": "",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "ud_ol3_rssi",
+            "bitLength": 32,
+            "type": "float",
+            "description": "Defaults to 0 if the Plaser System configuration does not have a User Data Optical Lane 3.",
+            "units": "",
+            "bitstructType": "f32"
+        },
+        {
+            "fieldName": "ud_ol3_ber",
+            "bitLength": 8,
+            "type": "uint8_t",
+            "description": "Defaults to 0 if the Plaser System configuration does not have a User Data Optical Lane 3.",
+            "units": "",
+            "bitstructType": "u8"
+        },
+        {
+            "fieldName": "target_eci_x",
+            "bitLength": 64,
+            "type": "double",
+            "description": "",
+            "units": "m",
+            "bitstructType": "f64"
+        },
+        {
+            "fieldName": "target_eci_y",
+            "bitLength": 64,
+            "type": "double",
+            "description": "",
+            "units": "m",
+            "bitstructType": "f64"
+        },
+        {
+            "fieldName": "target_eci_z",
+            "bitLength": 64,
+            "type": "double",
+            "description": "",
+            "units": "m",
+            "bitstructType": "f64"
+        },
+        {
+            "fieldName": "target_plaser_frame_x",
+            "bitLength": 64,
+            "type": "double",
+            "description": "",
+            "units": "UV",
+            "bitstructType": "f64"
+        },
+        {
+            "fieldName": "target_plaser_frame_y",
+            "bitLength": 64,
+            "type": "double",
+            "description": "",
+            "units": "UV",
+            "bitstructType": "f64"
+        },
+        {
+            "fieldName": "target_plaser_frame_z",
+            "bitLength": 64,
+            "type": "double",
+            "description": "",
+            "units": "UV",
+            "bitstructType": "f64"
+        }
+    ]
+}
