@@ -22,7 +22,7 @@ class Configs():
         with open(self.global_config_path,'w') as f:
             json.dump(configDict, f, indent=4)
         self.globalCongfig = configDict
-        return configDict
+
     
     def getPath(self,path):
         """

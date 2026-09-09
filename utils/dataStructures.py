@@ -105,6 +105,7 @@ class DataDictionaries():
     def loadAllDicts(self):
         self.loadStructures()
         self.loadPacketTemplates()
+        self.loadCommandTemplates()
 
     def loadStructures(self):
         self.structures = CONFIG()['telemetryStructures']
@@ -112,7 +113,6 @@ class DataDictionaries():
     def loadPacketTemplates(self):
         #read all structures and create a packet dictionary for each
         self.packetTemplates = {}
-        #TODO support packet definitions instead of just header definitions
         ##TODO support dynamic sized fields
         for structureName, structure in self.structures.items():
             if not 'packetIdentifier' in structure:
@@ -135,6 +135,11 @@ class DataDictionaries():
                             self.packetTemplates[f"{structureName}_{packetId}"].extend(packetDef['fields'])
                         self.packetTemplates[f"{structureName}_{packetId}"].extend(packetDict['fields'])
 
+    def loadCommandTemplates(self):
+        pdb.set_trace()
+        commandFilePath = cfLoader.getPath("commandDefinitions")
+        for file_ in 
 
 
+PACKET_TEMPLATES = DataDictionaries().packetTemplates
 
