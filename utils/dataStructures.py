@@ -136,10 +136,20 @@ class DataDictionaries():
                         self.packetTemplates[f"{structureName}_{packetId}"].extend(packetDict['fields'])
 
     def loadCommandTemplates(self):
-        pdb.set_trace()
-        commandFilePath = cfLoader.getPath("commandDefinitions")
-        for file_ in 
+        commandFilePath = cfgLoader.getPath("commandDefinitions")
+        self.commandComponents = {"static components":{},"command definitions":{}}
+        for file_ in [file.name for file in commandFilePath.iterdir() if file.is_file()]:
+            if file_[-3:] == ".hd":
+                with open(commandFilePath / file_, 'r') as f:
+                    componentDict = json.load(f)
+                self.commandComponents['static components'][file_[:-3]] = componentDict['fields']
 
+            if file_[-3:] == ".cd":
+                #command
+                with open(commandFilePath / file_, 'r') as f:
+                    componentDict = json.load(f)
+                self.commandComponents['command definitions'][file_[:-3]] = componentDict
 
 PACKET_TEMPLATES = DataDictionaries().packetTemplates
+COMMAND_COMPONENTS = DataDictionaries().commandComponents
 

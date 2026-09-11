@@ -4,6 +4,7 @@ import json
 import os
 import copy
 import csv
+import logging
 
 from PySide6.QtGui import QColor #for colors
 from PySide6.QtCore import QFile, Qt
@@ -12,17 +13,20 @@ from PySide6.QtWidgets import (
     QApplication, 
     QMainWindow,
     QMessageBox,
+    QInputDialog,
     QHeaderView,
     QDialog,
     QWidget,
     QHBoxLayout,
     QFileDialog,
     QTreeWidget,
+    QListWidgetItem,
     QTreeWidgetItem,
     QTableWidget,
     QLineEdit,
     QTableWidgetItem,
     QPushButton,
+    QAbstractSpinBox,
     QSpinBox,
     QDoubleSpinBox,
     QComboBox,
@@ -36,7 +40,7 @@ CONFIG = cfgLoader.loadGlobalConfig
 
 from packetDefinitionLib import PacketDefinitionUtility
 from decode import Decoder
-from dataStructures import PACKET_TEMPLATES
+from dataStructures import PACKET_TEMPLATES, COMMAND_COMPONENTS
 from telemetrySelector import TelemetryFieldSelector
 #from commandBuilder import CommandBuilder
 
@@ -344,8 +348,10 @@ class SimPacket(QTreeWidgetItem):
 
         self.hzSpinBox = QDoubleSpinBox()
         self.hzSpinBox.setSingleStep(0.1)
+        self.hzSpinBox.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
         self.portBox = QSpinBox()
         self.portBox.setRange(1,65535)
+        self.portBox.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
         self.ipBox = QLineEdit()
         self.protocolBox = QComboBox()
         self.protocolBox.addItems(['UDP','TCP'])
@@ -370,6 +376,51 @@ class SimPacket(QTreeWidgetItem):
             cfgLoader.configWrite(newCfg)
 
 """
+Commanding Classes
+"""
+class StaticListItem(QListWidgetItem):
+    #a header/footer definition file in the command components list
+    def __init__(self,componentName,componentDict,parentList):
+        self.componentName = componentName
+        self.componentDict = componentDict
+        self.parentList = parentList
+        super().__init__(componentName)
+        self.parentList.addItem(self)
+
+
+class CommandListItem(QListWidgetItem):
+    #the unique command objects in the command components list
+    def __init__(self,componentName,componentDict,parentList):
+        self.componentName = componentName
+        self.componentDict = componentDict
+        self.parentList = parentList
+        super().__init__(componentName)
+        self.parentList.addItem(self)
+
+class CommandStructureItem(QTreeWidgetItem):
+    #a structured command Item in the command structure tree
+    
+    def __init__(self,parentTree,structureName):
+        self.structureName = structureName
+        super().__init__(parentTree)
+        self.setText(0,self.structureName)
+
+class CommandStructureComponentItem(QTreeWidgetItem):
+    #child component item of command structure item
+    def __init__(self,parentItem,component):
+        self.parentItem = parentItem
+        self.component = component
+        super().__init__(parentItem)
+        self.setText(0,component.componentName)
+
+
+
+class CommandField():
+    #field-value pair for each field in a command
+    def __init__(self):
+        pass
+
+"""
 Dex Main GUI
 """
     
@@ -389,17 +440,115 @@ class DexMain():
 
     def initGUI(self):
         self.ui.setWindowTitle(f"Dex {CONFIG()['version']}")
+
+        #simulation controls
         self.ui.simulationPacketsTree.setColumnCount(7)     
         self.ui.simulationPacketsTree.setHeaderLabels(['Enabled','Packet','Simulation Rate (Hz)','IP','port','protocol','Behaviors'])
         for column in range(self.ui.simulationPacketsTree.columnCount()):
             self.ui.simulationPacketsTree.resizeColumnToContents(column)
         self.populateSimPackets()
+        for commandStructure in CONFIG()['commandStructures']:
+            self.ui.simulationCommandStructureBox.addItem(commandStructure)
+            
 
+        #command controls
+        self.ui.newCommandStructureButton.clicked.connect(self.newCommandStructure)
+        self.ui.addCommandComponentButton.clicked.connect(self.addCommandComponent)
+        self.ui.removeCommandStructureButton.clicked.connect(self.removeCommand)
+        self.ui.buildCommandButton.clicked.connect(self.buildCommand)
+        self.ui.sendCommandButton.clicked.connect(self.sendCommand)
+        self.populateCommandComponents()
+        self.populateCommandStructures()
+        
+
+    def populateCommandComponents(self):
+        for component,componentDict in COMMAND_COMPONENTS['static components'].items():
+            staticComponentItem = StaticListItem(component,componentDict,self.ui.commandComponentList)
+
+        for component, componentDict in COMMAND_COMPONENTS['command definitions'].items():
+            commandItem = CommandListItem(component,componentDict,self.ui.commandComponentList)
+        
+    def populateCommandStructures(self):
+        #populate already built command structures from global config
+        commandStructures = CONFIG()['commandStructures']
+        for structureName,structureDict in commandStructures.items():
+            componentList = structureDict['format']
+            structureItem = CommandStructureItem(self.ui.commandStructureTree,structureName)
+            for componentName in componentList:
+                j = 0
+                componentAssigned = False
+                while j < self.ui.commandComponentList.count():
+                    componentItem = self.ui.commandComponentList.item(j)
+                    if componentItem.componentName == componentName:
+                        childItem = CommandStructureComponentItem(structureItem,componentItem)
+                        componentAssigned = True
+                        break
+                    j += 1
+                    
+                if not componentAssigned:
+                    self.commandMessage(f"In command structure: {structureName} component: {componentName} not found.  If filenames in commandDefinitions folder have been changed they must be reverted.","ERROR")
+
+    def commandMessage(self,msg,type="INFO"):
+        pass
+            
     def populateSimPackets(self):
-
+        
         for packetName, packetDict in PACKET_TEMPLATES.items():
             simItem = SimPacket(self.ui.simulationPacketsTree,packetName,packetDict)
-    
+
+    def newCommandStructure(self):
+        text, ok = QInputDialog.getText(None, "New Structure", "Enter Structure Name:", QLineEdit.Normal)
+        if ok and text:
+            CommandStructureItem(self.ui.commandStructureTree,text)
+        self.writeCommandStructures()
+        
+    def addCommandComponent(self):
+        #add selected command component to selected command structure
+        component = self.ui.commandComponentList.currentItem()
+        structureSelection = self.ui.commandStructureTree.currentItem()
+        if component is None or structureSelection is None:
+            return
+
+        if isinstance(structureSelection,CommandStructureComponentItem):
+            structureItem = structureSelection.parent() 
+            index = structureItem.indexOfChild(structureSelection)
+            childItem = CommandStructureComponentItem(structureItem,component)
+            structureItem.insertChild(index,childItem)
+        else:
+            childItem = CommandStructureComponentItem(structureSelection,component)
+            structureSelection.addChild(childItem)
+            structureSelection.setExpanded(True)
+        self.writeCommandStructures()
+
+    def removeCommand(self):
+        structureSelection = self.ui.commandStructureTree.currentItem()
+        if structureSelection is None:
+            return
+        root = self.ui.commandStructureTree.invisibleRootItem()
+        (structureSelection.parent() or root).removeChild(structureSelection)
+        self.writeCommandStructures()
+
+    def buildCommand(self):
+
+
+        pass
+    def sendCommand(self):
+        pass
+
+    def writeCommandStructures(self):
+        numStructures = self.ui.commandStructureTree.topLevelItemCount()
+        commandStructures = {}
+        for i in range(numStructures):
+            structureItem = self.ui.commandStructureTree.topLevelItem(i)
+            commandStructures[structureItem.structureName] ={"format":[]}
+            for j in range(structureItem.childCount()):
+                childItem = structureItem.child(j)
+                commandStructures[structureItem.structureName]['format'].append(childItem.component.componentName)
+
+        currentConfig = CONFIG()
+        currentConfig['commandStructures'] = commandStructures
+        cfgLoader.configWrite(currentConfig) 
+
 if __name__ == "__main__":
     app = QApplication([])
     dexMain = DexMain()

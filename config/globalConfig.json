@@ -17,6 +17,15 @@
             ]
         }
     },
+    "commandStructures": {
+        "sfdasd": {
+            "format": [
+                "primaryHeader",
+                "secondaryHeader",
+                "sampleCommands"
+            ]
+        }
+    },
     "storage": {
         "polarsSchemaPath": "config/polarsSchemas.json",
         "activeStorageMethod": "parquet",
