@@ -42,7 +42,17 @@ from packetDefinitionLib import PacketDefinitionUtility
 from decode import Decoder
 from dataStructures import PACKET_TEMPLATES, COMMAND_COMPONENTS
 from telemetrySelector import TelemetryFieldSelector
-#from commandBuilder import CommandBuilder
+from commandBuilder import CommandBuilder
+
+# Colors
+COMMAND_HEADER = QColor(132,197,227)
+COMMAND_STRUCTURE = QColor(250,212,117)
+COMMAND_STRUCTURE_BASE = (217,100,220)
+
+def colorGen(baseColor, hueStep=35):
+    while True:
+        yield QColor.fromHsv(*baseColor)
+        baseColor = ((baseColor[0] + hueStep) % 360, baseColor[1], baseColor[2])
 
 """
 Simulation classes
@@ -385,6 +395,7 @@ class StaticListItem(QListWidgetItem):
         self.componentDict = componentDict
         self.parentList = parentList
         super().__init__(componentName)
+        self.setBackground(COMMAND_HEADER)
         self.parentList.addItem(self)
 
 
@@ -395,6 +406,7 @@ class CommandListItem(QListWidgetItem):
         self.componentDict = componentDict
         self.parentList = parentList
         super().__init__(componentName)
+        self.setBackground(COMMAND_STRUCTURE)
         self.parentList.addItem(self)
 
 class CommandStructureItem(QTreeWidgetItem):
@@ -407,17 +419,17 @@ class CommandStructureItem(QTreeWidgetItem):
 
 class CommandStructureComponentItem(QTreeWidgetItem):
     #child component item of command structure item
-    def __init__(self,parentItem,component):
+    def __init__(self,parentItem,component,color):
+        self.color = color
         self.parentItem = parentItem
         self.component = component
         super().__init__(parentItem)
+        self.setBackground(0,self.color)
         self.setText(0,component.componentName)
-
-
 
 class CommandField():
     #field-value pair for each field in a command
-    def __init__(self):
+    def __init__(self,fieldName,defaaultValue):
         pass
 
 """
@@ -446,20 +458,24 @@ class DexMain():
         self.ui.simulationPacketsTree.setHeaderLabels(['Enabled','Packet','Simulation Rate (Hz)','IP','port','protocol','Behaviors'])
         for column in range(self.ui.simulationPacketsTree.columnCount()):
             self.ui.simulationPacketsTree.resizeColumnToContents(column)
+        self.ui.simulationPacketsTree.setHeaderHidden(False)
         self.populateSimPackets()
         for commandStructure in CONFIG()['commandStructures']:
             self.ui.simulationCommandStructureBox.addItem(commandStructure)
             
 
         #command controls
+        self.commandColorGen = colorGen(COMMAND_STRUCTURE_BASE)
         self.ui.newCommandStructureButton.clicked.connect(self.newCommandStructure)
         self.ui.addCommandComponentButton.clicked.connect(self.addCommandComponent)
         self.ui.removeCommandStructureButton.clicked.connect(self.removeCommand)
         self.ui.buildCommandButton.clicked.connect(self.buildCommand)
         self.ui.sendCommandButton.clicked.connect(self.sendCommand)
+        self.ui.commandFieldsTable.setHorizontalHeaderLabels(['field','type','value'])
+        self.ui.commandFieldsTable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+
         self.populateCommandComponents()
         self.populateCommandStructures()
-        
 
     def populateCommandComponents(self):
         for component,componentDict in COMMAND_COMPONENTS['static components'].items():
@@ -472,7 +488,8 @@ class DexMain():
         #populate already built command structures from global config
         commandStructures = CONFIG()['commandStructures']
         for structureName,structureDict in commandStructures.items():
-            componentList = structureDict['format']
+            componentList = structureDict['headers'] + [structureDict['commands']]
+            componentList.extend(structureDict['footers'])
             structureItem = CommandStructureItem(self.ui.commandStructureTree,structureName)
             for componentName in componentList:
                 j = 0
@@ -480,7 +497,7 @@ class DexMain():
                 while j < self.ui.commandComponentList.count():
                     componentItem = self.ui.commandComponentList.item(j)
                     if componentItem.componentName == componentName:
-                        childItem = CommandStructureComponentItem(structureItem,componentItem)
+                        childItem = CommandStructureComponentItem(structureItem,componentItem,next(self.commandColorGen))
                         componentAssigned = True
                         break
                     j += 1
@@ -512,10 +529,10 @@ class DexMain():
         if isinstance(structureSelection,CommandStructureComponentItem):
             structureItem = structureSelection.parent() 
             index = structureItem.indexOfChild(structureSelection)
-            childItem = CommandStructureComponentItem(structureItem,component)
+            childItem = CommandStructureComponentItem(structureItem,component,next(self.commandColorGen))
             structureItem.insertChild(index,childItem)
         else:
-            childItem = CommandStructureComponentItem(structureSelection,component)
+            childItem = CommandStructureComponentItem(structureSelection,component,next(self.commandColorGen))
             structureSelection.addChild(childItem)
             structureSelection.setExpanded(True)
         self.writeCommandStructures()
@@ -529,9 +546,20 @@ class DexMain():
         self.writeCommandStructures()
 
     def buildCommand(self):
+        structureSelection =  self.ui.commandStructureTree.currentItem()
+        if structureSelection is None:
+            return
+        if isinstance(structureSelection,CommandStructureComponentItem):
+            structureName = structureSelection.parentItem.structureName
+        else:
+            structureName = structureSelection.structureName
+        structure = CONFIG()['commandStructures'][structureName]
+    
+        commandBuilder = CommandBuilder(structure)
+        if commandBuilder.exec() == QDialog.Accepted:
+            self.populateCommandFieldsTable()
+            self.populateRawCommandBox()
 
-
-        pass
     def sendCommand(self):
         pass
 
@@ -540,10 +568,18 @@ class DexMain():
         commandStructures = {}
         for i in range(numStructures):
             structureItem = self.ui.commandStructureTree.topLevelItem(i)
-            commandStructures[structureItem.structureName] ={"format":[]}
+            commandStructures[structureItem.structureName] ={"headers":[],"footers":[]}
+            headers = True
             for j in range(structureItem.childCount()):
                 childItem = structureItem.child(j)
-                commandStructures[structureItem.structureName]['format'].append(childItem.component.componentName)
+                if isinstance(childItem.component,CommandListItem):
+                    commandStructures[structureItem.structureName]['commands'] = childItem.component.componentName
+                    headers = False
+                else:
+                    if headers:
+                        commandStructures[structureItem.structureName]['headers'].append(childItem.component.componentName)
+                    else:
+                        commandStructures[structureItem.structureName]['footers'].append(childItem.component.componentName)
 
         currentConfig = CONFIG()
         currentConfig['commandStructures'] = commandStructures

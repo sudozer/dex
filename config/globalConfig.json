@@ -18,12 +18,13 @@
         }
     },
     "commandStructures": {
-        "sfdasd": {
-            "format": [
+        "spacecraft commands": {
+            "headers": [
                 "primaryHeader",
-                "secondaryHeader",
-                "sampleCommands"
-            ]
+                "secondaryHeader"
+            ],
+            "footers": [],
+            "commands": "sampleCommands"
         }
     },
     "storage": {

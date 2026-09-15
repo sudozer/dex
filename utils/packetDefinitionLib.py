@@ -46,12 +46,9 @@ class PacketDefinitionUtility():
                     break
             #size not defined in type field    
             if len(bs) < 2:
-                if not 'arrayLength' in field:
-                    bs += str(field['bitLength'])
-                else:
-                    bitLen = field['bitLength'] / field['arrayLength']
-                    bs += str(bitLen)
-
+                
+                bs += str(field['bitLength'])
+               
             baseBitstructType = bs
 
         if 'float' == field['type']:
@@ -66,11 +63,8 @@ class PacketDefinitionUtility():
         if 'bool' in field['type']:
             baseBitstructType = 'b1'
 
-        if 'arrayLength' in field:
-            bsString = baseBitstructType * field['arrayLength']
-        else:
-            bsString = baseBitstructType
 
+        bsString = baseBitstructType
         return bsString
     
     def addConvertedTypes(self,definitionPath):
@@ -157,10 +151,7 @@ class PacketDefinitionUtility():
         #{uniqueID,timestamp,rawbits,rawValue,convertedValue}
         schemaDict = {"packetUUID":"pl.UInt128()","primaryTimestamp":"pl.Datetime(time_zone=\"UTC\")","rawBits":f"pl.Array(pl.Boolean(),{field['bitLength']})"}
         polarsDT = self.primitive2polars(field['type'])
-        if 'arrayLength' in field:
-            schemaDict['rawValue'] = f"pl.Array({polarsDT},{field['arrayLength']})"
-        else:
-            schemaDict['rawValue'] = polarsDT
+        schemaDict['rawValue'] = polarsDT
 
         if 'conversion' not in field:
             schemaDict['convertedValue'] = schemaDict['rawValue']
@@ -234,7 +225,7 @@ class PacketDefinitionUtility():
         return validFields
 
     def validateField(self,field,path_=""):
-        #enforce database_safe naming, cant start with a number and only _ is allowed
+        #enforce database_safe naming, cant start with a number and only _ special character is allowed
         validationErrors = []
         requiredKeys = [
             "fieldName",
@@ -301,20 +292,10 @@ class PacketDefinitionUtility():
             logMsg = f"Field must contain either \'variableLength\' field for dynamically sized fields or \'bitLength\' and \'bitstructType\' fields for statically determined fields.\n\n{field}"
             validationErrors.append(logMsg)
 
-        # validate key primitive datatypes
-        if 'arrayLength' in field:
-            if not isinstance(field['arrayLength'],int):
-                logMsg = f"\'arrayLength\' must be int."
-                validationErrors.append(logMsg)
-
         #validate bitLength
         if 'bitLength' in field:
             if field['type'] in knownTypeSizes:
-                baseFieldLength = knownTypeSizes[field['type']]
-                if 'arrayLength' in field:
-                    expectedFieldLength = baseFieldLength * field['arrayLength']
-                else:
-                    expectedFieldLength = baseFieldLength
+                expectedFieldLength = knownTypeSizes[field['type']]
                 if not expectedFieldLength == field['bitLength'] and not baseFieldLength == 0:
                     validationErrors.append(f"bitLength supplied differs from expected.\nExpecting {expectedFieldLength} - Supplied {field['bitLength']}")
 

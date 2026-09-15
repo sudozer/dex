@@ -169,7 +169,6 @@ class PacketDefinitionEditor():
         self.ui.dataTypeComboBox.currentTextChanged.connect(self.dataTypeSelected)
 
         self.ui.variableLengthCheckbox.stateChanged.connect(self.variableLengthChanged)
-        self.ui.arrayLengthSpinBox.valueChanged.connect(self.arrayLengthChanged)
         self.ui.dynamicLengthFieldButton.setEnabled(False)
         self.ui.dynamicLengthFieldLineEdit.setEnabled(False)
         self.ui.lengthFieldOffsetSpinBox.setEnabled(False)
@@ -184,7 +183,6 @@ class PacketDefinitionEditor():
             self.ui.dynamicLengthFieldLineEdit, 
             self.ui.lengthFieldOffsetSpinBox, 
             self.ui.lengthInBitsComboBox, 
-            self.ui.arrayLengthSpinBox, 
             self.ui.bitLengthSpinBox, 
             self.ui.configureConversionButton,
             self.ui.configureLimitsButton,
@@ -197,7 +195,6 @@ class PacketDefinitionEditor():
         self.ui.lengthFieldOffsetSpinBox.valueChanged.connect(self.fieldParameterChanged)
         self.ui.lengthFieldOffsetSpinBox.valueChanged.connect(self.fieldParameterChanged)
         self.ui.lengthInBitsComboBox.currentTextChanged.connect(self.fieldParameterChanged)
-        self.ui.arrayLengthSpinBox.valueChanged.connect(self.fieldParameterChanged)
         self.ui.bitLengthSpinBox.valueChanged.connect(self.fieldParameterChanged)
 
         self.ui.addTelemetryDefinitionButton.clicked.connect(self.addNewDefinition)
@@ -345,14 +342,12 @@ class PacketDefinitionEditor():
             self.ui.dynamicLengthFieldLineEdit.setEnabled(True)
             self.ui.lengthFieldOffsetSpinBox.setEnabled(True)
             self.ui.lengthInBitsComboBox.setEnabled(True)
-            self.ui.arrayLengthSpinBox.setEnabled(False)
             self.ui.bitLengthSpinBox.setEnabled(False)
         else:
             self.ui.dynamicLengthFieldButton.setEnabled(False)
             self.ui.dynamicLengthFieldLineEdit.setEnabled(False)
             self.ui.lengthFieldOffsetSpinBox.setEnabled(False)
             self.ui.lengthInBitsComboBox.setEnabled(False)
-            self.ui.arrayLengthSpinBox.setEnabled(True)
             self.ui.bitLengthSpinBox.setEnabled(True)
 
     def dataTypeSelected(self,text):
@@ -361,15 +356,11 @@ class PacketDefinitionEditor():
         else:
             self.setBitLength()
 
-    def arrayLengthChanged(self):
-        self.setBitLength()
-
     def setBitLength(self):
         typeText = self.ui.dataTypeComboBox.currentText()
         for typeName, typeDict in typeOptions.items():
             if typeText == typeDict['label']:
-                arrayLength = self.ui.arrayLengthSpinBox.value()
-                bitLength = typeDict['size'] * arrayLength
+                bitLength = typeDict['size']
                 self.ui.bitLengthSpinBox.setValue(bitLength)
                 break
         self.ui.bitLengthSpinBox.setEnabled(False)
@@ -438,14 +429,6 @@ class PacketDefinitionEditor():
             print(E)
 
         try:
-            if 'arrayLength' in fieldDict:
-                self.ui.arrayLengthSpinBox.setValue(fieldDict['arrayLength'])
-            else:
-                self.ui.arrayLengthSpinBox.setValue(1)
-        except Exception as E:
-            print(E)
-
-        try:
             if 'variableLength' in fieldDict:
                 self.ui.variableLengthCheckbox.setChecked(True)
                 self.ui.dynamicLengthFieldLineEdit.setText(fieldDict['variableLength']['lengthField'])
@@ -459,7 +442,7 @@ class PacketDefinitionEditor():
 
         try:
             if self.ui.dataTypeComboBox.currentText() != "manually-sized uint" and self.ui.dataTypeComboBox.currentText() != "manually-sized int":
-                self.ui.bitLengthSpinBox.setValue(parameterDict['size'] * self.ui.arrayLengthSpinBox.value())
+                self.ui.bitLengthSpinBox.setValue(parameterDict['size'])
             else:
                 if 'bitLength' in fieldDict:
                     self.ui.bitLengthSpinBox.setValue(fieldDict['bitLength'])
@@ -499,9 +482,6 @@ class PacketDefinitionEditor():
         if len(self.ui.descriptionTextEdit.toPlainText()) > 0:
             fieldDict['description'] = self.ui.descriptionTextEdit.toPlainText()
         
-        if self.ui.arrayLengthSpinBox.value() > 1:
-            fieldDict['arrayLength'] = self.ui.arrayLengthSpinBox.value()
-
         if self.ui.variableLengthCheckbox.isChecked():
             fieldDict['variableLength'] = {
                 'lengthField': self.ui.dynamicLengthFieldLineEdit.text(),
@@ -567,9 +547,6 @@ class PacketDefinitionEditor():
                     "description": row[3],
                     "units":row[4],
                 }
-
-                if len(row[5]) > 0 and int(row[5]) > 1:
-                    fieldDict['arrayLength'] = int(row[5])
 
                 fieldDict['bitstructType'] = self.pktDefUtil.createBitstructString(fieldDict)
                 if len(row[6]) > 0:

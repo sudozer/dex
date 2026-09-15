@@ -74,10 +74,8 @@ class PolarsStructures():
             "rawBits":self.bitstringToBoolean(fieldDict['rawBits']),         
                 }
         #polars wants a list of lists for storing an array
-        if 'arrayLength' in fieldDict:
-            dfDict["rawValue"] = [fieldDict['rawValue']]
-        else:
-            dfDict["rawValue"] = fieldDict['rawValue']  
+
+        dfDict["rawValue"] = fieldDict['rawValue']  
 
         #if no converted value is present, return decoded value
         if 'convertedValue' in fieldDict:

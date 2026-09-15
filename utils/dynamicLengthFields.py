@@ -49,29 +49,19 @@ def findFieldLength(packet,template,field):
     i=0
 
     for fld in templateToLengthField:
-        
-        if 'arrayLength' in fld:
-            fld['rawValue'] = []
-            j = fld['arrayLength']
-            while j > 0:
-                fld['rawValue'].append(packetValues[i])
-                i+=1
-                j-=1
-        else:
-            fld['rawValue'] = packetValues[i]
-            i+=1
+        fld['rawValue'] = packetValues[i]
+        i+=1
+
     if field['variableLength']['lengthInBits']:
         field['bitLength'] = lengthFieldOffset + templateToLengthField[lengthFieldIndex]['rawValue']
     else:
         lengthBytes = lengthFieldOffset + templateToLengthField[lengthFieldIndex]['rawValue']
         field['bitLength'] = int(lengthBytes*8)
-    #back-calculate arrayLength
 
     baseSize = int(field['bitstructType'][1:])
     if field['bitLength'] % baseSize:
         errStr = f"Incorrect data basetype or bit length:\nBasesize (derived from bitstructType): {baseSize}\nCalculated bitLength: {field['bitLength']}"
         logging.error(errStr)
         raise Exception()
-    field['arrayLength'] = int(field['bitLength'] / baseSize)
-    field['bitstructType'] = field['bitstructType'] * field['arrayLength']
+    field['bitstructType'] = field['bitstructType']
     return field

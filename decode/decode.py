@@ -199,8 +199,6 @@ class Decoder():
         i = 0
         bitPosition = 0
         for field in packetTemplate:
-            if 'arrayLength' in field and field['arrayLength'] == 0:
-                continue
             fieldName = field['fieldName']
             defSource = field['definitionSource']
             if field['bitLength'] > 1:
@@ -210,16 +208,8 @@ class Decoder():
 
             try:
                 bitPosition += field['bitLength']
-                if 'arrayLength' in field:
-                    field['rawValue'] = []
-                    j = field['arrayLength']
-                    while j > 0:
-                        field['rawValue'].append(packetValues[i])
-                        i += 1
-                        j -= 1
-                else:
-                    field['rawValue'] = packetValues[i]
-                    i += 1
+                field['rawValue'] = packetValues[i]
+                i += 1
                 field['bitOffset'] = bitPosition - field['bitLength']
                 fieldKey = f"{defSource}__{fieldName}"
                 interpretedFields[fieldKey] = field
