@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>621</width>
+    <width>1004</width>
     <height>681</height>
    </rect>
   </property>
@@ -22,7 +22,7 @@
      <item>
       <widget class="QTabWidget" name="tabs">
        <property name="currentIndex">
-        <number>1</number>
+        <number>3</number>
        </property>
        <widget class="QWidget" name="tab">
         <attribute name="title">
@@ -103,7 +103,11 @@
               </widget>
              </item>
              <item>
-              <widget class="QLineEdit" name="commandIPDestinationBox"/>
+              <widget class="QLineEdit" name="commandIPDestinationBox">
+               <property name="text">
+                <string>127.0.0.1</string>
+               </property>
+              </widget>
              </item>
              <item>
               <widget class="QLabel" name="label_13">
@@ -126,6 +130,28 @@
                <property name="maximum">
                 <number>65535</number>
                </property>
+               <property name="value">
+                <number>5555</number>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="commandProtocolSelect">
+               <item>
+                <property name="text">
+                 <string>TCP client</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>TCP server</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>UDP</string>
+                </property>
+               </item>
               </widget>
              </item>
              <item>
@@ -140,20 +166,6 @@
                 </size>
                </property>
               </spacer>
-             </item>
-             <item>
-              <widget class="QComboBox" name="commandProtocolSelect">
-               <item>
-                <property name="text">
-                 <string>TCP</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>UDP</string>
-                </property>
-               </item>
-              </widget>
              </item>
             </layout>
            </item>
@@ -256,6 +268,9 @@
                  </item>
                  <item>
                   <widget class="QPushButton" name="setDefaultCommandValuesButton">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
                    <property name="text">
                     <string>Set Default Values</string>
                    </property>
@@ -346,6 +361,26 @@
               </spacer>
              </item>
              <item>
+              <widget class="QLabel" name="label_23">
+               <property name="text">
+                <string>Command Sequence Number:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QSpinBox" name="commandSequenceNumberBox">
+               <property name="minimumSize">
+                <size>
+                 <width>60</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="buttonSymbols">
+                <enum>QAbstractSpinBox::NoButtons</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
               <widget class="QPushButton" name="sendCommandButton">
                <property name="enabled">
                 <bool>false</bool>
@@ -364,11 +399,44 @@
             </layout>
            </item>
            <item>
-            <widget class="QLabel" name="label_15">
-             <property name="text">
-              <string>Status</string>
+            <layout class="QHBoxLayout" name="horizontalLayout_24">
+             <property name="bottomMargin">
+              <number>0</number>
              </property>
-            </widget>
+             <item>
+              <widget class="QLabel" name="label_15">
+               <property name="text">
+                <string>Status:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="clearCommandMessagesButton">
+               <property name="maximumSize">
+                <size>
+                 <width>60</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Clear</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_4">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
            </item>
            <item>
             <widget class="QTextEdit" name="commandMessageBox">
@@ -609,7 +677,7 @@
               <widget class="QComboBox" name="simulationCommandProtocolSelect">
                <property name="maximumSize">
                 <size>
-                 <width>65</width>
+                 <width>75</width>
                  <height>16777215</height>
                 </size>
                </property>
@@ -623,6 +691,23 @@
                  <string>UDP</string>
                 </property>
                </item>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_19">
+               <property name="text">
+                <string>Round trip delay (s):</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QDoubleSpinBox" name="roundTripDelaySpinBox">
+               <property name="buttonSymbols">
+                <enum>QAbstractSpinBox::NoButtons</enum>
+               </property>
+               <property name="singleStep">
+                <double>0.100000000000000</double>
+               </property>
               </widget>
              </item>
              <item>
@@ -653,6 +738,12 @@
              </item>
              <item>
               <widget class="QComboBox" name="simulationCommandStructureBox">
+               <property name="minimumSize">
+                <size>
+                 <width>120</width>
+                 <height>0</height>
+                </size>
+               </property>
                <property name="currentText">
                 <string/>
                </property>
@@ -700,7 +791,7 @@
               <bool>true</bool>
              </property>
              <property name="headerHidden">
-              <bool>false</bool>
+              <bool>true</bool>
              </property>
              <attribute name="headerVisible">
               <bool>false</bool>
@@ -713,11 +804,44 @@
             </widget>
            </item>
            <item>
-            <widget class="QLabel" name="label_16">
-             <property name="text">
-              <string>Status</string>
+            <layout class="QHBoxLayout" name="horizontalLayout_25">
+             <property name="bottomMargin">
+              <number>0</number>
              </property>
-            </widget>
+             <item>
+              <widget class="QLabel" name="label_16">
+               <property name="text">
+                <string>Status:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="clearSimulationMessagesButton">
+               <property name="maximumSize">
+                <size>
+                 <width>60</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Clear</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_5">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
            </item>
            <item>
             <widget class="QTextEdit" name="simulationMessageBox">
@@ -775,12 +899,103 @@
              <item>
               <layout class="QVBoxLayout" name="verticalLayout_16">
                <item>
-                <widget class="QCheckBox" name="checkBox_3">
+                <widget class="QLabel" name="label_21">
+                 <property name="text">
+                  <string>Global Options:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_22">
+                 <property name="text">
+                  <string>Message Level</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QComboBox" name="comboBox">
+                 <property name="maximumSize">
+                  <size>
+                   <width>120</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
                  <property name="toolTip">
-                  <string>For development use only, will write simulated telemetry to project database</string>
+                  <string>Alter the verbosity of log messages</string>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string>Info</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Warning</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Error</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Debug</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+               <item>
+                <widget class="Line" name="line_3">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_18">
+                 <property name="text">
+                  <string>Commanding Options:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="fillCCSDSFields">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Automatically fill fields like ccsds datestamps and sequence numbers when a command is sent.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="text">
-                  <string>Write Simulated Telemetry To Storage</string>
+                  <string>Fill Autofill fields</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="Line" name="line_2">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_20">
+                 <property name="text">
+                  <string>Simulation Options</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="checkBox_3">
+                 <property name="toolTip">
+                  <string>Fill autofill fields in simulated telemetry</string>
+                 </property>
+                 <property name="text">
+                  <string>Fill Autofill Fields</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
                  </property>
                 </widget>
                </item>

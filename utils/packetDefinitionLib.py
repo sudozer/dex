@@ -296,7 +296,7 @@ class PacketDefinitionUtility():
         if 'bitLength' in field:
             if field['type'] in knownTypeSizes:
                 expectedFieldLength = knownTypeSizes[field['type']]
-                if not expectedFieldLength == field['bitLength'] and not baseFieldLength == 0:
+                if not expectedFieldLength == field['bitLength']:
                     validationErrors.append(f"bitLength supplied differs from expected.\nExpecting {expectedFieldLength} - Supplied {field['bitLength']}")
 
         #validate bitstruct string
@@ -316,13 +316,68 @@ class PacketDefinitionUtility():
             if not 'convertedType' in conv:
                 validationErrors.append(f"No converted datatype supplied.")
 
-
         if len(validationErrors) > 0:
             self.logger.error(f"Validation of field: {field['fieldName']} in file: {path_} failed with the following errors:")
             for error in validationErrors:
                 self.logger.error(error)
             return False, validationErrors
         return True, validationErrors
+
+    def validateValue(self,fieldType,value):
+        #confirm that a supplied value matches the datatype
+        knownTypeSizes = {
+            "uint":0,
+            "int":0,
+            "uint8_t":8,
+            "uint16_t":16,
+            "uint32_t":32,
+            "uint64_t":64,
+            "uint128_t":128,
+            "int8_t":8,
+            "int16_t":16,
+            "int32_t":32,
+            "int64_t":64,
+            "int128_t":128,
+            "float":32,
+            "double":64,
+            "char":8
+        }
+
+        if fieldType not in knownTypeSizes:
+            self.logger.error(
+                f"Unable to validate value {value!r}: unknown field type {fieldType!r}."
+            )
+            return False
+
+        try:
+            if fieldType == 'char':
+                if len(value) != 1 or ord(value) > 255:
+                    raise ValueError("expected one character representable in 8 bits")
+            elif fieldType in ('float', 'double'):
+                float(value)
+            else:
+                convertedValue = int(value)
+                bitLength = knownTypeSizes[fieldType]
+                if fieldType.startswith('uint') and convertedValue < 0:
+                    raise ValueError("unsigned values cannot be negative")
+                if bitLength:
+                    if fieldType.startswith('uint'):
+                        minimum, maximum = 0, (2 ** bitLength) - 1
+                    else:
+                        minimum = -(2 ** (bitLength - 1))
+                        maximum = (2 ** (bitLength - 1)) - 1
+                    if not minimum <= convertedValue <= maximum:
+                        raise ValueError(
+                            f"expected a value from {minimum} through {maximum}"
+                        )
+        except (TypeError, ValueError, OverflowError) as error:
+            self.logger.error(
+                f"Value {value!r} cannot be converted to field "
+            )
+            return False
+
+        return True
+
     
     def sumBitLengths(self,fields):
         totalBits = 0

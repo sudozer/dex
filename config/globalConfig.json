@@ -10,6 +10,7 @@
     "telemetryDefinitionsBasepath": "telemetryDefinitions/",
     "malformedPacketPath": "malformedPackets/malformedPacketStorage",
     "autoLaunchMalformedPacketHandler": false,
+    "autofillCommands": true,
     "telemetryStructures": {
         "splaser": {
             "format": [
@@ -24,7 +25,11 @@
                 "secondaryHeader"
             ],
             "footers": [],
-            "commands": "sampleCommands"
+            "commands": "sampleCommands",
+            "commandIdField": {
+                "componentIndex": 1,
+                "fieldIndex": 6
+            }
         }
     },
     "storage": {
