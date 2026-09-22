@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
 from dataStructures import COMMAND_COMPONENTS
 from loadConfig import Configs
 from packetDefinitionLib import PacketDefinitionUtility
-import commandAutofillFunctions
+from commandAutofillFunctions import AutofillCommand
 ERROR_COLOR = QColor(237,71,59)
 
 cfgLoader = Configs()
@@ -182,6 +182,8 @@ class CommandBuilder(QDialog):
             self.validateField(valueItem)
 
     def validateField(self,tableItem):
+        if not tableItem.column() == 2:
+            return
         self.ui.argumentTable.itemChanged.disconnect()
         row = tableItem.row()
         type_ = self.ui.argumentTable.item(row,1).text()
@@ -250,6 +252,8 @@ class CommandBuilder(QDialog):
                         bitstring = format(convertedValue, 'b')
                 item.argDict['value'] = value
                 item.argDict['bitstring'] = bitstring
+                if self.relevantFields:
+                    item.argDict['relevant'] = True if item.fieldCell.checkState() == Qt.CheckState.Checked else False
                 commandList.append(item.argDict)
         self.commandList = commandList
         self.accept()

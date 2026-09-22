@@ -41,8 +41,10 @@ CONFIG = cfgLoader.loadGlobalConfig
 from packetDefinitionLib import PacketDefinitionUtility
 from decode import Decoder
 from dataStructures import PACKET_TEMPLATES, COMMAND_COMPONENTS
+
 from telemetrySelector import TelemetryFieldSelector
 from commandBuilder import CommandBuilder
+from commandIDSelector import CommandIDSelector
 from txCommand import TCPCommandSocket, UDPCommandSocket
 
 # Colors
@@ -382,6 +384,7 @@ class SimPacket(QTreeWidgetItem):
         self.portBox.setRange(1,65535)
         self.portBox.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
         self.ipBox = QLineEdit()
+        self.ipBox.setText("127.0.0.1")
         self.protocolBox = QComboBox()
         self.protocolBox.addItems(['UDP','TCP'])
         self.structureBox = QComboBox()
@@ -439,6 +442,7 @@ class CommandStructureItem(QTreeWidgetItem):
         self.structureName = structureName
         super().__init__(parentTree)
         self.setText(0,self.structureName)
+        self.commandIdField = None
 
 class CommandStructureComponentItem(QTreeWidgetItem):
     #child component item of command structure item
@@ -571,8 +575,13 @@ class DexMain():
         #populate already built command structures from global config
         commandStructures = CONFIG()['commandStructures']
         for structureName,structureDict in commandStructures.items():
-            componentList = structureDict['headers'] + [structureDict['commands']]
-            componentList.extend(structureDict['footers'])
+            componentList = []
+            if len(structureDict['headers']) > 0:
+                componentList.extend(structureDict['headers'])
+            if len(structureDict['commands']) > 0:
+                componentList.append(structureDict['commands'])
+            if len(structureDict['footers']) > 0:
+                componentList.extend(structureDict['footers'])
             structureItem = CommandStructureItem(self.ui.commandStructureTree,structureName)
             for componentName in componentList:
                 j = 0
@@ -611,19 +620,35 @@ class DexMain():
     def addCommandComponent(self):
         #add selected command component to selected command structure
         component = self.ui.commandComponentList.currentItem()
+
         structureSelection = self.ui.commandStructureTree.currentItem()
         if component is None or structureSelection is None:
             return
 
         if isinstance(structureSelection,CommandStructureComponentItem):
-            structureItem = structureSelection.parent() 
+            structureItem = structureSelection.parent()
+        else:
+            structureItem = structureSelection
+
+        if isinstance(component,CommandListItem):
+            componentList = []
+            for i in range(structureItem.childCount()):
+                componentList.append(structureItem.child(i).component)
+            cmdIDSelector = CommandIDSelector(componentList)
+            if cmdIDSelector.exec() == QDialog.Accepted:
+                structureItem.commandIdField = cmdIDSelector.commandIdField
+            else:
+                return
+
+        if isinstance(structureSelection,CommandStructureComponentItem):
             index = structureItem.indexOfChild(structureSelection)
             childItem = CommandStructureComponentItem(structureItem,component,next(self.commandColorGen))
             structureItem.insertChild(index,childItem)
         else:
-            childItem = CommandStructureComponentItem(structureSelection,component,next(self.commandColorGen))
-            structureSelection.addChild(childItem)
-            structureSelection.setExpanded(True)
+            childItem = CommandStructureComponentItem(structureItem,component,next(self.commandColorGen))
+            structureItem.addChild(childItem)
+            structureItem.setExpanded(True)
+
         self.writeCommandStructures()
 
     def removeCommand(self):
@@ -678,7 +703,7 @@ class DexMain():
         commandStructures = {}
         for i in range(numStructures):
             structureItem = self.ui.commandStructureTree.topLevelItem(i)
-            commandStructures[structureItem.structureName] ={"headers":[],"footers":[]}
+            commandStructures[structureItem.structureName] ={"headers":[],"commands":'',"footers":[]}
             headers = True
             for j in range(structureItem.childCount()):
                 childItem = structureItem.child(j)
@@ -691,6 +716,9 @@ class DexMain():
                     else:
                         commandStructures[structureItem.structureName]['footers'].append(childItem.component.componentName)
 
+            if not structureItem.commandIdField == None:
+                commandStructures[structureItem.structureName]['commandIdField'] = structureItem.commandIdField
+                
         currentConfig = CONFIG()
         currentConfig['commandStructures'] = commandStructures
         cfgLoader.configWrite(currentConfig)

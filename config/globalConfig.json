@@ -24,8 +24,8 @@
                 "primaryHeader",
                 "secondaryHeader"
             ],
-            "footers": [],
             "commands": "sampleCommands",
+            "footers": [],
             "commandIdField": {
                 "componentIndex": 1,
                 "fieldIndex": 6
