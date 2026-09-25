@@ -1,0 +1,56 @@
+{
+    "4400": {
+        "packetName": "sampleTelemetry04A",
+        "description": "Sample telemetry packet set 04A",
+        "apid": 4400,
+        "packetId": 4400,
+        "fields": [
+            {"fieldName": "lineState", "type": "uint8_t", "description": "Line state", "units": "count", "bitLength": 8, "bitstructType": "u8"},
+            {"fieldName": "commandId", "type": "uint16_t", "description": "Command identifier", "units": "count", "bitLength": 16, "bitstructType": "u16"},
+            {"fieldName": "payloadLength", "type": "uint32_t", "description": "Payload length", "units": "bytes", "bitLength": 32, "bitstructType": "u32"},
+            {"fieldName": "timestampTicks", "type": "uint64_t", "description": "Timestamp ticks", "units": "ticks", "bitLength": 64, "bitstructType": "u64"},
+            {"fieldName": "pitchRate", "type": "int32_t", "description": "Pitch rate", "units": "counts", "bitLength": 32, "bitstructType": "s32"},
+            {"fieldName": "yawRate", "type": "int64_t", "description": "Yaw rate", "units": "counts", "bitLength": 64, "bitstructType": "s64"},
+            {"fieldName": "gain", "type": "float", "description": "Control gain", "units": "ratio", "bitLength": 32, "bitstructType": "f32"},
+            {"fieldName": "orbitRadius", "type": "double", "description": "Orbit radius", "units": "km", "bitLength": 64, "bitstructType": "f64"},
+            {"fieldName": "responseCode", "type": "char", "description": "Response code", "units": "ASCII", "bitLength": 8, "bitstructType": "t8"},
+            {"fieldName": "controlWord", "type": "uint", "description": "Control word", "units": "bits", "bitLength": 15, "bitstructType": "u15"}
+        ]
+    },
+    "4401": {
+        "packetName": "sampleTelemetry04B",
+        "description": "Sample telemetry packet set 04B",
+        "apid": 4401,
+        "packetId": 4401,
+        "fields": [
+            {"fieldName": "lineState", "type": "uint8_t", "description": "Line state", "units": "count", "bitLength": 8, "bitstructType": "u8"},
+            {"fieldName": "commandId", "type": "uint16_t", "description": "Command identifier", "units": "count", "bitLength": 16, "bitstructType": "u16"},
+            {"fieldName": "payloadLength", "type": "uint32_t", "description": "Payload length", "units": "bytes", "bitLength": 32, "bitstructType": "u32"},
+            {"fieldName": "timestampTicks", "type": "uint64_t", "description": "Timestamp ticks", "units": "ticks", "bitLength": 64, "bitstructType": "u64"},
+            {"fieldName": "pitchRate", "type": "int32_t", "description": "Pitch rate", "units": "counts", "bitLength": 32, "bitstructType": "s32"},
+            {"fieldName": "yawRate", "type": "int64_t", "description": "Yaw rate", "units": "counts", "bitLength": 64, "bitstructType": "s64"},
+            {"fieldName": "gain", "type": "float", "description": "Control gain", "units": "ratio", "bitLength": 32, "bitstructType": "f32"},
+            {"fieldName": "orbitRadius", "type": "double", "description": "Orbit radius", "units": "km", "bitLength": 64, "bitstructType": "f64"},
+            {"fieldName": "responseCode", "type": "char", "description": "Response code", "units": "ASCII", "bitLength": 8, "bitstructType": "t8"},
+            {"fieldName": "controlWord", "type": "uint", "description": "Control word", "units": "bits", "bitLength": 15, "bitstructType": "u15"}
+        ]
+    },
+    "4402": {
+        "packetName": "sampleTelemetry04C",
+        "description": "Sample telemetry packet set 04C",
+        "apid": 4402,
+        "packetId": 4402,
+        "fields": [
+            {"fieldName": "lineState", "type": "uint8_t", "description": "Line state", "units": "count", "bitLength": 8, "bitstructType": "u8"},
+            {"fieldName": "commandId", "type": "uint16_t", "description": "Command identifier", "units": "count", "bitLength": 16, "bitstructType": "u16"},
+            {"fieldName": "payloadLength", "type": "uint32_t", "description": "Payload length", "units": "bytes", "bitLength": 32, "bitstructType": "u32"},
+            {"fieldName": "timestampTicks", "type": "uint64_t", "description": "Timestamp ticks", "units": "ticks", "bitLength": 64, "bitstructType": "u64"},
+            {"fieldName": "pitchRate", "type": "int32_t", "description": "Pitch rate", "units": "counts", "bitLength": 32, "bitstructType": "s32"},
+            {"fieldName": "yawRate", "type": "int64_t", "description": "Yaw rate", "units": "counts", "bitLength": 64, "bitstructType": "s64"},
+            {"fieldName": "gain", "type": "float", "description": "Control gain", "units": "ratio", "bitLength": 32, "bitstructType": "f32"},
+            {"fieldName": "orbitRadius", "type": "double", "description": "Orbit radius", "units": "km", "bitLength": 64, "bitstructType": "f64"},
+            {"fieldName": "responseCode", "type": "char", "description": "Response code", "units": "ASCII", "bitLength": 8, "bitstructType": "t8"},
+            {"fieldName": "controlWord", "type": "uint", "description": "Control word", "units": "bits", "bitLength": 15, "bitstructType": "u15"}
+        ]
+    }
+}

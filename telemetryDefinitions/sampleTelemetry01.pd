@@ -1,0 +1,56 @@
+{
+    "4100": {
+        "packetName": "sampleTelemetry01A",
+        "description": "Sample telemetry packet set 01A",
+        "apid": 4100,
+        "packetId": 4100,
+        "fields": [
+            {"fieldName": "statusCode", "type": "uint8_t", "description": "Status code", "units": "count", "bitLength": 8, "bitstructType": "u8"},
+            {"fieldName": "modeCode", "type": "uint16_t", "description": "Mode code", "units": "count", "bitLength": 16, "bitstructType": "u16"},
+            {"fieldName": "sampleCount", "type": "uint32_t", "description": "Sample count", "units": "count", "bitLength": 32, "bitstructType": "u32"},
+            {"fieldName": "totalTicks", "type": "uint64_t", "description": "Elapsed ticks", "units": "ticks", "bitLength": 64, "bitstructType": "u64"},
+            {"fieldName": "signedOffset", "type": "int16_t", "description": "Signed offset", "units": "counts", "bitLength": 16, "bitstructType": "s16"},
+            {"fieldName": "temperature", "type": "float", "description": "Temperature", "units": "degC", "bitLength": 32, "bitstructType": "f32"},
+            {"fieldName": "voltage", "type": "double", "description": "Voltage", "units": "V", "bitLength": 64, "bitstructType": "f64"},
+            {"fieldName": "label", "type": "char", "description": "Unit label", "units": "ASCII", "bitLength": 8, "bitstructType": "t8"},
+            {"fieldName": "rawNibble", "type": "uint", "description": "Raw nibble", "units": "bits", "bitLength": 4, "bitstructType": "u4"},
+            {"fieldName": "signedTrim", "type": "int", "description": "Signed trim", "units": "bits", "bitLength": 12, "bitstructType": "s12"}
+        ]
+    },
+    "4101": {
+        "packetName": "sampleTelemetry01B",
+        "description": "Sample telemetry packet set 01B",
+        "apid": 4101,
+        "packetId": 4101,
+        "fields": [
+            {"fieldName": "statusCode", "type": "uint8_t", "description": "Status code", "units": "count", "bitLength": 8, "bitstructType": "u8"},
+            {"fieldName": "modeCode", "type": "uint16_t", "description": "Mode code", "units": "count", "bitLength": 16, "bitstructType": "u16"},
+            {"fieldName": "sampleCount", "type": "uint32_t", "description": "Sample count", "units": "count", "bitLength": 32, "bitstructType": "u32"},
+            {"fieldName": "totalTicks", "type": "uint64_t", "description": "Elapsed ticks", "units": "ticks", "bitLength": 64, "bitstructType": "u64"},
+            {"fieldName": "signedOffset", "type": "int16_t", "description": "Signed offset", "units": "counts", "bitLength": 16, "bitstructType": "s16"},
+            {"fieldName": "temperature", "type": "float", "description": "Temperature", "units": "degC", "bitLength": 32, "bitstructType": "f32"},
+            {"fieldName": "voltage", "type": "double", "description": "Voltage", "units": "V", "bitLength": 64, "bitstructType": "f64"},
+            {"fieldName": "label", "type": "char", "description": "Unit label", "units": "ASCII", "bitLength": 8, "bitstructType": "t8"},
+            {"fieldName": "rawNibble", "type": "uint", "description": "Raw nibble", "units": "bits", "bitLength": 4, "bitstructType": "u4"},
+            {"fieldName": "signedTrim", "type": "int", "description": "Signed trim", "units": "bits", "bitLength": 12, "bitstructType": "s12"}
+        ]
+    },
+    "4102": {
+        "packetName": "sampleTelemetry01C",
+        "description": "Sample telemetry packet set 01C",
+        "apid": 4102,
+        "packetId": 4102,
+        "fields": [
+            {"fieldName": "statusCode", "type": "uint8_t", "description": "Status code", "units": "count", "bitLength": 8, "bitstructType": "u8"},
+            {"fieldName": "modeCode", "type": "uint16_t", "description": "Mode code", "units": "count", "bitLength": 16, "bitstructType": "u16"},
+            {"fieldName": "sampleCount", "type": "uint32_t", "description": "Sample count", "units": "count", "bitLength": 32, "bitstructType": "u32"},
+            {"fieldName": "totalTicks", "type": "uint64_t", "description": "Elapsed ticks", "units": "ticks", "bitLength": 64, "bitstructType": "u64"},
+            {"fieldName": "signedOffset", "type": "int16_t", "description": "Signed offset", "units": "counts", "bitLength": 16, "bitstructType": "s16"},
+            {"fieldName": "temperature", "type": "float", "description": "Temperature", "units": "degC", "bitLength": 32, "bitstructType": "f32"},
+            {"fieldName": "voltage", "type": "double", "description": "Voltage", "units": "V", "bitLength": 64, "bitstructType": "f64"},
+            {"fieldName": "label", "type": "char", "description": "Unit label", "units": "ASCII", "bitLength": 8, "bitstructType": "t8"},
+            {"fieldName": "rawNibble", "type": "uint", "description": "Raw nibble", "units": "bits", "bitLength": 4, "bitstructType": "u4"},
+            {"fieldName": "signedTrim", "type": "int", "description": "Signed trim", "units": "bits", "bitLength": 12, "bitstructType": "s12"}
+        ]
+    }
+}

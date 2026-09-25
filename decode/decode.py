@@ -78,16 +78,16 @@ class Decoder():
             raise PacketProcessingError("decode", f"Failed to decode packet: {exc}", raw_packet=hexPacket, packet_template=packetTemplate) from exc
 
     def findPacketType(self, hexPacket, structure):
-        #if packetIdentifier is present in packet structure, a static header field must identify the packet type. Use this to determine how to interpret the rest of the packet.
+        #if packetIdField is present in packet structure, a static header field must identify the packet type. Use this to determine how to interpret the rest of the packet.
         #This is for cases where multiple packet types are sent over the same channel and need to be differentiated.
         packetComponents = copy(structure['format'])
         try:
             packetTemplate = self.assembleHeaderTemplate(structure)
             partialPacket, partialPacketOrder = self.readFromTemplate(hexPacket, packetTemplate, False)
-            idFile = structure['format'][structure['packetIdentifier']['identifierSourceIndex']]
-            idField = structure['packetIdentifier']['field']
+            idFile = structure['format'][structure['packetIdField']['componentIndex']]
+            idField = structure['packetIdField']['field']
             pktID = partialPacket[f"{idFile}__{idField}"]['rawValue']
-            packetFile = structure['format'][structure['packetIdentifier']['packetDefinitionsIndex']]
+            packetFile = structure['format'][structure['packetIdField']['packetDefinitionsIndex']]
             with open(CFGLOADER.getPath(packetFile)) as f:
                 pktDef = json.load(f)
                 try:
@@ -102,7 +102,7 @@ class Decoder():
                 except KeyError as exc:
                     raise PacketProcessingError("decode", f"Packet ID {pktID} not found in packet definition file {packetFile}", raw_packet=hexPacket, packet_template=packetTemplate) from exc
 
-            structure['format'][structure['packetIdentifier']['packetDefinitionsIndex']] = dynamicStructureComponent
+            structure['format'][structure['packetIdField']['packetDefinitionsIndex']] = dynamicStructureComponent
             return structure, components
         except PacketProcessingError:
             raise
@@ -111,9 +111,9 @@ class Decoder():
 
     def assembleHeaderTemplate(self, structure):
         #assemble a packet template for just the static header fields that identify the packet type, based on the packetIdentifier settings in globalConfig.
-        idFileIndex = structure['packetIdentifier']['identifierSourceIndex']
-        idField = structure['packetIdentifier']['field']
-        pktDefFile = structure['format'][structure['packetIdentifier']['packetDefinitionsIndex']]
+        idFileIndex = structure['packetIdField']['componentIndex']
+        idField = structure['packetIdField']['field']
+        pktDefFile = structure['format'][structure['packetIdField']['packetDefinitionsIndex']]
         try:
             with open(CFGLOADER.getPath(pktDefFile), 'r') as f:
                 pktDef = json.load(f)
@@ -149,7 +149,7 @@ class Decoder():
         #structure components are either a string filepath containing static components of the packet
         #or a dict containing the field name, type, and bit length of a dynamic component of the packet.
 
-        if 'packetIdentifier' in structure:
+        if 'packetIdField' in structure:
             structure, components = self.findPacketType(hexPacket, structure)
             if not structure:
                 raise PacketProcessingError("decode", 'Unable to interpret packet: Unable to resolve packet structure', raw_packet=hexPacket)

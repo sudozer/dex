@@ -1,0 +1,56 @@
+{
+    "4200": {
+        "packetName": "sampleTelemetry02A",
+        "description": "Sample telemetry packet set 02A",
+        "apid": 4200,
+        "packetId": 4200,
+        "fields": [
+            {"fieldName": "eventId", "type": "uint8_t", "description": "Event identifier", "units": "count", "bitLength": 8, "bitstructType": "u8"},
+            {"fieldName": "sequence", "type": "uint16_t", "description": "Sequence number", "units": "count", "bitLength": 16, "bitstructType": "u16"},
+            {"fieldName": "frameNumber", "type": "uint32_t", "description": "Frame number", "units": "count", "bitLength": 32, "bitstructType": "u32"},
+            {"fieldName": "missionTime", "type": "uint64_t", "description": "Mission time", "units": "ticks", "bitLength": 64, "bitstructType": "u64"},
+            {"fieldName": "accelX", "type": "int8_t", "description": "X acceleration", "units": "counts", "bitLength": 8, "bitstructType": "s8"},
+            {"fieldName": "accelY", "type": "int32_t", "description": "Y acceleration", "units": "counts", "bitLength": 32, "bitstructType": "s32"},
+            {"fieldName": "pressure", "type": "float", "description": "Pressure", "units": "kPa", "bitLength": 32, "bitstructType": "f32"},
+            {"fieldName": "position", "type": "double", "description": "Position", "units": "km", "bitLength": 64, "bitstructType": "f64"},
+            {"fieldName": "sourceTag", "type": "char", "description": "Source tag", "units": "ASCII", "bitLength": 8, "bitstructType": "t8"},
+            {"fieldName": "flags", "type": "uint", "description": "Status flags", "units": "bits", "bitLength": 10, "bitstructType": "u10"}
+        ]
+    },
+    "4201": {
+        "packetName": "sampleTelemetry02B",
+        "description": "Sample telemetry packet set 02B",
+        "apid": 4201,
+        "packetId": 4201,
+        "fields": [
+            {"fieldName": "eventId", "type": "uint8_t", "description": "Event identifier", "units": "count", "bitLength": 8, "bitstructType": "u8"},
+            {"fieldName": "sequence", "type": "uint16_t", "description": "Sequence number", "units": "count", "bitLength": 16, "bitstructType": "u16"},
+            {"fieldName": "frameNumber", "type": "uint32_t", "description": "Frame number", "units": "count", "bitLength": 32, "bitstructType": "u32"},
+            {"fieldName": "missionTime", "type": "uint64_t", "description": "Mission time", "units": "ticks", "bitLength": 64, "bitstructType": "u64"},
+            {"fieldName": "accelX", "type": "int8_t", "description": "X acceleration", "units": "counts", "bitLength": 8, "bitstructType": "s8"},
+            {"fieldName": "accelY", "type": "int32_t", "description": "Y acceleration", "units": "counts", "bitLength": 32, "bitstructType": "s32"},
+            {"fieldName": "pressure", "type": "float", "description": "Pressure", "units": "kPa", "bitLength": 32, "bitstructType": "f32"},
+            {"fieldName": "position", "type": "double", "description": "Position", "units": "km", "bitLength": 64, "bitstructType": "f64"},
+            {"fieldName": "sourceTag", "type": "char", "description": "Source tag", "units": "ASCII", "bitLength": 8, "bitstructType": "t8"},
+            {"fieldName": "flags", "type": "uint", "description": "Status flags", "units": "bits", "bitLength": 10, "bitstructType": "u10"}
+        ]
+    },
+    "4202": {
+        "packetName": "sampleTelemetry02C",
+        "description": "Sample telemetry packet set 02C",
+        "apid": 4202,
+        "packetId": 4202,
+        "fields": [
+            {"fieldName": "eventId", "type": "uint8_t", "description": "Event identifier", "units": "count", "bitLength": 8, "bitstructType": "u8"},
+            {"fieldName": "sequence", "type": "uint16_t", "description": "Sequence number", "units": "count", "bitLength": 16, "bitstructType": "u16"},
+            {"fieldName": "frameNumber", "type": "uint32_t", "description": "Frame number", "units": "count", "bitLength": 32, "bitstructType": "u32"},
+            {"fieldName": "missionTime", "type": "uint64_t", "description": "Mission time", "units": "ticks", "bitLength": 64, "bitstructType": "u64"},
+            {"fieldName": "accelX", "type": "int8_t", "description": "X acceleration", "units": "counts", "bitLength": 8, "bitstructType": "s8"},
+            {"fieldName": "accelY", "type": "int32_t", "description": "Y acceleration", "units": "counts", "bitLength": 32, "bitstructType": "s32"},
+            {"fieldName": "pressure", "type": "float", "description": "Pressure", "units": "kPa", "bitLength": 32, "bitstructType": "f32"},
+            {"fieldName": "position", "type": "double", "description": "Position", "units": "km", "bitLength": 64, "bitstructType": "f64"},
+            {"fieldName": "sourceTag", "type": "char", "description": "Source tag", "units": "ASCII", "bitLength": 8, "bitstructType": "t8"},
+            {"fieldName": "flags", "type": "uint", "description": "Status flags", "units": "bits", "bitLength": 10, "bitstructType": "u10"}
+        ]
+    }
+}

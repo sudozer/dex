@@ -4,43 +4,53 @@
             "fieldName": "VersionNumber",
             "type": "uint",
             "bitLength": 3,
-            "bitstructType": "u3"
+            "bitstructType": "u3",
+            "defaultValue": 0
         },
         {
             "fieldName": "PacketType",
             "type": "uint",
             "bitLength": 1,
-            "bitstructType": "u1"
+            "bitstructType": "u1",
+            "defaultValue": 0
         },
         {
             "fieldName": "SecondaryHeaderFlag",
             "type": "uint",
             "bitLength": 1,
-            "bitstructType": "u1"
+            "bitstructType": "u1",
+            "defaultValue": 0
         },
         {
             "fieldName": "APID",
             "type": "uint",
             "bitLength": 11,
-            "bitstructType": "u11"
+            "bitstructType": "u11",
+            "defaultValue": 0
         },
         {
             "fieldName": "SequenceFlags",
             "type": "uint",
             "bitLength": 2,
-            "bitstructType": "u2"
+            "bitstructType": "u2",
+            "defaultValue": 0
         },
         {
             "fieldName": "PacketSequenceCount",
             "type": "uint",
             "bitLength": 14,
-            "bitstructType": "u14"
+            "bitstructType": "u14",
+            "defaultValue": 0,
+            "autofill":"primarySequenceCount"
         },
         {
             "fieldName": "PacketDataLength",
             "type": "uint16_t",
             "bitLength": 16,
-            "bitstructType": "u16"
+            "bitstructType": "u16",
+            "defaultValue": 0,
+            "autofill":"primaryLengthField"
+
         }
     ],
     "totalBitLength": 48

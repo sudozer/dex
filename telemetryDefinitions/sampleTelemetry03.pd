@@ -1,0 +1,56 @@
+{
+    "4300": {
+        "packetName": "sampleTelemetry03A",
+        "description": "Sample telemetry packet set 03A",
+        "apid": 4300,
+        "packetId": 4300,
+        "fields": [
+            {"fieldName": "channelId", "type": "uint8_t", "description": "Channel identifier", "units": "count", "bitLength": 8, "bitstructType": "u8"},
+            {"fieldName": "retryCount", "type": "uint16_t", "description": "Retry count", "units": "count", "bitLength": 16, "bitstructType": "u16"},
+            {"fieldName": "byteCount", "type": "uint32_t", "description": "Byte count", "units": "bytes", "bitLength": 32, "bitstructType": "u32"},
+            {"fieldName": "uptime", "type": "uint64_t", "description": "System uptime", "units": "seconds", "bitLength": 64, "bitstructType": "u64"},
+            {"fieldName": "deltaX", "type": "int16_t", "description": "X delta", "units": "counts", "bitLength": 16, "bitstructType": "s16"},
+            {"fieldName": "deltaY", "type": "int64_t", "description": "Y delta", "units": "counts", "bitLength": 64, "bitstructType": "s64"},
+            {"fieldName": "current", "type": "float", "description": "Electrical current", "units": "A", "bitLength": 32, "bitstructType": "f32"},
+            {"fieldName": "energy", "type": "double", "description": "Energy", "units": "J", "bitLength": 64, "bitstructType": "f64"},
+            {"fieldName": "deviceCode", "type": "char", "description": "Device code", "units": "ASCII", "bitLength": 8, "bitstructType": "t8"},
+            {"fieldName": "errorBits", "type": "int", "description": "Error bits", "units": "bits", "bitLength": 14, "bitstructType": "s14"}
+        ]
+    },
+    "4301": {
+        "packetName": "sampleTelemetry03B",
+        "description": "Sample telemetry packet set 03B",
+        "apid": 4301,
+        "packetId": 4301,
+        "fields": [
+            {"fieldName": "channelId", "type": "uint8_t", "description": "Channel identifier", "units": "count", "bitLength": 8, "bitstructType": "u8"},
+            {"fieldName": "retryCount", "type": "uint16_t", "description": "Retry count", "units": "count", "bitLength": 16, "bitstructType": "u16"},
+            {"fieldName": "byteCount", "type": "uint32_t", "description": "Byte count", "units": "bytes", "bitLength": 32, "bitstructType": "u32"},
+            {"fieldName": "uptime", "type": "uint64_t", "description": "System uptime", "units": "seconds", "bitLength": 64, "bitstructType": "u64"},
+            {"fieldName": "deltaX", "type": "int16_t", "description": "X delta", "units": "counts", "bitLength": 16, "bitstructType": "s16"},
+            {"fieldName": "deltaY", "type": "int64_t", "description": "Y delta", "units": "counts", "bitLength": 64, "bitstructType": "s64"},
+            {"fieldName": "current", "type": "float", "description": "Electrical current", "units": "A", "bitLength": 32, "bitstructType": "f32"},
+            {"fieldName": "energy", "type": "double", "description": "Energy", "units": "J", "bitLength": 64, "bitstructType": "f64"},
+            {"fieldName": "deviceCode", "type": "char", "description": "Device code", "units": "ASCII", "bitLength": 8, "bitstructType": "t8"},
+            {"fieldName": "errorBits", "type": "int", "description": "Error bits", "units": "bits", "bitLength": 14, "bitstructType": "s14"}
+        ]
+    },
+    "4302": {
+        "packetName": "sampleTelemetry03C",
+        "description": "Sample telemetry packet set 03C",
+        "apid": 4302,
+        "packetId": 4302,
+        "fields": [
+            {"fieldName": "channelId", "type": "uint8_t", "description": "Channel identifier", "units": "count", "bitLength": 8, "bitstructType": "u8"},
+            {"fieldName": "retryCount", "type": "uint16_t", "description": "Retry count", "units": "count", "bitLength": 16, "bitstructType": "u16"},
+            {"fieldName": "byteCount", "type": "uint32_t", "description": "Byte count", "units": "bytes", "bitLength": 32, "bitstructType": "u32"},
+            {"fieldName": "uptime", "type": "uint64_t", "description": "System uptime", "units": "seconds", "bitLength": 64, "bitstructType": "u64"},
+            {"fieldName": "deltaX", "type": "int16_t", "description": "X delta", "units": "counts", "bitLength": 16, "bitstructType": "s16"},
+            {"fieldName": "deltaY", "type": "int64_t", "description": "Y delta", "units": "counts", "bitLength": 64, "bitstructType": "s64"},
+            {"fieldName": "current", "type": "float", "description": "Electrical current", "units": "A", "bitLength": 32, "bitstructType": "f32"},
+            {"fieldName": "energy", "type": "double", "description": "Energy", "units": "J", "bitLength": 64, "bitstructType": "f64"},
+            {"fieldName": "deviceCode", "type": "char", "description": "Device code", "units": "ASCII", "bitLength": 8, "bitstructType": "t8"},
+            {"fieldName": "errorBits", "type": "int", "description": "Error bits", "units": "bits", "bitLength": 14, "bitstructType": "s14"}
+        ]
+    }
+}

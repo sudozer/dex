@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
 from dataStructures import COMMAND_COMPONENTS
 from loadConfig import Configs
 from packetDefinitionLib import PacketDefinitionUtility
-from commandAutofillFunctions import AutofillCommand
+from autofill import Autofiller
 ERROR_COLOR = QColor(237,71,59)
 
 cfgLoader = Configs()
@@ -61,10 +61,6 @@ class FieldItem():
         else:
             val = 0
 
-        if startingConfig['autofillCommands']:
-            if 'autofill' in argDict:
-                val = eval(f"commandAutofillFunctions.{argDict['autofill']}()")
-
         self.valueCell = QTableWidgetItem(str(val))
 
         self.fieldCell.setFlags(self.fieldCell.flags() & ~Qt.ItemIsEditable)
@@ -84,6 +80,7 @@ class CommandBuilder(QDialog):
         # Load the UI from the .ui file
         self.packetDefLib = PacketDefinitionUtility()
         self.validatingArgs = False
+        self.autofiller = Autofiller()
         loader = QUiLoader()
         self.guiPath = cfgLoader.getPath('apps/commandBuilder/ui/commandBuilder.ui')
         ui_file = QFile(self.guiPath)
@@ -91,7 +88,6 @@ class CommandBuilder(QDialog):
         self.ui = loader.load(ui_file, self)
         ui_file.close()
         self.commandStructure = commandStructure
-
         layout = QVBoxLayout()
         layout.addWidget(self.ui)
         self.setLayout(layout)
@@ -110,12 +106,17 @@ class CommandBuilder(QDialog):
         self.show()
 
     def populateCommands(self):
-        commandComponent = self.commandStructure['commands']
-        commandBasePath = cfgLoader.getPath(f'commandDefinitions/{commandComponent}.cd')
-        with open(commandBasePath, 'r') as f:
-            commandsDict = json.load(f)
-        for command,commandDict in commandsDict.items():
-            commandItem = CommandItem(self.ui.commandList,command,commandDict)
+
+        commandComponent = self.commandStructure['packets']
+        if not commandComponent == '':
+            commandBasePath = cfgLoader.getPath(f'commandDefinitions/{commandComponent}.cd')
+            with open(commandBasePath, 'r') as f:
+                commandsDict = json.load(f)
+            for command,commandDict in commandsDict.items():
+                commandItem = CommandItem(self.ui.commandList,command,commandDict)
+
+        else:
+            commandItem = CommandItem(self.ui.commandList,self.commandStructure,{'commandName':""})
 
     def populateArgumentTable(self):
         self.ui.argumentTable.clearContents()
@@ -139,14 +140,38 @@ class CommandBuilder(QDialog):
             self.componentIndex += 1
         self.addStaticComponents('footers')
 
+        if not 'arguments' in commandItem.commandDict:
+            self.ui.showNoncommandFieldsCheckbox.setChecked(True)
+        else:
+            self.ui.showNoncommandFieldsCheckbox.setChecked(False)
+
+
         #embed commandId in its appropriate location 
-        componentIndex = self.commandStructure['commandIdField']['componentIndex']
-        fieldIndex = self.commandStructure['commandIdField']['fieldIndex']
-        self.fieldItems[componentIndex][fieldIndex].valueCell.setText(str(commandItem.commandID))
+        if 'packedIdField' in self.commandStructure:
+            componentIndex = self.commandStructure['packetIdField']['componentIndex']
+            fieldIndex = self.commandStructure['packetIdField']['fieldIndex']
+            self.fieldItems[componentIndex][fieldIndex].valueCell.setText(str(commandItem.commandID))
         
         if not self.validatingArgs:
             self.validatingArgs = True
             self.ui.argumentTable.itemChanged.connect(self.validateField)
+
+        #autofill here
+        if startingConfig['autofillCommands']:
+            commandFieldList = []
+            for comp in self.fieldItems:
+                for field in comp:
+                    commandFieldList.append(field.argDict)
+
+            filledCommandFieldList = self.autofiller.autofillAllFields(commandFieldList)
+            i=0
+            for comp in self.fieldItems:
+                for fieldItem in comp:
+                    fieldItem.argDict = filledCommandFieldList[i]
+                    i += 1
+                    if 'autofill' in fieldItem.argDict:
+                        fieldItem.valueCell.setText(str(fieldItem.argDict['value']))
+
         self.validateAllFields()
         self.checkAllFieldsValid()
 

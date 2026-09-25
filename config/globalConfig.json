@@ -11,11 +11,38 @@
     "malformedPacketPath": "malformedPackets/malformedPacketStorage",
     "autoLaunchMalformedPacketHandler": false,
     "autofillCommands": true,
+    "commandSequenceNumber": 0,
     "telemetryStructures": {
         "splaser": {
-            "format": [
+            "headers": [
                 "telemetryDefinitions/splaserPacket.hd"
-            ]
+            ],
+            "packets": "",
+            "footers": []
+        },
+        "sampleStructure1": {
+            "headers": [
+                "telemetryDefinitions/primaryHeader.hd",
+                "telemetryDefinitions/secondaryHeader.hd"
+            ],
+            "packets": "telemetryDefinitions/sampleTelemetry01.pd",
+            "footers": [],
+            "packetIdField": {
+                "componentIndex": 1,
+                "fieldIndex": 6
+            }
+        },
+        "sampleStructure2": {
+            "headers": [
+                "telemetryDefinitions/primaryHeader.hd",
+                "telemetryDefinitions/secondaryHeader.hd"
+            ],
+            "packets": "telemetryDefinitions/sampleTelemetry02.pd",
+            "footers": [],
+            "packetIdField": {
+                "componentIndex": 1,
+                "fieldIndex": 6
+            }
         }
     },
     "commandStructures": {
@@ -24,9 +51,9 @@
                 "primaryHeader",
                 "secondaryHeader"
             ],
-            "commands": "sampleCommands",
+            "packets": "sampleCommands",
             "footers": [],
-            "commandIdField": {
+            "packetIdField": {
                 "componentIndex": 1,
                 "fieldIndex": 6
             }
@@ -47,7 +74,42 @@
             "dbName": "o2o"
         }
     },
-    "simulation": {
-        "splaser": {}
-    }
+    "simulation": [
+        {
+            "packetConfig": {
+                "simulationRate": 1.0,
+                "ip": "127.0.0.1",
+                "port": 5555,
+                "protocol": "UDP",
+                "structure": "sampleStructure1",
+                "packet": "sampleStructure1_4101"
+            },
+            "packetBehaviors": {},
+            "fieldBehaviors": {}
+        },
+        {
+            "packetConfig": {
+                "simulationRate": 5.0,
+                "ip": "127.0.0.1",
+                "port": 1,
+                "protocol": "UDP",
+                "structure": "splaser",
+                "packet": "splaser"
+            },
+            "packetBehaviors": [],
+            "fieldBehaviors": []
+        },
+        {
+            "packetConfig": {
+                "simulationRate": 1.0,
+                "ip": "127.0.0.1",
+                "port": 1,
+                "protocol": "UDP",
+                "structure": "splaser",
+                "packet": "splaser"
+            },
+            "packetBehaviors": [],
+            "fieldBehaviors": []
+        }
+    ]
 }

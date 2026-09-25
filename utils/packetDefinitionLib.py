@@ -294,7 +294,7 @@ class PacketDefinitionUtility():
 
         #validate bitLength
         if 'bitLength' in field:
-            if field['type'] in knownTypeSizes:
+            if field['type'] in knownTypeSizes and not field['type'] == "uint" and not field['type'] == 'int':
                 expectedFieldLength = knownTypeSizes[field['type']]
                 if not expectedFieldLength == field['bitLength']:
                     validationErrors.append(f"bitLength supplied differs from expected.\nExpecting {expectedFieldLength} - Supplied {field['bitLength']}")

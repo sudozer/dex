@@ -42,6 +42,7 @@ from packetDefinitionLib import PacketDefinitionUtility
 from decode import Decoder
 from dataStructures import PACKET_TEMPLATES, COMMAND_COMPONENTS
 
+from packetDefinitionEditor import PacketDefinitionEditor
 from telemetrySelector import TelemetryFieldSelector
 from commandBuilder import CommandBuilder
 from commandIDSelector import CommandIDSelector
@@ -148,9 +149,9 @@ class FieldItem(QTreeWidgetItem):
             self.setInitConfigs(initConfig)
 
     def setInitConfigs(self,initConfig):
-        for initBehavior in initConfig:
-            #create a field Behavior
-            item = FieldBehavior(self,self.fieldName, initBehavior)
+        pdb.set_trace()
+        for fieldBehavior in initConfig:
+            item = FieldBehavior(self,self.fieldName,fieldBehavior)
 
     def addBehavior(self):
         #needs testing
@@ -166,9 +167,10 @@ class FieldItem(QTreeWidgetItem):
 
     def removeBehavior(self):
         #remove the currently selected behavior
-        selectedItems = self.parentTree.selectedItems()
-        if len(selectedItems) > 0:
-            del selectedItems[0]
+        selection = self.parentTree.currentItem()
+        if not selection.parent() == self:
+            return
+        self.removeChild(selection)
 
 class FieldBehavior(QTreeWidgetItem):
     """
@@ -279,8 +281,13 @@ class FieldBehavior(QTreeWidgetItem):
             return commandBuilder.commandList
 
 class SimBehaviorWidget(QDialog):
-    def __init__(self, parent, packetName, packetList, dexMain, telemetryStructure):
+    def __init__(self,parentTree,simItem,packetList,dexMain):
+        self.parentTree = parentTree
+        self.packetName = simItem.packetBox.currentText()
+        self.telemetryStructure = simItem.structureBox.currentText()
+        self.packetList = packetList
         self.dexMainWidget = dexMain
+        self.row = self.parentTree.indexOfTopLevelItem(simItem)
         super().__init__()
             # Open the .ui file
         self.guiPath = cfgLoader.getPath('apps/main/ui/simBehaviorEditor.ui')
@@ -292,8 +299,7 @@ class SimBehaviorWidget(QDialog):
         loader = QUiLoader()
         self.loaded_widget = loader.load(ui_file, self)
         ui_file.close()
-
-        self.simParameterDict = CONFIG()['simulation'][packetName]
+        self.simParameterDict = CONFIG()['simulation'][self.row]
 
         # Set up layout to display the loaded form
         from PySide6.QtWidgets import QVBoxLayout
@@ -302,10 +308,8 @@ class SimBehaviorWidget(QDialog):
         layout.addWidget(self.loaded_widget)
         self.setLayout(layout)
         self.setModal(True)
-        self.packetName = packetName
-        self.packetList = packetList
         
-        self.setWindowTitle(f"{packetName} Simulation Behaviors")
+        self.setWindowTitle(f"{self.packetName} Simulation Behaviors")
 
         self.loaded_widget.fieldwiseBehaviorTree.setColumnCount(5)
         self.loaded_widget.fieldwiseBehaviorTree.setHeaderLabels(['Enabled','Trigger Type','Trigger Parameters','Behavior Type','Behavior Parameters'])
@@ -327,21 +331,15 @@ class SimBehaviorWidget(QDialog):
         self.show()
 
     def populateFields(self):
-        #populate fieldwise tree with FieldBehaviors and packet behavior list with PacketBehaviors
-        if not "simulation" in CONFIG():
-            cfg = CONFIG()
-            cfg['simulation'] = {}
-            for packet in PACKET_TEMPLATES:
-                cfg['simulation'][packet] = {}
-            cfgLoader.configWrite(cfg)
-
-        cfg = CONFIG()
-        initConfigs = cfg['simulation'][self.packetName]
         #populate field list
 
         for field in self.packetList:
             fieldName = field['fieldName']
-            fieldItem = FieldItem(self.loaded_widget.fieldwiseBehaviorTree,fieldName,field,initConfigs.get(fieldName,[]),self)
+            if fieldName in self.simParameterDict['fieldBehaviors']:
+                initConfig = self.simParameterDict['fieldBehaviors'][fieldName]
+            else:
+                initConfig = []
+            fieldItem = FieldItem(self.loaded_widget.fieldwiseBehaviorTree,fieldName,field,initConfig,self)
 
     def populatePacketPlaybacks(self):
         pass
@@ -365,17 +363,21 @@ class SimBehaviorWidget(QDialog):
         selectedItems = self.loaded_widget.wholePacketPlaybackTable.selectedItems()
         if len(selectedItems) > 0:
             row = selectedItems[0].row()
-            self.loaded_widget.wholePacketPlaybackTable.removeRow(row)     
+            self.loaded_widget.wholePacketPlaybackTable.removeRow(row)
+
+    def writeSimulationConfig(self):
+        pass
 
 class SimPacket(QTreeWidgetItem):
-    def __init__(self, parent, packetName, packetDict, dexMain):
+    def __init__(self, parentWidget, dexMain,initConfig = None):
         self.dexMainWidget = dexMain
-        self.packetName = packetName
-        self.packetDict = packetDict
-        super().__init__(parent)
-        self.setText(1, packetName)
+        super().__init__(parentWidget)
+
         self.setFlags(self.flags() | Qt.ItemFlag.ItemIsUserCheckable)
         self.setCheckState(0, Qt.CheckState.Checked)
+
+        self.packetBehaviors = []
+        self.fieldBehaviors = []
 
         self.hzSpinBox = QDoubleSpinBox()
         self.hzSpinBox.setSingleStep(0.1)
@@ -386,30 +388,94 @@ class SimPacket(QTreeWidgetItem):
         self.ipBox = QLineEdit()
         self.ipBox.setText("127.0.0.1")
         self.protocolBox = QComboBox()
-        self.protocolBox.addItems(['UDP','TCP'])
+        self.protocolBox.addItems(['UDP','TCP Client', 'TCP Server'])
         self.structureBox = QComboBox()
         for structure in CONFIG()['telemetryStructures']:
             self.structureBox.addItem(structure)
+        self.structureBox.currentTextChanged.connect(self.initPacketBox)
+        self.packetBox = QComboBox()
+        self.initPacketBox()
 
         self.behaviorsEditButton = QPushButton("Edit")
         self.behaviorsEditButton.clicked.connect(self.editBehaviors)
+        
+        self.parentWidget = parentWidget
+        parentWidget.setItemWidget(self,1,self.structureBox)
+        parentWidget.setItemWidget(self,2,self.packetBox)
+        parentWidget.setItemWidget(self,3,self.hzSpinBox)
+        parentWidget.setItemWidget(self,4,self.ipBox)
+        parentWidget.setItemWidget(self,5,self.portBox)
+        parentWidget.setItemWidget(self,6,self.protocolBox)
+        parentWidget.setItemWidget(self,7,self.behaviorsEditButton)
 
-        self.parentWidget = parent
-        parent.setItemWidget(self,2,self.hzSpinBox)
-        parent.setItemWidget(self,3,self.ipBox)
-        parent.setItemWidget(self,4,self.portBox)
-        parent.setItemWidget(self,5,self.protocolBox)
-        parent.setItemWidget(self,6,self.structureBox)
-        parent.setItemWidget(self,7,self.behaviorsEditButton)
+        if not initConfig == None:
+            self.initializeFromConfig(initConfig)
+        else:
+            self.addSimPacketConfig()
+
+        self.hzSpinBox.valueChanged.connect(self.writeSimConfig)
+        self.portBox.valueChanged.connect(self.writeSimConfig)
+        self.ipBox.editingFinished.connect(self.writeSimConfig)
+        self.protocolBox.currentTextChanged.connect(self.writeSimConfig)
+        #self.structureBox.currentTextChanged.connect(self.writeSimConfig)
+        self.packetBox.currentTextChanged.connect(self.writeSimConfig)
+
+    def initPacketBox(self):
+        self.packetBox.clear()
+        structure = self.structureBox.currentText()
+        for packet in PACKET_TEMPLATES:
+            if packet[0:len(structure)] == structure:
+                self.packetBox.addItem(packet)
 
     def editBehaviors(self):
-        behaviorEditor = SimBehaviorWidget(self.parentWidget,self.packetName,self.packetDict,self.dexMainWidget,self.structureBox.currentText())
+        packetDict =PACKET_TEMPLATES[self.packetBox.currentText()]
+        behaviorEditor = SimBehaviorWidget(self.parentWidget,self,packetDict,self.dexMainWidget)
         result = behaviorEditor.exec()
-        if result == QDialog.DialogCode.Accepted:
-            #write new sim behaviors to the config
-            newCfg = CONFIG()
-            newCfg['simulation'][self.packetName] = behaviorEditor.simParameterDict
-            cfgLoader.configWrite(newCfg)
+        self.writeSimConfig()
+
+    def simPacketDict(self):
+        simConfig = {
+            "packetConfig":{
+                "simulationRate":self.hzSpinBox.value(),
+                "ip":self.ipBox.text(),
+                "port":self.portBox.value(),
+                "protocol":self.protocolBox.currentText(),
+                "structure":self.structureBox.currentText(),
+                "packet":self.packetBox.currentText()
+            },
+            "packetBehaviors":self.packetBehaviors,
+            "fieldBehaviors":self.fieldBehaviors
+        }
+        return simConfig
+
+    def addSimPacketConfig(self):
+        cfg = CONFIG()
+        simList = cfg['simulation']
+        simList.append(self.simPacketDict())
+        cfgLoader.configWrite(cfg)
+
+    def writeSimConfig(self):
+        simConfig = self.simPacketDict()
+        row = self.parentWidget.indexOfTopLevelItem(self)
+        cfg = CONFIG()
+        simList = cfg['simulation']
+        simList[row] = simConfig
+        cfgLoader.configWrite(cfg)
+        
+    def initializeFromConfig(self,initConfig):
+        self.structureBox.setCurrentText(str(initConfig['packetConfig']['structure']))
+        self.packetBox.setCurrentText(str(initConfig['packetConfig']['packet']))
+        self.hzSpinBox.setValue(float(initConfig['packetConfig']['simulationRate']))
+        self.ipBox.setText(str(initConfig['packetConfig']['ip']))
+        self.portBox.setValue(int(initConfig['packetConfig']['port']))
+        self.protocolBox.setCurrentText(str(initConfig['packetConfig']['protocol']))
+
+        self.populateSimBehaviors(initConfig)
+
+    def populateSimBehaviors(self,initConfig):
+        pass
+
+
 
 """
 Commanding Classes
@@ -496,7 +562,7 @@ class DexMain():
         self.currentlyBuiltStructure = None
         #simulation controls
         self.ui.simulationPacketsTree.setColumnCount(7)     
-        self.ui.simulationPacketsTree.setHeaderLabels(['Enabled','Packet','Simulation Rate (Hz)','IP','port','protocol','telemetry Structure','Behaviors'])
+        self.ui.simulationPacketsTree.setHeaderLabels(['Enabled','Telemetry Structure','Packet','Simulation Rate (Hz)','IP','port','protocol','Behaviors'])
         self.ui.simulationPacketsTree.setColumnWidth(0,70)
         self.ui.simulationPacketsTree.setColumnWidth(1,70)
         self.ui.simulationPacketsTree.setColumnWidth(2,130)
@@ -506,6 +572,8 @@ class DexMain():
         self.ui.simulationPacketsTree.setColumnWidth(6,130)
         self.ui.simulationPacketsTree.setColumnWidth(7,70)
 
+        self.ui.addSimPacketButton.clicked.connect(self.addPacketSimulation)
+        self.ui.removeSimPacketButton.clicked.connect(self.removePacketSimulation)
 
         # for column in range(self.ui.simulationPacketsTree.columnCount()):
         #     self.ui.simulationPacketsTree.resizeColumnToContents(column)
@@ -533,18 +601,39 @@ class DexMain():
         self.ui.commandProtocolSelect.currentTextChanged.connect(self.commandParameterChanged)
         self.ui.clearCommandMessagesButton.clicked.connect(self.clearCommandMessageBox)
 
-
         self.populateCommandComponents()
         self.populateCommandStructures()
 
+        #telemetry controls
+        self.ui.telemetryDefinitionsButton.clicked.connect(self.editTelemetryDefinitions)
+
+
     """
-    Simulation
+    Simulation functions
     """
 
     def populateSimPackets(self):
         self.simPacketItems = []
-        for packetName, packetDict in PACKET_TEMPLATES.items():
-            self.simPacketItems.append(SimPacket(self.ui.simulationPacketsTree,packetName,packetDict,self))
+        for simPacketConfig in CONFIG()['simulation']:
+            self.simPacketItems.append(SimPacket(self.ui.simulationPacketsTree,self,simPacketConfig))
+
+    def addPacketSimulation(self):
+        self.simPacketItems.append(SimPacket(self.ui.simulationPacketsTree,self))
+
+    def removePacketSimulation(self):
+        currentItem = self.ui.simulationPacketsTree.currentItem()
+        if currentItem and currentItem.parent() is None:
+            removeItem = currentItem
+        else:
+            return
+        cfg = CONFIG()
+        #remove from config
+        row = self.ui.simulationPacketsTree.indexOfTopLevelItem(removeItem)
+        del cfg['simulation'][row]
+        cfgLoader.configWrite(cfg)
+        self.ui.simulationPacketsTree.takeTopLevelItem(row)
+
+
 
     def simulationMessage(self,msg,type_="INFO"):
         self.ui.simulationMessageBox.setTextColor(QColor("black"))
@@ -561,7 +650,14 @@ class DexMain():
         self.ui.simulationMessageBox.clear()
 
     """
-    Commands
+    Telemetry Functions
+    """
+    def editTelemetryDefinitions(self):
+        packetDefinitionEditor = PacketDefinitionEditor()
+
+
+    """
+    Command functions
     """
 
     def populateCommandComponents(self):
@@ -578,8 +674,8 @@ class DexMain():
             componentList = []
             if len(structureDict['headers']) > 0:
                 componentList.extend(structureDict['headers'])
-            if len(structureDict['commands']) > 0:
-                componentList.append(structureDict['commands'])
+            if len(structureDict['packets']) > 0:
+                componentList.append(structureDict['packets'])
             if len(structureDict['footers']) > 0:
                 componentList.extend(structureDict['footers'])
             structureItem = CommandStructureItem(self.ui.commandStructureTree,structureName)
@@ -708,7 +804,7 @@ class DexMain():
             for j in range(structureItem.childCount()):
                 childItem = structureItem.child(j)
                 if isinstance(childItem.component,CommandListItem):
-                    commandStructures[structureItem.structureName]['commands'] = childItem.component.componentName
+                    commandStructures[structureItem.structureName]['packets'] = childItem.component.componentName
                     headers = False
                 else:
                     if headers:
@@ -717,7 +813,7 @@ class DexMain():
                         commandStructures[structureItem.structureName]['footers'].append(childItem.component.componentName)
 
             if not structureItem.commandIdField == None:
-                commandStructures[structureItem.structureName]['commandIdField'] = structureItem.commandIdField
+                commandStructures[structureItem.structureName]['packetIdField'] = structureItem.commandIdField
                 
         currentConfig = CONFIG()
         currentConfig['commandStructures'] = commandStructures
@@ -786,7 +882,7 @@ class DexMain():
                 json.dump(hdrDict,f,indent=4)
         #command file
 
-        commandPath = cfgLoader.getPath(f'commandDefinitions/{commandStructure['commands']}.cd')
+        commandPath = cfgLoader.getPath(f'commandDefinitions/{commandStructure['packets']}.cd')
         with open(commandPath,'r') as f:
             commandsDict = json.load(f)
         commandDict = commandsDict[self.commandId]

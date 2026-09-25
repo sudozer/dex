@@ -1,7 +1,7 @@
 import socket
 from socket import socket as sock
 import pdb
-import commandAutofillFunctions
+from autofill import Autofiller
 import struct
 import logging
 
@@ -55,6 +55,7 @@ class TCPCommandSocket(sock):
         self.role =role
         self.IP = IP
         self.Port = Port
+        self.autofiller = Autofiller()
         
         if messageFunction == 'log':
             self.messageFunction = defaultLog
@@ -81,7 +82,10 @@ class TCPCommandSocket(sock):
     def sendCommand(self,command):
         wrappedCommand = buildCommandFromDict(command)
         if self.role == "client":
+            if startingConfig['autofillCommands']:
+                command = self.autofill.autofillAllFields(command)
             pass
+
 
 class UDPCommandSocket(sock):
     def __init__(self,IP,Port,messageFunction):
@@ -89,13 +93,12 @@ class UDPCommandSocket(sock):
         self.IP = IP
         self.Port = Port
         self.messageFunction = messageFunction
+        self.autofill = Autofiller()
 
     def sendCommand(self,command):
         try:
             if startingConfig['autofillCommands']:
-                for field in command:
-                    if 'autofill' in command:
-                        field['value'] = eval(f"commandAutofillFunctions.{field['autofill']}()")
+                command = self.autofill.autofillAllFields(command)
                 
             wrappedCommand = buildCommandFromDict(command)
             self.sendto(wrappedCommand,(self.IP,self.Port))

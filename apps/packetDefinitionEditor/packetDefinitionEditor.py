@@ -17,8 +17,9 @@ from PySide6.QtGui import QColor #for colors
 from PySide6.QtCore import QFile, Qt
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (
-    QApplication, 
+    QApplication,
     QMainWindow,
+    QDialog,
     QMessageBox,
     QHeaderView,
     QFileDialog,
@@ -66,6 +67,7 @@ class ParentItem(QTreeWidgetItem):
         super().__init__(treeWidget,[text])
         self.children = []
         self.currentlyValid = True
+        self.type = 'static' if text[-3:] == '.hd' else 'packets'
     
     def validate(self):
         self.currentlyValid = True
@@ -132,6 +134,38 @@ class FieldItem(QTreeWidgetItem):
     def addToParents(self):
         for parent in self.parentItems:
             parent.children.append(self)
+
+class StructureItem(QTreeWidgetItem):
+    def __init__(self,structureName,structureDict,parentTree):
+        self.colorGenerator = colorGen(STRUCTUREBASECOLOR)
+        self.structureName = structureName
+        super().__init__(parentTree,[structureName])
+        self.structureDict = structureDict
+        self.parentTree = parentTree
+        self.populateStructureChildren()
+        self.addingHeaders = True #add new static elements as headers until a packet file is added
+
+    def populateStructureChildren(self):
+
+        self.componentList = []
+        for path in self.structureDict['headers']:
+            fname = Path(path).name[:-3]
+            self.componentList.append(StructureChild(fname,self,next(self.colorGenerator)))
+
+        if len(self.structureDict['packets']) > 0:
+            path_ = self.structureDict['packets']
+            fname = Path(path_).name[:-3]
+            self.componentList.append(StructureChild(fname,self,next(self.colorGenerator)))
+
+        for path in self.structureDict['footers']:
+            fname = Path(path).name[:-3]
+            self.componentList.append(StructureChild(fname,self,next(self.colorGenerator)))
+
+class StructureChild(QTreeWidgetItem):
+    def __init__(self,componentName,parentItem,color):
+        super().__init__(parentItem,[componentName])
+        self.componentName = componentName
+        self.setBackground(0,color)
 
 class PacketDefinitionEditor():
 
@@ -221,29 +255,25 @@ class PacketDefinitionEditor():
         self.telemetryDefinitions = {}
 
         for telemetryDefinitionFile in files:
-            self.telemetryDefinitions[telemetryDefinitionFile.name] = json.load(open(telemetryDefinitionFile,'r'))
-            item = ParentItem(self.ui.telemetryDefinitionsTree,telemetryDefinitionFile.name)            
+            fname = telemetryDefinitionFile.name[:-3]
+            self.telemetryDefinitions[fname] = json.load(open(telemetryDefinitionFile,'r'))
+            item = ParentItem(self.ui.telemetryDefinitionsTree,fname)            
             
         files = [f for f in tdefPath.rglob('*') if f.is_file() and f.suffix in ('.pd')]
         for telemetryDefinitionFile in files:
-            self.telemetryDefinitions[telemetryDefinitionFile.name] = json.load(open(telemetryDefinitionFile,'r'))
-            packetDefinition = self.telemetryDefinitions[telemetryDefinitionFile.name]
-            item = ParentItem(self.ui.telemetryDefinitionsTree,telemetryDefinitionFile.name)
+            fname = telemetryDefinitionFile.name[:-3]
+            self.telemetryDefinitions[fname] = json.load(open(telemetryDefinitionFile,'r'))
+            packetDefinition = self.telemetryDefinitions[fname]
+            item = ParentItem(self.ui.telemetryDefinitionsTree,fname)
             for k in packetDefinition.keys():
                 packetName = packetDefinition[k]['packetName']
                 packetItem = ParentItem(item,f"{k} - {packetName}")
 
     def populateTelemetryStructures(self):
         self.ui.structureTree.clear()
-        colorGenerator = colorGen(STRUCTUREBASECOLOR)
         for structureName, structure in CONFIG()['telemetryStructures'].items():
-            item = QTreeWidgetItem([structureName])
-            self.ui.structureTree.addTopLevelItem(item)
-            for path in structure['format']:
-                fname = Path(path).name
-                component = QTreeWidgetItem([fname])
-                item.addChild(component)
-                component.setBackground(0,next(colorGenerator))
+            item = StructureItem(structureName,structure,self.ui.structureTree)
+            #self.ui.structureTree.addTopLevelItem(item)
 
     def validateAllTelemetryDefinitions(self):
         for i in range(self.ui.telemetryDefinitionsTree.topLevelItemCount()):
@@ -597,6 +627,7 @@ class PacketDefinitionEditor():
 
     def addNewPacket(self):
         #TODO support adding new packets to a packet definition
+        
         pass
     
     def removeDefinition(self):
@@ -616,9 +647,8 @@ class PacketDefinitionEditor():
             #TODO check for database safe naming
             with open(cfgLoader.global_config_path,'r') as globalConfigFile:
                 globalConfigDict = json.load(globalConfigFile)
-            globalConfigDict['telemetryStructures'][newStructureName] = {'format':[]}
-            with open(cfgLoader.global_config_path,'w') as globalConfigFile:
-                json.dump(globalConfigDict, globalConfigFile, indent=4)
+            globalConfigDict['telemetryStructures'][newStructureName] = {'headers':[],'packets':'','footers':[]}
+            cfgLoader.configWrite(globalConfigDict)
             self.populateTelemetryStructures()
 
     def addTelemetryDefinitionToStructure(self):
@@ -633,11 +663,21 @@ class PacketDefinitionEditor():
 
         with open(cfgLoader.global_config_path,'r') as globalConfigFile:
             globalConfigDict = json.load(globalConfigFile)
-        globalConfigDict['telemetryStructures'][structureName]['format'].append(f"telemetryDefinitions/{defName}")
-        #TODO link packet definitions properly
-        with open(cfgLoader.global_config_path,'w') as globalConfigFile:
-            json.dump(globalConfigDict, globalConfigFile, indent=4)
+        structureDict = globalConfigDict['telemetryStructures'][structureName]
+        if selectedDef.text(0)[-3:] == ".pd":
+            structureDict['packets'] = selectedDef.text(0)[:-3]
+            #TODO link packet definitions properly
+        if len(structureDict['packets']) > 0:
+            structureDict['headers'].append(selectedDef.text(0)[:-3])
+        else:
+            structureDict['footers'].append(selectedDef.text(0)[:-3])
+
+        cfgLoader.configWrite(globalConfigDict)
         self.populateTelemetryStructures()
+
+    def writeTelemetryStructures(self):
+        pass
+
 
     def removeStructureOrComponent(self):
         #TODO depending on what is selected, remove either a component from a structure or an entire structure
