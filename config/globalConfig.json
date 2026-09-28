@@ -3,6 +3,7 @@
     "datetimeFormat": "%Y-%m-%d_%H:%M:%S.%f %Z",
     "datetimeFileFormat": "%Y-%m-%d_%H-%M-%S%Z",
     "datetimeDayOfYearFormat": "%Y-%j_%H:%M:%S.%f %Z",
+    "qtDateFormat": "yyyy-MM-dd-HH-mm-ss",
     "parentPath": "C:\\Users\\jmgrego2\\Desktop\\vmshare\\dex",
     "logBasepath": "logs/ActiveLog.log",
     "guiTheme": "dark_cyan.xml",
@@ -84,8 +85,8 @@
                 "structure": "sampleStructure1",
                 "packet": "sampleStructure1_4101"
             },
-            "packetBehaviors": {},
-            "fieldBehaviors": {}
+            "packetBehaviors": [],
+            "fieldBehaviors": []
         },
         {
             "packetConfig": {
@@ -95,6 +96,18 @@
                 "protocol": "UDP",
                 "structure": "splaser",
                 "packet": "splaser"
+            },
+            "packetBehaviors": [],
+            "fieldBehaviors": []
+        },
+        {
+            "packetConfig": {
+                "simulationRate": 2.4,
+                "ip": "127.0.0.1",
+                "port": 1,
+                "protocol": "UDP",
+                "structure": "sampleStructure2",
+                "packet": "sampleStructure2_4201"
             },
             "packetBehaviors": [],
             "fieldBehaviors": []

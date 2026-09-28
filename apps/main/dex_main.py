@@ -37,10 +37,11 @@ from qt_material import apply_stylesheet
 from loadConfig import Configs
 cfgLoader = Configs()
 CONFIG = cfgLoader.loadGlobalConfig
+STARTING_CONFIG = CONFIG() #for when it's not necessary to reload the whole config
 
 from packetDefinitionLib import PacketDefinitionUtility
 from decode import Decoder
-from dataStructures import PACKET_TEMPLATES, COMMAND_COMPONENTS
+from dataStructures import PACKET_TEMPLATES, COMMAND_COMPONENTS, PACKET_STRUCTURES
 
 from packetDefinitionEditor import PacketDefinitionEditor
 from telemetrySelector import TelemetryFieldSelector
@@ -69,7 +70,7 @@ class PacketBehavior(QTableWidgetItem):
     """
     list item of the whole packet playback behavior table
     """
-    def __init__(self, parent,behaviorWidget):
+    def __init__(self, parent,behaviorWidget,row):
         super().__init__()
         self.parentTable = parent
         self.behaviorWidget = behaviorWidget
@@ -80,6 +81,11 @@ class PacketBehavior(QTableWidgetItem):
         self.playbackTimeField.setCalendarPopup(True)
         self.setFlags(Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled)
         self.setCheckState(Qt.CheckState.Checked)
+
+        self.parentTable.insertRow(row)
+        self.parentTable.setItem(row, 0, self)
+        self.parentTable.setCellWidget(self.row(),1,self.triggerComboBox)
+        self.parentTable.setCellWidget(self.row(),3,self.playbackTimeField)
 
     def triggerChanged(self, newTrigger):
         if newTrigger == 'Initial Condition':
@@ -95,11 +101,11 @@ class PacketBehavior(QTableWidgetItem):
 
             self.telemetryFieldButton = QPushButton("Telemetry Field")
             self.telemetryFieldButton.clicked.connect(self.selectTelemetryField)
-            self.line_edit2 = QLineEdit()
-            self.line_edit2.setPlaceholderText("Value")
+            self.telemetryValue = QLineEdit()
+            self.telemetryValue.setPlaceholderText("Value")
 
             cell_layout.addWidget(self.telemetryFieldButton)
-            cell_layout.addWidget(self.line_edit2)
+            cell_layout.addWidget(self.telemetryValue)
             self.parentTable.setCellWidget(self.row(),2,container)
 
         if newTrigger == 'On Command Recieved':
@@ -121,11 +127,31 @@ class PacketBehavior(QTableWidgetItem):
         structure = CONFIG()['commandStructures'][structureName]
         commandBuilder = CommandBuilder(structure,True)
         if commandBuilder.exec() == QDialog.Accepted:
-            return commandBuilder.commandList
+            self.commandList = commandBuilder.commandList
 
 
     def loadInitialBehavior(self):
         pass
+
+    def writeSimConfig(self):
+        self.packetSimConfig = False
+        packetSimConfig = {"trigger":{"triggerType":self.triggerComboBox.currentText(),"triggerArgs":{}},"behavior":{"behaviorType":"playback from telemetry","behaviorArgs":{}}}
+        #write trigger args
+        triggerArgs = packetSimConfig['trigger']['triggerArgs']
+        match packetSimConfig['trigger']['triggerType']:
+            case "Initial Condition":
+                #no trigger arguments needed
+                pass
+            case "On Telemetry Value":
+                #TODO validate that value matches telemetry Field type
+                triggerArgs={"telemetryField":self.telemetryFieldButton.text(),"value":self.telemetryValue.text()}
+            
+            case "On Command Received":
+                triggerArgs = {"commandList":self.commandList}
+
+        packetSimConfig['behavior']['behaviorArgs'] = {"playbackTime":self.playbackTimeField.datetime().toString(STARTING_CONFIG['qtDateFormat'])}
+        self.packetSimConfig = packetSimConfig
+        return packetSimConfig
 
 class FieldItem(QTreeWidgetItem):
     """
@@ -167,10 +193,10 @@ class FieldItem(QTreeWidgetItem):
 
     def removeBehavior(self):
         #remove the currently selected behavior
-        selection = self.parentTree.currentItem()
-        if not selection.parent() == self:
+        removeItem = self.behaviorsWidget.removeBehavior
+        if not removeItem.parent() == self:
             return
-        self.removeChild(selection)
+        self.removeChild(removeItem)
 
 class FieldBehavior(QTreeWidgetItem):
     """
@@ -186,7 +212,7 @@ class FieldBehavior(QTreeWidgetItem):
         self.triggerComboBox = QComboBox()
         self.triggerComboBox.addItems(['Initial Condition','On Telemetry Value','On Command Recieved'])
         self.behaviorComboBox = QComboBox()
-        self.behaviorComboBox.addItems(['hold static value','playback from telemetry','ramp to','pseudorandom noise around'])
+        self.behaviorComboBox.addItems(['Hold Static Value','Ramp To','Playback From Telemetry'])
 
         self.triggerComboBox.currentTextChanged.connect(self.triggerChanged)
         self.behaviorComboBox.currentTextChanged.connect(self.behaviorChanged)
@@ -237,17 +263,17 @@ class FieldBehavior(QTreeWidgetItem):
 
     def behaviorChanged(self, newBehavior):
         #['hold static value','playback from telemetry','ramp to','pseudorandom noise around']
-        if newBehavior == 'hold static value':
+        if newBehavior == 'Hold Static Value':
             self.behaviorParamsValue = QLineEdit()
             self.behaviorParamsValue.setPlaceholderText("Value")
             self.parentItem.parentTree.setItemWidget(self,4,self.behaviorParamsValue)
 
-        if newBehavior == 'playback from telemetry':
+        if newBehavior == 'Playback From Telemetry':
             self.behaviorPlaybackTime = QDateTimeEdit()
             self.behaviorPlaybackTime.setCalendarPopup(True)
             self.parentItem.parentTree.setItemWidget(self,4,self.behaviorPlaybackTime)
 
-        if newBehavior == 'ramp to':
+        if newBehavior == 'Ramp To':
             container = QWidget()
             layout = QHBoxLayout(container)
             layout.setContentsMargins(4, 4, 4, 4)
@@ -256,14 +282,12 @@ class FieldBehavior(QTreeWidgetItem):
             self.behaviorRampValue.setPlaceholderText("Final Value")
             self.behaviorRampSeconds = QLineEdit()
             self.behaviorRampSeconds.setPlaceholderText("Ramp Time (s)")
+            self.behaviorRampType = QComboBox()
+            self.behaviorRampType.addItems(['Linear','Asymtotic'])
             layout.addWidget(self.behaviorRampValue)
             layout.addWidget(self.behaviorRampSeconds)
+            layout.addWidget(self.behaviorRampType)
             self.parentItem.parentTree.setItemWidget(self,4,container)
-
-        if newBehavior == 'pseudorandom noise around':
-            self.behaviorPseudorandomValue = QLineEdit()
-            self.behaviorPseudorandomValue.setPlaceholderText("Value")
-            self.parentItem.parentTree.setItemWidget(self,4,self.behaviorPseudorandomValue)
 
     def selectTelemetryField(self):
         selector = TelemetryFieldSelector()
@@ -280,11 +304,85 @@ class FieldBehavior(QTreeWidgetItem):
         if commandBuilder.exec() == QDialog.Accepted:
             return commandBuilder.commandList
 
+    def writeSimConfig(self):
+
+        self.fieldSimConfig = False
+        fieldSimConfig = {"trigger":{"triggerType":self.triggerComboBox.currentText(),"triggerArgs":{}},"behavior":{"behaviorType":"playback from telemetry","behaviorArgs":{}}}
+        #write trigger args
+        triggerArgs = fieldSimConfig['trigger']['triggerArgs']
+        match fieldSimConfig['trigger']['triggerType']:
+            case "Initial Condition":
+                #no trigger arguments needed
+                pass
+
+            case "On Telemetry Value":
+                #TODO validate that value matches telemetry Field type
+                triggerArgs={"telemetryField":self.telemetryFieldButton.text(),"value":self.telemetryValue.text()}
+            
+            case "On Command Received":
+                triggerArgs = {"commandList":self.commandList}
+
+        behaviorArgs = fieldSimConfig['behavior']['behaviorArgs']
+        match fieldSimConfig['behavior']['behaviorType']:
+            case "Hold Static Value":
+                #TODO verify correct datatype
+                behaviorArgs = {'value':self.behaviorParamsValue.text()}
+
+            case "Ramp To":
+                #TODO verify type in value and seconds fields
+                behaviorArgs = {'value':self.behaviorRampValue.text(),"rampSeconds":self.behaviorRampSeconds.text(),"rampType":self.behaviorRampType.currentText()}
+
+            case "Playback from Telemetry":
+                behaviorArgs = {"playbackTime":self.behaviorPlaybackTime.datetime().toString(STARTING_CONFIG['qtDateFormat'])}
+
+        self.fieldSimConfig = fieldSimConfig
+        return fieldSimConfig
+
+class PacketSelector(QDialog):
+
+    def __init__(self):
+
+        super().__init__()
+            # Open the .ui file
+        self.guiPath = cfgLoader.getPath('apps/main/ui/packetSelector.ui')
+        ui_file = QFile(self.guiPath)
+        if not ui_file.open(QFile.ReadOnly):
+            raise RuntimeError(f"Cannot open file: {ui_file.errorString()}")
+
+        # Load widgets into this dialog
+        loader = QUiLoader()
+        self.ui = loader.load(ui_file, self)
+        ui_file.close()
+        # Set up layout to display the loaded form
+        from PySide6.QtWidgets import QVBoxLayout
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.ui)
+        self.setLayout(layout)
+        self.setModal(True)
+        self.populateStructures()
+        self.populatePackets()
+
+        self.ui.structureBox.currentTextChanged.connect(self.populatePackets)
+        self.ui.okButton.clicked.connect(self.accept)
+        self.show()
+
+    def populateStructures(self):
+        self.ui.structureBox.clear()
+        for structure in PACKET_STRUCTURES:
+            self.ui.structureBox.addItem(structure)
+        
+    def populatePackets(self):
+        self.ui.packetBox.clear()
+        packets = PACKET_STRUCTURES[self.ui.structureBox.currentText()]
+        for packet in packets:
+            self.ui.packetBox.addItem(packet)
+
 class SimBehaviorWidget(QDialog):
     def __init__(self,parentTree,simItem,packetList,dexMain):
         self.parentTree = parentTree
-        self.packetName = simItem.packetBox.currentText()
-        self.telemetryStructure = simItem.structureBox.currentText()
+        self.packetName = simItem.packet
+        self.telemetryStructure = simItem.structure
         self.packetList = packetList
         self.dexMainWidget = dexMain
         self.row = self.parentTree.indexOfTopLevelItem(simItem)
@@ -324,7 +422,11 @@ class SimBehaviorWidget(QDialog):
 
         self.loaded_widget.addPlaybackTriggerButton.clicked.connect(self.addPacketPlaybackTrigger)
         self.loaded_widget.removePlaybackTriggerButton.clicked.connect(self.removePacketPlaybackTrigger)
-        self.loaded_widget.okButton.clicked.connect(self.accept)
+        self.loaded_widget.okButton.clicked.connect(self.writeSimulationConfig)
+        self.loaded_widget.fieldwiseBehaviorTree.itemSelectionChanged.connect(self.setRemoveBehaviorItem)
+
+        self.packetSimItems = []
+        self.fieldSimItems = []
 
         self.populateFields()
         self.populatePacketPlaybacks()
@@ -346,30 +448,42 @@ class SimBehaviorWidget(QDialog):
 
     def addPacketPlaybackTrigger(self):
         #add a new row to the packet playback table
-        item = PacketBehavior(self.loaded_widget.wholePacketPlaybackTable,self)
         if self.loaded_widget.wholePacketPlaybackTable.selectedItems():
             selectedItem = self.loaded_widget.wholePacketPlaybackTable.selectedItems()[0]
             row = selectedItem.row() + 1
         else:
             row = self.loaded_widget.wholePacketPlaybackTable.rowCount()
+        self.packetSimItems.insert(row,PacketBehavior(self.loaded_widget.wholePacketPlaybackTable,self,row))
 
-        self.loaded_widget.wholePacketPlaybackTable.insertRow(row)
-        self.loaded_widget.wholePacketPlaybackTable.setItem(row, 0, item)
-        self.loaded_widget.wholePacketPlaybackTable.setCellWidget(item.row(),1,item.triggerComboBox)
-        self.loaded_widget.wholePacketPlaybackTable.setCellWidget(item.row(),3,item.playbackTimeField)
 
     def removePacketPlaybackTrigger(self):
         #remove the currently selected row from the packet playback table
-        selectedItems = self.loaded_widget.wholePacketPlaybackTable.selectedItems()
-        if len(selectedItems) > 0:
-            row = selectedItems[0].row()
+
+        selectedItem = self.loaded_widget.wholePacketPlaybackTable.currentItem()
+        if not selectedItem == None:
+            row = selectedItem.row()
             self.loaded_widget.wholePacketPlaybackTable.removeRow(row)
 
+    def setRemoveBehaviorItem(self):
+        if isinstance(self.loaded_widget.fieldwiseBehaviorTree.currentItem().parent(),FieldItem):
+            self.removeBehavior = self.loaded_widget.fieldwiseBehaviorTree.currentItem()
+    
     def writeSimulationConfig(self):
+        self.packetBehaviors = []
+        for packetBehaviorRow in range(self.loaded_widget.wholePacketPlaybackTable.rowCount()):
+            pass
+
+        for i in range(self.loaded_widget.fieldwiseBehaviorTree.topLevelItemCount()):
+            field = self.loaded_widget.fieldwiseBehaviorTree.topLevelItem(i)
+            for j in range(field.childCount()):
+                fieldBehavior = field.child(j)
+                pass
+
+        self.accept()
         pass
 
 class SimPacket(QTreeWidgetItem):
-    def __init__(self, parentWidget, dexMain,initConfig = None):
+    def __init__(self, parentWidget, dexMain, structure, packet, initConfig = None):
         self.dexMainWidget = dexMain
         super().__init__(parentWidget)
 
@@ -378,6 +492,8 @@ class SimPacket(QTreeWidgetItem):
 
         self.packetBehaviors = []
         self.fieldBehaviors = []
+        self.structure = structure
+        self.packet = packet
 
         self.hzSpinBox = QDoubleSpinBox()
         self.hzSpinBox.setSingleStep(0.1)
@@ -389,25 +505,27 @@ class SimPacket(QTreeWidgetItem):
         self.ipBox.setText("127.0.0.1")
         self.protocolBox = QComboBox()
         self.protocolBox.addItems(['UDP','TCP Client', 'TCP Server'])
-        self.structureBox = QComboBox()
-        for structure in CONFIG()['telemetryStructures']:
-            self.structureBox.addItem(structure)
-        self.structureBox.currentTextChanged.connect(self.initPacketBox)
-        self.packetBox = QComboBox()
-        self.initPacketBox()
+        # self.structureBox = QComboBox()
+        # for structure in CONFIG()['telemetryStructures']:
+        #     self.structureBox.addItem(structure)
+        # self.structureBox.currentTextChanged.connect(self.initPacketBox)
+        # self.packetBox = QComboBox()
+        # self.initPacketBox()
 
         self.behaviorsEditButton = QPushButton("Edit")
         self.behaviorsEditButton.clicked.connect(self.editBehaviors)
         
         self.parentWidget = parentWidget
-        parentWidget.setItemWidget(self,1,self.structureBox)
-        parentWidget.setItemWidget(self,2,self.packetBox)
+        #parentWidget.setItemWidget(self,1,self.structureBox)
+        #parentWidget.setItemWidget(self,2,self.packetBox)
         parentWidget.setItemWidget(self,3,self.hzSpinBox)
         parentWidget.setItemWidget(self,4,self.ipBox)
         parentWidget.setItemWidget(self,5,self.portBox)
         parentWidget.setItemWidget(self,6,self.protocolBox)
         parentWidget.setItemWidget(self,7,self.behaviorsEditButton)
 
+        self.setText(1,self.structure)
+        self.setText(2,self.packet)
         if not initConfig == None:
             self.initializeFromConfig(initConfig)
         else:
@@ -418,17 +536,17 @@ class SimPacket(QTreeWidgetItem):
         self.ipBox.editingFinished.connect(self.writeSimConfig)
         self.protocolBox.currentTextChanged.connect(self.writeSimConfig)
         #self.structureBox.currentTextChanged.connect(self.writeSimConfig)
-        self.packetBox.currentTextChanged.connect(self.writeSimConfig)
+        #self.packetBox.currentTextChanged.connect(self.writeSimConfig)
 
-    def initPacketBox(self):
-        self.packetBox.clear()
-        structure = self.structureBox.currentText()
-        for packet in PACKET_TEMPLATES:
-            if packet[0:len(structure)] == structure:
-                self.packetBox.addItem(packet)
+    # def initPacketBox(self):
+    #     self.packetBox.clear()
+    #     structure = self.structureBox.currentText()
+    #     for packet in PACKET_TEMPLATES:
+    #         if packet[0:len(structure)] == structure:
+    #             self.packetBox.addItem(packet)
 
     def editBehaviors(self):
-        packetDict =PACKET_TEMPLATES[self.packetBox.currentText()]
+        packetDict =PACKET_TEMPLATES[self.text(2)]
         behaviorEditor = SimBehaviorWidget(self.parentWidget,self,packetDict,self.dexMainWidget)
         result = behaviorEditor.exec()
         self.writeSimConfig()
@@ -440,8 +558,8 @@ class SimPacket(QTreeWidgetItem):
                 "ip":self.ipBox.text(),
                 "port":self.portBox.value(),
                 "protocol":self.protocolBox.currentText(),
-                "structure":self.structureBox.currentText(),
-                "packet":self.packetBox.currentText()
+                "structure":self.text(1),
+                "packet":self.text(2)
             },
             "packetBehaviors":self.packetBehaviors,
             "fieldBehaviors":self.fieldBehaviors
@@ -463,8 +581,10 @@ class SimPacket(QTreeWidgetItem):
         cfgLoader.configWrite(cfg)
         
     def initializeFromConfig(self,initConfig):
-        self.structureBox.setCurrentText(str(initConfig['packetConfig']['structure']))
-        self.packetBox.setCurrentText(str(initConfig['packetConfig']['packet']))
+        # self.structureBox.setCurrentText(str(initConfig['packetConfig']['structure']))
+        # self.packetBox.setCurrentText(str(initConfig['packetConfig']['packet']))
+        self.setText(1,self.structure)
+        self.setText(2,self.packet)
         self.hzSpinBox.setValue(float(initConfig['packetConfig']['simulationRate']))
         self.ipBox.setText(str(initConfig['packetConfig']['ip']))
         self.portBox.setValue(int(initConfig['packetConfig']['port']))
@@ -615,10 +735,17 @@ class DexMain():
     def populateSimPackets(self):
         self.simPacketItems = []
         for simPacketConfig in CONFIG()['simulation']:
-            self.simPacketItems.append(SimPacket(self.ui.simulationPacketsTree,self,simPacketConfig))
+            structure = simPacketConfig['packetConfig']['structure']
+            packet = simPacketConfig['packetConfig']['packet']
+            self.simPacketItems.append(SimPacket(self.ui.simulationPacketsTree,self,structure,packet,simPacketConfig))
 
     def addPacketSimulation(self):
-        self.simPacketItems.append(SimPacket(self.ui.simulationPacketsTree,self))
+        #launchPacketSelector
+        packetSelector = PacketSelector()
+        if packetSelector.exec() == QDialog.Accepted:
+            structure = packetSelector.ui.structureBox.currentText()
+            packet = packetSelector.ui.packetBox.currentText()
+            self.simPacketItems.append(SimPacket(self.ui.simulationPacketsTree,self,structure,packet))
 
     def removePacketSimulation(self):
         currentItem = self.ui.simulationPacketsTree.currentItem()

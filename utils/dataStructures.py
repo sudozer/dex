@@ -111,14 +111,19 @@ class DataDictionaries():
     def loadPacketTemplates(self):
         #read all structures and create a packet dictionary for each
         self.packetTemplates = {}
+        self.packetStructures = {}
         ##TODO support dynamic sized fields
         for structureName, structure in self.structures.items():
+            self.packetStructures[structureName] = {}
             if not 'packetIdField' in structure:
                 self.packetTemplates[structureName] = []
+                
                 for file in structure['headers']:
                     with open(cfgLoader.getPath(file),'r') as file_:
                         packetDict = json.load(file_)
                         self.packetTemplates[structureName].extend(packetDict['fields'])
+
+                self.packetStructures[structureName][structureName] = self.packetTemplates[structureName]
             else:
                 packetFilePath = cfgLoader.getPath(structure['packets'])
                 with open(packetFilePath,'r') as packetDefFile:
@@ -138,6 +143,8 @@ class DataDictionaries():
                             packetDict = json.load(file_)
                             self.packetTemplates[f"{structureName}_{packetId}"].extend(packetDict['fields'])
 
+                    self.packetStructures[structureName][f"{structureName}_{packetId}"] = self.packetTemplates[f"{structureName}_{packetId}"]
+
     def loadCommandTemplates(self):
         commandFilePath = cfgLoader.getPath("commandDefinitions")
         self.commandComponents = {"static components":{},"command definitions":{}}
@@ -153,6 +160,8 @@ class DataDictionaries():
                     componentDict = json.load(f)
                 self.commandComponents['command definitions'][file_[:-3]] = componentDict
 
-PACKET_TEMPLATES = DataDictionaries().packetTemplates
-COMMAND_COMPONENTS = DataDictionaries().commandComponents
+Datadicts = DataDictionaries()
+PACKET_TEMPLATES = Datadicts.packetTemplates
+PACKET_STRUCTURES = Datadicts.packetStructures
+COMMAND_COMPONENTS = Datadicts.commandComponents
 
