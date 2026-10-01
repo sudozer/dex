@@ -136,6 +136,7 @@ class CommandBuilder(QDialog):
         if 'arguments' in commandItem.commandDict:
             self.fieldItems.append([])
             for argDict in commandItem.commandDict['arguments']:
+                argDict['component'] = commandItem.commandID
                 self.fieldItems[self.componentIndex].append(FieldItem(argDict,self.ui.argumentTable,True,self.relevantFields))
             self.componentIndex += 1
         self.addStaticComponents('footers')
@@ -196,6 +197,7 @@ class CommandBuilder(QDialog):
             with open(componentPath,'r') as f:
                 componentDict = json.load(f)
             for fieldDict in componentDict['fields']:
+                fieldDict['component'] = componentPath.stem
                 self.fieldItems[self.componentIndex].append(FieldItem(fieldDict,self.ui.argumentTable,False,self.relevantFields))
                 if not self.ui.showNoncommandFieldsCheckbox.isChecked():
                     self.ui.argumentTable.setRowHidden(self.ui.argumentTable.rowCount()-1,True)

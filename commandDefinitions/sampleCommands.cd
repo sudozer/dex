@@ -1,0 +1,58 @@
+{
+    "2000": {
+        "commandBytes": "\\x07\\xD0",
+        "bitLength": 16,
+        "commandName": "argCommand",
+        "description": "No operation command",
+        "arguments": [
+            {
+                "fieldName": "arg1",
+                "description": "blah blah arg1",
+                "type": "uint8_t",
+                "bitLength": 8,
+                "defaultValue": 0
+            },
+            {
+                "fieldName": "arg2",
+                "description": "blah blah arg2",
+                "type": "uint32_t",
+                "bitLength": 32,
+                "defaultValue": 12345
+            },
+            {
+                "fieldName": "arg3",
+                "description": "this is a float argument",
+                "type": "float",
+                "bitLength": 32,
+                "defaultValue": 2.215
+            }
+        ]
+    },
+    "2001": {
+        "commandBits": "0000011111010001",
+        "bitLength": 16,
+        "commandName": "sampleSetMode",
+        "description": "Set a mode from a lookup table",
+        "arguments": [
+            {
+                "fieldName": "sampleMode",
+                "description": "blah blah arg1",
+                "type": "uint8_t",
+                "bitLength": 8,
+                "defaultValue": 0,
+                "enumerationTable": {
+                    "0": "Mode A",
+                    "1": "Mode B",
+                    "2": "Mode C",
+                    "3": "Mode D"
+                }
+            }
+        ]
+    },
+    "2002": {
+        "commandBytes": "\\x07\\xD2",
+        "bitLength": 16,
+        "commandName": "NoOp",
+        "description": "No operation command"
+    }
+}

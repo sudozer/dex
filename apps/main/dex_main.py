@@ -7,7 +7,7 @@ import csv
 import logging
 
 from PySide6.QtGui import QColor #for colors
-from PySide6.QtCore import QFile, Qt
+from PySide6.QtCore import QFile, Qt, QDateTime, QTimeZone
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (
     QApplication, 
@@ -41,7 +41,7 @@ STARTING_CONFIG = CONFIG() #for when it's not necessary to reload the whole conf
 
 from packetDefinitionLib import PacketDefinitionUtility
 from decode import Decoder
-from dataStructures import PACKET_TEMPLATES, COMMAND_COMPONENTS, PACKET_STRUCTURES
+from dataStructures import PACKET_TEMPLATES, COMMAND_COMPONENTS, PACKET_STRUCTURES,PACKET_STRUCTURE_COMPONENTS
 
 from packetDefinitionEditor import PacketDefinitionEditor
 from telemetrySelector import TelemetryFieldSelector
@@ -75,10 +75,12 @@ class PacketBehavior(QTableWidgetItem):
         self.parentTable = parent
         self.behaviorWidget = behaviorWidget
         self.triggerComboBox = QComboBox()
-        self.triggerComboBox.addItems(['Initial Condition','On Telemetry Value','On Command Recieved'])
+        self.triggerComboBox.addItems(['Initial Condition','On Telemetry Value','On Command Received'])
         self.triggerComboBox.currentTextChanged.connect(self.triggerChanged)
         self.playbackTimeField = QDateTimeEdit()
         self.playbackTimeField.setCalendarPopup(True)
+        self.playbackTimeField.setTimeZone(QTimeZone.UTC)
+        self.playbackTimeField.setDisplayFormat(STARTING_CONFIG['qtDateFormat'])
         self.setFlags(Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled)
         self.setCheckState(Qt.CheckState.Checked)
 
@@ -108,7 +110,7 @@ class PacketBehavior(QTableWidgetItem):
             cell_layout.addWidget(self.telemetryValue)
             self.parentTable.setCellWidget(self.row(),2,container)
 
-        if newTrigger == 'On Command Recieved':
+        if newTrigger == 'On Command Received':
 
             self.commandSelectButton = QPushButton("Command")
             self.commandSelectButton.clicked.connect(self.selectCommand)
@@ -127,7 +129,7 @@ class PacketBehavior(QTableWidgetItem):
         structure = CONFIG()['commandStructures'][structureName]
         commandBuilder = CommandBuilder(structure,True)
         if commandBuilder.exec() == QDialog.Accepted:
-            self.commandList = commandBuilder.commandList
+            self.commandDict = {'structure':commandBuilder.commandStructure, 'commandList':commandBuilder.commandList}
 
 
     def loadInitialBehavior(self):
@@ -149,7 +151,8 @@ class PacketBehavior(QTableWidgetItem):
             case "On Command Received":
                 triggerArgs = {"commandList":self.commandList}
 
-        packetSimConfig['behavior']['behaviorArgs'] = {"playbackTime":self.playbackTimeField.datetime().toString(STARTING_CONFIG['qtDateFormat'])}
+
+        packetSimConfig['behavior']['behaviorArgs'] = {"playbackTime":self.playbackTimeField.dateTime().toString(STARTING_CONFIG['qtDateFormat'])}
         self.packetSimConfig = packetSimConfig
         return packetSimConfig
 
@@ -157,13 +160,14 @@ class FieldItem(QTreeWidgetItem):
     """
     tree item of a single field in the fieldwise simulation tree
     """
-    def __init__(self, parent, fieldName, fieldDict, initConfig, behaviorsWidget):
-
+    def __init__(self, parent,componentName, fieldName, fieldDict, initConfig, behaviorsWidget):
+        self.fieldBehaviors = []
         self.behaviorsWidget = behaviorsWidget
         super().__init__(parent)
         self.parentTree = parent
         self.setText(0, f"{fieldName}")
         self.fieldName = fieldName
+        self.componentName = componentName
         self.fieldDict = fieldDict
         self.addBehaviorButton = QPushButton("Add Behavior")
         self.removeBehaviorButton = QPushButton("Remove Behavior")
@@ -175,20 +179,13 @@ class FieldItem(QTreeWidgetItem):
             self.setInitConfigs(initConfig)
 
     def setInitConfigs(self,initConfig):
-        pdb.set_trace()
         for fieldBehavior in initConfig:
-            item = FieldBehavior(self,self.fieldName,fieldBehavior)
+            self.fieldBehaviors.append(FieldBehavior(self,self.fieldName,fieldBehavior))
+
+        self.setExpanded(True)
 
     def addBehavior(self):
-        #needs testing
-        item = FieldBehavior(self,self.fieldName)
-        if self.parentTree.selectedItems():
-            selectedItem = self.parentTree.selectedItems()[0]
-            if selectedItem.parent() == self:
-                index = self.parentTree.indexOfTopLevelItem(selectedItem)
-                item.parent().takeChild(item.parent().indexOfChild(item))
-                self.insertChild(index + 1, item)
-
+        self.fieldBehaviors.append(FieldBehavior(self,self.fieldName))
         self.setExpanded(True)
 
     def removeBehavior(self):
@@ -197,6 +194,7 @@ class FieldItem(QTreeWidgetItem):
         if not removeItem.parent() == self:
             return
         self.removeChild(removeItem)
+        self.fieldBehaviors.remove(removeItem)
 
 class FieldBehavior(QTreeWidgetItem):
     """
@@ -210,7 +208,7 @@ class FieldBehavior(QTreeWidgetItem):
         self.setCheckState(0, Qt.CheckState.Checked)
 
         self.triggerComboBox = QComboBox()
-        self.triggerComboBox.addItems(['Initial Condition','On Telemetry Value','On Command Recieved'])
+        self.triggerComboBox.addItems(['Initial Condition','On Telemetry Value','On Command Received'])
         self.behaviorComboBox = QComboBox()
         self.behaviorComboBox.addItems(['Hold Static Value','Ramp To','Playback From Telemetry'])
 
@@ -228,8 +226,47 @@ class FieldBehavior(QTreeWidgetItem):
             self.populateInitBehavior(initBehavior)
 
     def populateInitBehavior(self,initBehavior):
-        #TODO populate init behaviors
-        pass
+        self.setCheckState(0,Qt.CheckState.Unchecked) 
+        if initBehavior['enabled']:
+            self.setCheckState(0,Qt.CheckState.Checked) 
+
+        
+        idx = self.triggerComboBox.findText(initBehavior['trigger']['triggerType'])
+        self.triggerComboBox.setCurrentIndex(idx)
+        idx = self.behaviorComboBox.findText(initBehavior['behavior']['behaviorType'])
+        self.behaviorComboBox.setCurrentIndex(idx)
+        
+        triggerArgs = initBehavior['trigger']['triggerArgs']
+        behaviorArgs = initBehavior['behavior']['behaviorArgs']
+        match self.triggerComboBox.currentText():
+            case "Initial Condition":
+                #no trigger arguments needed
+                pass
+
+            case "On Telemetry Value":
+                #triggerArgs={"telemetryField":self.telemetryFieldButton.text(),"value":self.telemetryValue.text()}
+                self.telemetryFieldButton.setText(triggerArgs['telemetryField'])
+                self.telemetryValue.setText(triggerArgs['value'])
+            case "On Command Received":
+                #triggerArgs = {"commandList":self.commandList}
+                self.commandDict = triggerArgs['commandDict']
+        
+        match self.behaviorComboBox.currentText():
+            case "Hold Static Value":
+                #behaviorArgs = {'value':self.behaviorParamsValue.text()}
+                self.behaviorParamsValue.setText(behaviorArgs['value'])
+            case "Ramp To":
+                #behaviorArgs = {'value':self.behaviorRampValue.text(),"rampSeconds":self.behaviorRampSeconds.text(),"rampType":self.behaviorRampType.currentText()}
+                self.behaviorRampValue.setText(behaviorArgs['value'])
+                self.behaviorRampSeconds.setText(behaviorArgs['rampSeconds'])
+                idx = self.behaviorRampType.findText(behaviorArgs['rampType'])
+                self.behaviorRampType.setCurrentIndex(idx)
+
+            case "Playback From Telemetry":
+                #behaviorArgs = {"playbackTime":self.behaviorPlaybackTime.dateTime().toString(STARTING_CONFIG['qtDateFormat'])}
+                qDate = QDateTime.fromString(behaviorArgs['playbackTime'],STARTING_CONFIG['qtDateFormat'])
+                qDate.setTimeZone(QTimeZone.utc())
+                self.behaviorPlaybackTime.setDateTime(qDate)
 
     def triggerChanged(self, newTrigger):
         self.setText(2,"")
@@ -248,14 +285,14 @@ class FieldBehavior(QTreeWidgetItem):
 
             self.telemetryFieldButton = QPushButton("Telemetry Field")
             self.telemetryFieldButton.clicked.connect(self.selectTelemetryField)
-            self.line_edit2 = QLineEdit()
-            self.line_edit2.setPlaceholderText("Value")
+            self.telemetryValue = QLineEdit()
+            self.telemetryValue.setPlaceholderText("Value")
 
             cell_layout.addWidget(self.telemetryFieldButton)
-            cell_layout.addWidget(self.line_edit2)
+            cell_layout.addWidget(self.telemetryValue)
             self.parentItem.parentTree.setItemWidget(self,2,container)
 
-        if newTrigger == 'On Command Recieved':
+        if newTrigger == 'On Command Received':
 
             self.commandSelectButton = QPushButton("Command")
             self.commandSelectButton.clicked.connect(self.selectCommand)
@@ -271,6 +308,8 @@ class FieldBehavior(QTreeWidgetItem):
         if newBehavior == 'Playback From Telemetry':
             self.behaviorPlaybackTime = QDateTimeEdit()
             self.behaviorPlaybackTime.setCalendarPopup(True)
+            self.behaviorPlaybackTime.setTimeZone(QTimeZone.UTC)
+            self.behaviorPlaybackTime.setDisplayFormat(STARTING_CONFIG['qtDateFormat'])
             self.parentItem.parentTree.setItemWidget(self,4,self.behaviorPlaybackTime)
 
         if newBehavior == 'Ramp To':
@@ -302,41 +341,48 @@ class FieldBehavior(QTreeWidgetItem):
         structure = CONFIG()['commandStructures'][structureName]
         commandBuilder = CommandBuilder(structure,True)
         if commandBuilder.exec() == QDialog.Accepted:
-            return commandBuilder.commandList
+            self.commandDict = {'structure':commandBuilder.commandStructure,'commandList':commandBuilder.commandList}
+
+        
 
     def writeSimConfig(self):
 
         self.fieldSimConfig = False
-        fieldSimConfig = {"trigger":{"triggerType":self.triggerComboBox.currentText(),"triggerArgs":{}},"behavior":{"behaviorType":"playback from telemetry","behaviorArgs":{}}}
         #write trigger args
-        triggerArgs = fieldSimConfig['trigger']['triggerArgs']
-        match fieldSimConfig['trigger']['triggerType']:
+        match self.triggerComboBox.currentText():
             case "Initial Condition":
                 #no trigger arguments needed
-                pass
+                triggerArgs = {}
 
             case "On Telemetry Value":
-                #TODO validate that value matches telemetry Field type
                 triggerArgs={"telemetryField":self.telemetryFieldButton.text(),"value":self.telemetryValue.text()}
             
             case "On Command Received":
-                triggerArgs = {"commandList":self.commandList}
-
-        behaviorArgs = fieldSimConfig['behavior']['behaviorArgs']
-        match fieldSimConfig['behavior']['behaviorType']:
+                relevantCmdList = []
+                for field in self.commandDict['commandList']:
+                    if field['relevant']:
+                        relevantCmdList.append(field)
+                triggerArgs = {"structure":self.commandDict['structure'],"commandList":relevantCmdList}
+        
+        match self.behaviorComboBox.currentText():
             case "Hold Static Value":
-                #TODO verify correct datatype
                 behaviorArgs = {'value':self.behaviorParamsValue.text()}
 
             case "Ramp To":
-                #TODO verify type in value and seconds fields
                 behaviorArgs = {'value':self.behaviorRampValue.text(),"rampSeconds":self.behaviorRampSeconds.text(),"rampType":self.behaviorRampType.currentText()}
 
-            case "Playback from Telemetry":
-                behaviorArgs = {"playbackTime":self.behaviorPlaybackTime.datetime().toString(STARTING_CONFIG['qtDateFormat'])}
-
-        self.fieldSimConfig = fieldSimConfig
+            case "Playback From Telemetry":
+                behaviorArgs = {"playbackTime":self.behaviorPlaybackTime.dateTime().toString(STARTING_CONFIG['qtDateFormat'])}
+        
+        fieldSimConfig={'trigger':{'triggerType':self.triggerComboBox.currentText(),'triggerArgs':triggerArgs},"behavior":{"behaviorType":self.behaviorComboBox.currentText(),"behaviorArgs":behaviorArgs}}
+        fieldSimConfig['enabled'] = True if self.checkState(0) == Qt.Checked else False
+        if self.validateFieldSimConfig(fieldSimConfig):
+            self.fieldSimConfig = fieldSimConfig
         return fieldSimConfig
+
+    def validateFieldSimConfig(self,fieldSimComfig):
+        #TODO validate the sim config
+        return True
 
 class PacketSelector(QDialog):
 
@@ -369,12 +415,12 @@ class PacketSelector(QDialog):
 
     def populateStructures(self):
         self.ui.structureBox.clear()
-        for structure in PACKET_STRUCTURES:
+        for structure in PACKET_STRUCTURE_COMPONENTS:
             self.ui.structureBox.addItem(structure)
         
     def populatePackets(self):
         self.ui.packetBox.clear()
-        packets = PACKET_STRUCTURES[self.ui.structureBox.currentText()]
+        packets = PACKET_STRUCTURE_COMPONENTS[self.ui.structureBox.currentText()]
         for packet in packets:
             self.ui.packetBox.addItem(packet)
 
@@ -434,14 +480,15 @@ class SimBehaviorWidget(QDialog):
 
     def populateFields(self):
         #populate field list
-
-        for field in self.packetList:
-            fieldName = field['fieldName']
-            if fieldName in self.simParameterDict['fieldBehaviors']:
-                initConfig = self.simParameterDict['fieldBehaviors'][fieldName]
-            else:
-                initConfig = []
-            fieldItem = FieldItem(self.loaded_widget.fieldwiseBehaviorTree,fieldName,field,initConfig,self)
+        for component in self.packetList:
+            componentName = component['component']
+            for field in component['fields']:
+                fieldName = field['fieldName']
+                if fieldName in self.simParameterDict['fieldBehaviors'][componentName]:
+                    initConfig = self.simParameterDict['fieldBehaviors'][componentName][fieldName]
+                else:
+                    initConfig = []
+                self.fieldSimItems.append(FieldItem(self.loaded_widget.fieldwiseBehaviorTree,componentName,fieldName,field,initConfig,self))
 
     def populatePacketPlaybacks(self):
         pass
@@ -463,6 +510,7 @@ class SimBehaviorWidget(QDialog):
         if not selectedItem == None:
             row = selectedItem.row()
             self.loaded_widget.wholePacketPlaybackTable.removeRow(row)
+            del self.packetSimItems[row]
 
     def setRemoveBehaviorItem(self):
         if isinstance(self.loaded_widget.fieldwiseBehaviorTree.currentItem().parent(),FieldItem):
@@ -470,14 +518,16 @@ class SimBehaviorWidget(QDialog):
     
     def writeSimulationConfig(self):
         self.packetBehaviors = []
-        for packetBehaviorRow in range(self.loaded_widget.wholePacketPlaybackTable.rowCount()):
-            pass
-
-        for i in range(self.loaded_widget.fieldwiseBehaviorTree.topLevelItemCount()):
-            field = self.loaded_widget.fieldwiseBehaviorTree.topLevelItem(i)
-            for j in range(field.childCount()):
-                fieldBehavior = field.child(j)
-                pass
+        self.fieldBehaviors = {}
+        for comp in PACKET_STRUCTURE_COMPONENTS[self.telemetryStructure][self.packetName]:
+            self.fieldBehaviors[comp['component']] = {}
+        
+        for packetBehavior in self.packetSimItems:
+            self.packetBehaviors.append(packetBehavior.writeSimConfig())
+    
+        for field in self.fieldSimItems:
+            if len(field.fieldBehaviors) > 0:
+                self.fieldBehaviors[field.componentName][field.fieldName]=[i.writeSimConfig() for i in field.fieldBehaviors]
 
         self.accept()
         pass
@@ -489,9 +539,10 @@ class SimPacket(QTreeWidgetItem):
 
         self.setFlags(self.flags() | Qt.ItemFlag.ItemIsUserCheckable)
         self.setCheckState(0, Qt.CheckState.Checked)
-
         self.packetBehaviors = []
-        self.fieldBehaviors = []
+        self.fieldBehaviors = {}
+        for comp in PACKET_STRUCTURE_COMPONENTS[structure][packet]:
+            self.fieldBehaviors[comp['component']] = {}
         self.structure = structure
         self.packet = packet
 
@@ -546,10 +597,20 @@ class SimPacket(QTreeWidgetItem):
     #             self.packetBox.addItem(packet)
 
     def editBehaviors(self):
-        packetDict =PACKET_TEMPLATES[self.text(2)]
+        packetDict =PACKET_STRUCTURE_COMPONENTS[self.text(1)][self.text(2)]
         behaviorEditor = SimBehaviorWidget(self.parentWidget,self,packetDict,self.dexMainWidget)
-        result = behaviorEditor.exec()
-        self.writeSimConfig()
+        if behaviorEditor.exec() == QDialog.Accepted:
+            self.packetBehaviors = behaviorEditor.packetBehaviors
+            self.fieldBehaviors = behaviorEditor.fieldBehaviors
+            self.writeSimConfig()
+
+    def writeSimConfig(self):
+        simConfig = self.simPacketDict()
+        row = self.parentWidget.indexOfTopLevelItem(self)
+        cfg = CONFIG()
+        simList = cfg['simulation']
+        simList[row] = simConfig
+        cfgLoader.configWrite(cfg)
 
     def simPacketDict(self):
         simConfig = {
@@ -571,14 +632,6 @@ class SimPacket(QTreeWidgetItem):
         simList = cfg['simulation']
         simList.append(self.simPacketDict())
         cfgLoader.configWrite(cfg)
-
-    def writeSimConfig(self):
-        simConfig = self.simPacketDict()
-        row = self.parentWidget.indexOfTopLevelItem(self)
-        cfg = CONFIG()
-        simList = cfg['simulation']
-        simList[row] = simConfig
-        cfgLoader.configWrite(cfg)
         
     def initializeFromConfig(self,initConfig):
         # self.structureBox.setCurrentText(str(initConfig['packetConfig']['structure']))
@@ -593,6 +646,7 @@ class SimPacket(QTreeWidgetItem):
         self.populateSimBehaviors(initConfig)
 
     def populateSimBehaviors(self,initConfig):
+
         pass
 
 

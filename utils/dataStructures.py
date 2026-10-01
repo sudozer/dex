@@ -112,31 +112,38 @@ class DataDictionaries():
         #read all structures and create a packet dictionary for each
         self.packetTemplates = {}
         self.packetStructures = {}
+        self.packetStructureComponents = {}
         ##TODO support dynamic sized fields
         for structureName, structure in self.structures.items():
             self.packetStructures[structureName] = {}
             if not 'packetIdField' in structure:
+                #just one packet
                 self.packetTemplates[structureName] = []
-                
+                self.packetStructureComponents[structureName]={structureName:[]}
                 for file in structure['headers']:
-                    with open(cfgLoader.getPath(file),'r') as file_:
+                    path_ = cfgLoader.getPath(file)
+                    with open(path_,'r') as file_:
                         packetDict = json.load(file_)
                         self.packetTemplates[structureName].extend(packetDict['fields'])
-
+                        self.packetStructureComponents[structureName][structureName].append({'component':path_.stem,'fields':packetDict['fields']})
+            
                 self.packetStructures[structureName][structureName] = self.packetTemplates[structureName]
             else:
+                self.packetStructureComponents[structureName]= {}
                 packetFilePath = cfgLoader.getPath(structure['packets'])
                 with open(packetFilePath,'r') as packetDefFile:
                     packetDefDict = json.load(packetDefFile)
                 for packetId, packetDef in packetDefDict.items():
                     self.packetTemplates[f"{structureName}_{packetId}"] = []
-
+                    self.packetStructureComponents[structureName][packetId] =[]
                     for file in structure['headers']:
-                        with open(cfgLoader.getPath(file),'r') as file_:
+                        path_ = cfgLoader.getPath(file)
+                        with open(path_,'r') as file_:
                             packetDict = json.load(file_)
                             self.packetTemplates[f"{structureName}_{packetId}"].extend(packetDict['fields'])
-
+                            self.packetStructureComponents[structureName][packetId].append({'component':path_.stem,'fields':packetDict['fields']})
                     self.packetTemplates[f"{structureName}_{packetId}"].extend(packetDef['fields'])
+                    self.packetStructureComponents[structureName][packetId].append({'component':packetId,'fields':packetDef['fields']})
 
                     for file in structure['footers']:
                         with open(cfgLoader.getPath(file),'r') as file_:
@@ -164,4 +171,5 @@ Datadicts = DataDictionaries()
 PACKET_TEMPLATES = Datadicts.packetTemplates
 PACKET_STRUCTURES = Datadicts.packetStructures
 COMMAND_COMPONENTS = Datadicts.commandComponents
+PACKET_STRUCTURE_COMPONENTS = Datadicts.packetStructureComponents
 
