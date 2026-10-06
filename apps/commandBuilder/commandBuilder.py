@@ -72,7 +72,7 @@ class FieldItem():
         self.fieldTable.setItem(row,2,self.valueCell)    
 
 class CommandBuilder(QDialog):
-    def __init__(self, commandStructure, relevantFields = False):
+    def __init__(self, commandStructureName, relevantFields = False):
         super().__init__()
         self.fieldItems = []
         self.commandId = None
@@ -87,7 +87,8 @@ class CommandBuilder(QDialog):
         ui_file.open(QFile.ReadOnly)
         self.ui = loader.load(ui_file, self)
         ui_file.close()
-        self.commandStructure = commandStructure
+        self.commandStructureName = commandStructureName
+        self.commandStructure = CONFIG()['commandStructures'][commandStructureName]
         layout = QVBoxLayout()
         layout.addWidget(self.ui)
         self.setLayout(layout)

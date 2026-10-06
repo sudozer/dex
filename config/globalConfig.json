@@ -78,6 +78,7 @@
     "simulation": [
         {
             "packetConfig": {
+                "enabled": true,
                 "simulationRate": 1.3,
                 "ip": "127.0.0.1",
                 "port": 1,
@@ -87,11 +88,12 @@
             },
             "packetBehaviors": [],
             "fieldBehaviors": {
-                "splaserPacket": []
+                "splaserPacket": {}
             }
         },
         {
             "packetConfig": {
+                "enabled": true,
                 "simulationRate": 3.2,
                 "ip": "127.0.0.1",
                 "port": 1,
@@ -101,81 +103,7 @@
             },
             "packetBehaviors": [],
             "fieldBehaviors": {
-                "primaryHeader": {
-                    "SecondaryHeaderFlag": [
-                        {
-                            "trigger": {
-                                "triggerType": "Initial Condition",
-                                "triggerArgs": {}
-                            },
-                            "behavior": {
-                                "behaviorType": "Hold Static Value",
-                                "behaviorArgs": {
-                                    "value": ""
-                                }
-                            },
-                            "enabled": false
-                        }
-                    ],
-                    "SequenceFlags": [
-                        {
-                            "trigger": {
-                                "triggerType": "On Telemetry Value",
-                                "triggerArgs": {
-                                    "telemetryField": "sampleStructure2_4201.PacketSequenceCount",
-                                    "value": "8"
-                                }
-                            },
-                            "behavior": {
-                                "behaviorType": "Ramp To",
-                                "behaviorArgs": {
-                                    "value": "45",
-                                    "rampSeconds": "23",
-                                    "rampType": "Linear"
-                                }
-                            },
-                            "enabled": true
-                        },
-                        {
-                            "trigger": {
-                                "triggerType": "On Command Received",
-                                "triggerArgs": {
-                                    "commandList": [
-                                        {
-                                            "fieldName": "arg2",
-                                            "description": "blah blah arg2",
-                                            "type": "uint32_t",
-                                            "bitLength": 32,
-                                            "defaultValue": 12345,
-                                            "component": "2000",
-                                            "value": "12345",
-                                            "bitstring": "00000000000000000011000000111001",
-                                            "relevant": true
-                                        },
-                                        {
-                                            "fieldName": "arg3",
-                                            "description": "this is a float argument",
-                                            "type": "float",
-                                            "bitLength": 32,
-                                            "defaultValue": 2.215,
-                                            "component": "2000",
-                                            "value": "2.215",
-                                            "bitstring": "01000000000011011100001010001111",
-                                            "relevant": true
-                                        }
-                                    ]
-                                }
-                            },
-                            "behavior": {
-                                "behaviorType": "Playback From Telemetry",
-                                "behaviorArgs": {
-                                    "playbackTime": "2000-01-04-23-42-12"
-                                }
-                            },
-                            "enabled": true
-                        }
-                    ]
-                },
+                "primaryHeader": {},
                 "secondaryHeader": {},
                 "4101": {}
             }
