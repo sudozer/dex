@@ -22,7 +22,7 @@
      <item>
       <widget class="QTabWidget" name="tabs">
        <property name="currentIndex">
-        <number>3</number>
+        <number>5</number>
        </property>
        <widget class="QWidget" name="tab">
         <attribute name="title">
@@ -690,12 +690,17 @@
                </property>
                <item>
                 <property name="text">
-                 <string>TCP</string>
+                 <string>UDP</string>
                 </property>
                </item>
                <item>
                 <property name="text">
-                 <string>UDP</string>
+                 <string>TCP Client</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>TCP Server</string>
                 </property>
                </item>
               </widget>
@@ -835,6 +840,16 @@
                </property>
               </widget>
              </item>
+             <item>
+              <widget class="QPushButton" name="simStopButton">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="text">
+                <string>End Simulation</string>
+               </property>
+              </widget>
+             </item>
             </layout>
            </item>
            <item>
@@ -958,44 +973,64 @@
                 </widget>
                </item>
                <item>
-                <widget class="QLabel" name="label_22">
-                 <property name="text">
-                  <string>Message Level</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QComboBox" name="comboBox">
-                 <property name="maximumSize">
-                  <size>
-                   <width>120</width>
-                   <height>16777215</height>
-                  </size>
-                 </property>
-                 <property name="toolTip">
-                  <string>Alter the verbosity of log messages</string>
+                <layout class="QHBoxLayout" name="horizontalLayout_29">
+                 <property name="bottomMargin">
+                  <number>5</number>
                  </property>
                  <item>
-                  <property name="text">
-                   <string>Info</string>
-                  </property>
+                  <widget class="QLabel" name="label_22">
+                   <property name="text">
+                    <string>Message Level</string>
+                   </property>
+                  </widget>
                  </item>
                  <item>
-                  <property name="text">
-                   <string>Warning</string>
-                  </property>
+                  <widget class="QComboBox" name="messageLevelBox">
+                   <property name="maximumSize">
+                    <size>
+                     <width>120</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>Alter the verbosity of log messages</string>
+                   </property>
+                   <item>
+                    <property name="text">
+                     <string>Info</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Warning</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Error</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Debug</string>
+                    </property>
+                   </item>
+                  </widget>
                  </item>
                  <item>
-                  <property name="text">
-                   <string>Error</string>
-                  </property>
+                  <spacer name="horizontalSpacer_8">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
                  </item>
-                 <item>
-                  <property name="text">
-                   <string>Debug</string>
-                  </property>
-                 </item>
-                </widget>
+                </layout>
                </item>
                <item>
                 <widget class="Line" name="line_3">
@@ -1012,7 +1047,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QCheckBox" name="fillCCSDSFields">
+                <widget class="QCheckBox" name="commandFillAutofillFields">
                  <property name="toolTip">
                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Automatically fill fields like ccsds datestamps and sequence numbers when a command is sent.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
@@ -1039,7 +1074,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QCheckBox" name="checkBox_3">
+                <widget class="QCheckBox" name="simAutofillFields">
                  <property name="toolTip">
                   <string>Fill autofill fields in simulated telemetry</string>
                  </property>
@@ -1056,29 +1091,13 @@
                  <property name="topMargin">
                   <number>5</number>
                  </property>
+                 <property name="bottomMargin">
+                  <number>5</number>
+                 </property>
                  <item>
                   <widget class="QLabel" name="label_24">
                    <property name="text">
                     <string>Float Random Noise: (+/-)</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QDoubleSpinBox" name="doubleSpinBox">
-                   <property name="maximumSize">
-                    <size>
-                     <width>40</width>
-                     <height>16777215</height>
-                    </size>
-                   </property>
-                   <property name="toolTip">
-                    <string>Inject random noise about three simulated value of any float/double datatype simulated values to mimic noise on voltage/temperature readings.</string>
-                   </property>
-                   <property name="buttonSymbols">
-                    <enum>QAbstractSpinBox::NoButtons</enum>
-                   </property>
-                   <property name="maximum">
-                    <double>100.000000000000000</double>
                    </property>
                   </widget>
                  </item>
@@ -1094,6 +1113,95 @@
                     </size>
                    </property>
                   </spacer>
+                 </item>
+                 <item>
+                  <widget class="QDoubleSpinBox" name="simulationFloatNoise">
+                   <property name="maximumSize">
+                    <size>
+                     <width>40</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>Inject random noise about three simulated value of any float/double datatype simulated values to mimic noise on voltage/temperature sensors.</string>
+                   </property>
+                   <property name="buttonSymbols">
+                    <enum>QAbstractSpinBox::NoButtons</enum>
+                   </property>
+                   <property name="maximum">
+                    <double>100.000000000000000</double>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_30">
+                 <property name="bottomMargin">
+                  <number>5</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="label_25">
+                   <property name="text">
+                    <string>Simulation Database Size (MB):</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_9">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QDoubleSpinBox" name="simulationDatabaseSizeBox">
+                   <property name="toolTip">
+                    <string>Simulated data gets written to the simulation mission database.  Set how large this database can get before the oldest telemetry starts getting deleted.</string>
+                   </property>
+                   <property name="maximum">
+                    <double>100000.000000000000000</double>
+                   </property>
+                   <property name="singleStep">
+                    <double>0.500000000000000</double>
+                   </property>
+                   <property name="value">
+                    <double>5000.000000000000000</double>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_31">
+                 <property name="bottomMargin">
+                  <number>6</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="label_26">
+                   <property name="text">
+                    <string>Pregenerated Packet Queue Size:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QSpinBox" name="simPregeneratedPacketsBox">
+                   <property name="toolTip">
+                    <string>Number of packets to pregenerate when running a simulation.  Larger numbers will cause the simulation to take longer to begin, smaller numbers may cause the simulation to bog down.</string>
+                   </property>
+                   <property name="maximum">
+                    <number>200</number>
+                   </property>
+                   <property name="value">
+                    <number>60</number>
+                   </property>
+                  </widget>
                  </item>
                 </layout>
                </item>
@@ -1113,11 +1221,41 @@
               </layout>
              </item>
              <item>
-              <layout class="QVBoxLayout" name="verticalLayout_17"/>
+              <layout class="QVBoxLayout" name="verticalLayout_17">
+               <property name="leftMargin">
+                <number>4</number>
+               </property>
+               <item>
+                <spacer name="horizontalSpacer_10">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
              </item>
             </layout>
            </item>
           </layout>
+         </item>
+         <item>
+          <widget class="QPushButton" name="saveButton">
+           <property name="maximumSize">
+            <size>
+             <width>60</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Save</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>

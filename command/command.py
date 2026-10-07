@@ -105,3 +105,43 @@ class UDPCommandSocket(sock):
             self.messageFunction(f"Command sent:\n{wrappedCommand}\n To destination {(self.IP,self.Port)}", 'info')
         except Exception as E:
             self.messageFunction(f"Command Failed:\n{E}\n", 'error')
+
+class CommandReceiver(sock):
+    def __init__(self,IP,port,protocol,structure,messageFunction):
+        super().__init__(socket.AF_INET,socket.SOCK_DGRAM)
+    
+        self.IP = IP
+        self.port = port
+        self.protocol = protocol
+        self.structure = structure
+        self.messageFunction = messageFunction
+        self.bind((self.IP,self.port))
+        self.commandQueue = []
+
+    def openListeningPort(self):
+        if self.protocol == 'UDP':
+            self.listeningPort = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.listeningPort.bind((self.IP,self.port))
+
+        if self.protocol == 'TCP Server':
+            pass
+
+        if self.protocol == 'TCP Client':
+            pass
+
+    def listenThread(self):
+        if self.protocol == 'UDP':
+            while True:
+                data, addr = self.listeningPort.recvfrom(65535)
+                self.messageFunction(f"Received command packet from {addr}: {data}")
+                self.processCommandPacket(data)
+                self.commandQueue.append(data)
+
+    def processThread(self):
+        while True:
+            if self.commandQueue:
+                commandPacket = self.commandQueue.pop(0)
+                self.processCommandPacket(commandPacket)
+
+    def processCommandPacket(self, commandPacket):
+        pdb.set_trace()

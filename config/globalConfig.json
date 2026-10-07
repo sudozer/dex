@@ -89,6 +89,11 @@
             "packetBehaviors": [],
             "fieldBehaviors": {
                 "splaserPacket": {}
+            },
+            "initialConditions": {
+                "enabled": false,
+                "playbackDatabase": "",
+                "playbackTime": "2023-10-06-04-32-04"
             }
         },
         {
@@ -101,11 +106,47 @@
                 "structure": "sampleStructure1",
                 "packet": "4101"
             },
-            "packetBehaviors": [],
+            "packetBehaviors": [
+                {
+                    "enabled": true,
+                    "trigger": {
+                        "triggerType": "Initial Condition",
+                        "triggerArgs": {}
+                    },
+                    "behavior": {
+                        "behaviorType": "Playback From Telemetry",
+                        "behaviorArgs": {
+                            "playbackDatabase": "sampleDatabase2",
+                            "playbackTime": "2001-01-23-05-00-00"
+                        }
+                    }
+                }
+            ],
             "fieldBehaviors": {
-                "primaryHeader": {},
+                "primaryHeader": {
+                    "APID": [
+                        {
+                            "trigger": {
+                                "triggerType": "Initial Condition",
+                                "triggerArgs": {}
+                            },
+                            "behavior": {
+                                "behaviorType": "Hold Static Value",
+                                "behaviorArgs": {
+                                    "value": "7"
+                                }
+                            },
+                            "enabled": true
+                        }
+                    ]
+                },
                 "secondaryHeader": {},
                 "4101": {}
+            },
+            "initialConditions": {
+                "enabled": false,
+                "playbackDatabase": "sampleDatabase2",
+                "playbackTime": "2000-01-19-00-00-00"
             }
         }
     ]

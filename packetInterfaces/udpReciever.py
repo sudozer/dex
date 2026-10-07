@@ -8,7 +8,8 @@ CONFIG = cfgLoader.loadGlobalConfig
 
 from utils.rxPorts import UDPRXPort
 from packetReceiver import PktReceiver
-class udpReciever(PktReceiver):
+
+class UdpReciever(PktReceiver):
     def __init__(self,ip,port,packetType,logLevel=logging.WARNING):
         super().__init__(packetType,logLevel)
         self.logger = logging.getLogger(__name__)

@@ -8,7 +8,7 @@ CONFIG = cfgLoader.loadGlobalConfig
 
 from rxPorts import TCPClient
 from packetReceiver import PktReceiver
-class tcpReciever(PktReceiver):
+class TcpReciever(PktReceiver):
     def __init__(self,ip,port,packetType,logLevel=logging.WARNING):
         super().__init__(packetType,logLevel)
         self.logger = logging.getLogger(__name__)
