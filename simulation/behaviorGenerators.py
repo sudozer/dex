@@ -1,9 +1,9 @@
-def staticValue(value):
+def behaviorStaticValue(value):
     while True:
         yield value
 
-def rampValue(rampParams, startVal, cadence):
+def behaviorRampValue(rampParams, startVal, cadence):
     pass
 
-def playBackTelemetry(fieldInfo,database,startTime):
+def behaviorPlayBackTelemetry(fieldInfo,database,startTime):
     pass

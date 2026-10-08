@@ -22,7 +22,7 @@
      <item>
       <widget class="QTabWidget" name="tabs">
        <property name="currentIndex">
-        <number>5</number>
+        <number>2</number>
        </property>
        <widget class="QWidget" name="tab">
         <attribute name="title">
@@ -33,24 +33,87 @@
           <layout class="QHBoxLayout" name="horizontalLayout">
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_4">
+             <property name="topMargin">
+              <number>4</number>
+             </property>
+             <item>
+              <layout class="QHBoxLayout" name="horizontalLayout_33">
+               <property name="bottomMargin">
+                <number>5</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="label_27">
+                 <property name="text">
+                  <string>Database:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QComboBox" name="currentActiveDatabase">
+                 <property name="minimumSize">
+                  <size>
+                   <width>150</width>
+                   <height>0</height>
+                  </size>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_11">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </item>
              <item>
               <layout class="QHBoxLayout" name="horizontalLayout_10">
                <property name="topMargin">
                 <number>8</number>
                </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
                <item>
                 <widget class="QLabel" name="label">
                  <property name="text">
-                  <string>Packet Interfaces:</string>
+                  <string>Packet Receivers:</string>
                  </property>
                 </widget>
                </item>
                <item>
-                <widget class="QPushButton" name="addNewPacketInterfaceButton">
+                <widget class="QPushButton" name="addTelemetryReceiverButton">
                  <property name="text">
-                  <string>Add New</string>
+                  <string>Add</string>
                  </property>
                 </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="removePacketInterfaceButton">
+                 <property name="text">
+                  <string>Remove</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_12">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
                </item>
                <item>
                 <widget class="QPushButton" name="telemetryDefinitionsButton">
@@ -62,7 +125,7 @@
               </layout>
              </item>
              <item>
-              <widget class="QTableWidget" name="packetInterfaceTable"/>
+              <widget class="QTableWidget" name="packetReceiverTable"/>
              </item>
             </layout>
            </item>
@@ -483,7 +546,7 @@
               </layout>
              </item>
              <item>
-              <widget class="QDateTimeEdit" name="dateTimeEdit_2">
+              <widget class="QDateTimeEdit" name="exportDateStart">
                <property name="calendarPopup">
                 <bool>true</bool>
                </property>
@@ -504,7 +567,7 @@
               </layout>
              </item>
              <item>
-              <widget class="QDateTimeEdit" name="dateTimeEdit">
+              <widget class="QDateTimeEdit" name="exportDateEnd">
                <property name="calendarPopup">
                 <bool>true</bool>
                </property>
@@ -516,7 +579,7 @@
                 <number>6</number>
                </property>
                <item>
-                <widget class="QCheckBox" name="checkBox_2">
+                <widget class="QCheckBox" name="setUniformCadenceBox">
                  <property name="toolTip">
                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Force data to a particular cadence, taking the most recently-passed datapoint as the value for each telemetry field when a sample is taken.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
@@ -526,7 +589,7 @@
                 </widget>
                </item>
                <item>
-                <widget class="QDoubleSpinBox" name="cadenceBox"/>
+                <widget class="QDoubleSpinBox" name="exportCadenceBox"/>
                </item>
                <item>
                 <widget class="QLabel" name="label_5">
@@ -538,7 +601,7 @@
               </layout>
              </item>
              <item>
-              <widget class="QCheckBox" name="checkBox">
+              <widget class="QCheckBox" name="antiAliasDataBox">
                <property name="toolTip">
                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If data from multiple packets is requested with misaligned cadences, use previous datapoints to fill all so that no columns are ever empty.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
@@ -564,6 +627,9 @@
            </item>
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_8">
+             <property name="leftMargin">
+              <number>5</number>
+             </property>
              <property name="rightMargin">
               <number>0</number>
              </property>
@@ -927,6 +993,16 @@
          </item>
         </layout>
        </widget>
+       <widget class="QWidget" name="tab_6">
+        <attribute name="title">
+         <string>Procedures</string>
+        </attribute>
+       </widget>
+       <widget class="QWidget" name="tab_7">
+        <attribute name="title">
+         <string>Orbit</string>
+        </attribute>
+       </widget>
        <widget class="QWidget" name="tab_5">
         <attribute name="title">
          <string>Custom Widgets</string>
@@ -967,8 +1043,15 @@
               <layout class="QVBoxLayout" name="verticalLayout_16">
                <item>
                 <widget class="QLabel" name="label_21">
+                 <property name="font">
+                  <font>
+                   <weight>75</weight>
+                   <bold>true</bold>
+                   <underline>true</underline>
+                  </font>
+                 </property>
                  <property name="text">
-                  <string>Global Options:</string>
+                  <string>Global:</string>
                  </property>
                 </widget>
                </item>
@@ -1041,13 +1124,20 @@
                </item>
                <item>
                 <widget class="QLabel" name="label_18">
+                 <property name="font">
+                  <font>
+                   <weight>75</weight>
+                   <bold>true</bold>
+                   <underline>true</underline>
+                  </font>
+                 </property>
                  <property name="text">
-                  <string>Commanding Options:</string>
+                  <string>Commanding:</string>
                  </property>
                 </widget>
                </item>
                <item>
-                <widget class="QCheckBox" name="commandFillAutofillFields">
+                <widget class="QCheckBox" name="commandAutofillFields">
                  <property name="toolTip">
                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Automatically fill fields like ccsds datestamps and sequence numbers when a command is sent.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
@@ -1068,8 +1158,15 @@
                </item>
                <item>
                 <widget class="QLabel" name="label_20">
+                 <property name="font">
+                  <font>
+                   <weight>75</weight>
+                   <bold>true</bold>
+                   <underline>true</underline>
+                  </font>
+                 </property>
                  <property name="text">
-                  <string>Simulation Options</string>
+                  <string>Simulation:</string>
                  </property>
                 </widget>
                </item>
@@ -1118,12 +1215,12 @@
                   <widget class="QDoubleSpinBox" name="simulationFloatNoise">
                    <property name="maximumSize">
                     <size>
-                     <width>40</width>
+                     <width>100</width>
                      <height>16777215</height>
                     </size>
                    </property>
                    <property name="toolTip">
-                    <string>Inject random noise about three simulated value of any float/double datatype simulated values to mimic noise on voltage/temperature sensors.</string>
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Inject random noise about the simulated value of any float/double datatype simulated values to mimic noise on voltage/temperature sensors.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                    </property>
                    <property name="buttonSymbols">
                     <enum>QAbstractSpinBox::NoButtons</enum>
@@ -1195,6 +1292,9 @@
                    <property name="toolTip">
                     <string>Number of packets to pregenerate when running a simulation.  Larger numbers will cause the simulation to take longer to begin, smaller numbers may cause the simulation to bog down.</string>
                    </property>
+                   <property name="minimum">
+                    <number>1</number>
+                   </property>
                    <property name="maximum">
                     <number>200</number>
                    </property>
@@ -1204,6 +1304,40 @@
                   </widget>
                  </item>
                 </layout>
+               </item>
+               <item>
+                <widget class="Line" name="line_5">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_28">
+                 <property name="font">
+                  <font>
+                   <weight>75</weight>
+                   <bold>true</bold>
+                   <underline>true</underline>
+                  </font>
+                 </property>
+                 <property name="text">
+                  <string>Telemetry:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QCheckBox" name="telemetryLaunchReceiversOnStartupBox">
+                 <property name="toolTip">
+                  <string>On program startup, enable all previously enabled telemetry receivers.</string>
+                 </property>
+                 <property name="text">
+                  <string>Launch receivers on startup</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
                </item>
                <item>
                 <spacer name="verticalSpacer_2">
@@ -1219,6 +1353,13 @@
                 </spacer>
                </item>
               </layout>
+             </item>
+             <item>
+              <widget class="Line" name="line_4">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+              </widget>
              </item>
              <item>
               <layout class="QVBoxLayout" name="verticalLayout_17">
@@ -1243,19 +1384,6 @@
             </layout>
            </item>
           </layout>
-         </item>
-         <item>
-          <widget class="QPushButton" name="saveButton">
-           <property name="maximumSize">
-            <size>
-             <width>60</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="text">
-            <string>Save</string>
-           </property>
-          </widget>
          </item>
         </layout>
        </widget>

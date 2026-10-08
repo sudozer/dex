@@ -3,10 +3,14 @@ import pdb
 import socket
 from socket import socket as sock
 import serialize
+from autofill import Autofiller
+import threading
+import time
  
 from loadConfig import Configs
 cfgLoader = Configs()
 CONFIG = cfgLoader.loadGlobalConfig
+STARTINGCONFIG = CONFIG()
 
 from dataStructures import PACKET_STRUCTURE_COMPONENTS, COMMAND_COMPONENTS
 from liveTelemetry import live_telemetry as LIVETLM
@@ -26,9 +30,11 @@ class SimTelemetryTransmitter(sock):
             self.sendFunc = self.sendUDP
 
         if self.packetConfig['protocol'] == 'TCP Client':
+            #TODO
             pass
 
         if self.packetConfig['protocol'] == 'TCP Server':
+            #TODO
             pass
 
     def sendUDP(self,packet):
@@ -47,16 +53,17 @@ class SimCommandReceiver(CommandReceiver):
         super().__init__('127.0.0.1',commandPort,commandProtocol,commandStructure,simulationMessageFunction)
 
 class Field():
-    def __init__(self,component,fieldDict,packetConfig,packetBehaviors,initialConditions,fieldSimulationDict):
+    def __init__(self,component,fieldDict,packetConfig,packetBehaviors,initialConditions,fieldSimulationDict,simulatedPacket):
+        self.simulatedPacket = simulatedPacket
         self.component = component
         self.fieldDict = fieldDict
         self.packetConfig = packetConfig
         self.packetBehaviors = packetBehaviors
         self.initialConditions = initialConditions
         self.fieldSimulationDict = fieldSimulationDict
-        self.transmitter = SimTelemetryTransmitter(packetConfig,simulationMessageFunction)
         self.prevValue = fieldDict.get('defaultValue',0)
         self.initReturn()
+        self.valueList = []
 
     def initReturn(self):
         #first enabled field behavior initial condition gets set
@@ -92,12 +99,29 @@ class Field():
 
         if self.currentBehavior['behaviorType'] == "Playback From Telemetry":
             self.behaviorGenerator = behaviorPlayBackTelemetry(self.fieldDict,self.currentBehavior['behaviorArgs']['playbackDatabase'],self.currentBehavior['behaviorArgs']['playbackTime'])
+        
+        self.valueList = []
+        self.buildValueList()
+
+    def buildValueList(self):
+        i = len(self.valueList)
+        while i < STARTINGCONFIG['simulationPregeneratedPackets']:
+            self.valueList.append(self.buildValue)
+            i += 1
+            
+    def buildValue(self):
+        self.prevValue = self.fieldDict['value']
+        val = next(self.behaviorGenerator)
+        rawBits,rawBytes = serialize.returnBitstring(self.fieldDict)
+        return {'val':val,'rawBits':rawBits,'rawBytes':rawBytes}    
 
     def returnValue(self):
-        self.prevValue = self.fieldDict['value']
-        self.fieldDict['value'] = next(self.behaviorGenerator)
-        self.fieldDict['rawBits'],self.fieldDict['rawBytes'] = serialize.returnBitstring(self.fieldDict)
-        return self.fieldDict    
+        try:
+            valDict = self.valueList.pop(0)
+        except:
+            self.simulatedPacket.simulationMessageFunction(f"Simulation field falling behind\n {self.fieldDict}","ERROR")
+            valDict = self.buildValue()
+        return self.fieldDict | valDict
     
     def registerTriggers(self):
         pass
@@ -105,14 +129,19 @@ class Field():
 class SimulatedPacket():
     def __init__(self, simDict, commandReceiver, telemetryReceiver, simulationMessageFunction):
         self.fields=[]
+        self.paused = False
+        self.stopped = False
+        self.queueLock = threading.Lock()
+        self.autofiller = Autofiller()
         self.simDict = simDict
+        self.period = 1 / self.simDict['packetConfig']['simulationRate']
         self.commandReceiver = commandReceiver
         self.telemetryReceiver = telemetryReceiver
         self.simulationMessageFunction = simulationMessageFunction
-        self.packetTemplate = PACKET_STRUCTURE_COMPONENTS[simDict['packetConfig']['structure']][simDict['packetConfig']['packetId']]
+        self.packetTemplate = PACKET_STRUCTURE_COMPONENTS[simDict['packetConfig']['structure']][simDict['packetConfig']['packet']]
         self.telemetryTransmitter = SimTelemetryTransmitter(simDict['packetConfig'],simulationMessageFunction)
         self.buildFieldList()
-        self.buildPacketList()
+
     def buildFieldList(self):
         for component in self.packetTemplate:
             componentName = component['component']
@@ -121,7 +150,8 @@ class SimulatedPacket():
                                          field,self.simDict['packetConfig'],
                                          self.simDict['packetBehaviors'],
                                          self.simDict['initialConditions'],
-                                         self.simDict['fieldBehaviors'].get(componentName,{}).get(field['fieldName'])))
+                                         self.simDict['fieldBehaviors'].get(componentName,{}).get(field['fieldName'],{}),
+                                         self))
 
     def buildPacket(self):
         packetList = []
@@ -130,19 +160,51 @@ class SimulatedPacket():
             packetList.append(field)
         return packetList
     
-    def packPacket(self,packet):
+    def sendPacket(self,packet):
+
+        if STARTINGCONFIG.get('autofillSimPackets'):
+            packet = self.autofiller.autofillAllFields(packet)
         bitString = ''
         for field in packet:
             bitString = bitString + field['rawBits']
         #TODO packet must be a whole number of bytes
         packetBytes = int(bitString, 2).to_bytes(len(bitString)//8, byteorder="big")
-        return packetBytes
+        self.telemetryTransmitter.send(packetBytes)
+            
+    def packetSenderThread(self):
+        nextTime = time.time()
+        currentPacket = self.buildPacket()
+        while not self.stopped:
+            time.sleep(1)
+            while not self.paused:
+                nextTime = nextTime + self.period
+                with self.queueLock:
+                    self.sendPacket(currentPacket)
+                currentPacket = self.buildPacket()
 
+                now = time.time()
+                dwellPeriod = nextTime - now
+                if dwellPeriod > 0:
+                    time.sleep(dwellPeriod)
+                else:
+                    self.simulationMessageFunction("Simulation falling behind.","ERROR")
+                    nextTime = time.time()
+
+    def packetBuilderThread(self):
+        while not self.stopped:
+            fieldIdx = 0
+            while fieldIdx < len(self.fields):
+                with self.queueLock:
+                    self.fields[fieldIdx].buildValueList()
+                    fieldIdx += 1
+
+    
     def pause(self):
-        pass
+        self.paused = True
+    
     def resume(self):
-        pass
+        self.paused = False
+        
     def stop(self):
-        pass
-
-
+        self.stopped = True
+        

@@ -1,5 +1,6 @@
 {
     "version": "0.0.0",
+    "mission": "development",
     "datetimeFormat": "%Y-%m-%d_%H:%M:%S.%f %Z",
     "datetimeFileFormat": "%Y-%m-%d_%H-%M-%S%Z",
     "datetimeDayOfYearFormat": "%Y-%j_%H:%M:%S.%f %Z",
@@ -92,7 +93,7 @@
             },
             "initialConditions": {
                 "enabled": false,
-                "playbackDatabase": "",
+                "playbackDatabase": "sampleDatabase1",
                 "playbackTime": "2023-10-06-04-32-04"
             }
         },
@@ -149,5 +150,9 @@
                 "playbackTime": "2000-01-19-00-00-00"
             }
         }
-    ]
+    ],
+    "autofillSimPackets": true,
+    "simulationFloatNoise": 0.0,
+    "simulationDatabaseSize": 5000.0,
+    "simulationPregeneratedPackets": 1
 }

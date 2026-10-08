@@ -1,0 +1,19 @@
+from PySide6.QtCore import QFile, Qt, QDateTime, QTimeZone
+from PySide6.QtUiTools import QUiLoader
+from PySide6.QtWidgets import (
+    QLabel,
+    QLineEdit,
+    QWidget,
+    QHBoxLayout
+)
+
+class TelemetryField(QWidget):
+    def __init__(self,field):
+        super().__init__()
+        self.label = QLabel()
+        self.value = QLineEdit()
+        self.layout = QHBoxLayout(self)
+        self.layout.setContentsMargins(4,4,4,4)
+        self.layout.setSpacing(4)
+        self.layout.addWidget(self.label)
+        self.layout.addWidget(self.value)

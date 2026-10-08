@@ -2,7 +2,7 @@ import struct
 
 
 def returnBitstring(field):
-    #this is ai code cuz i couldn't be assed
+
     fieldType = field['type']
     value = field['value']
     bitLength = field['bitLength']
@@ -23,5 +23,8 @@ def returnBitstring(field):
             )
         else:
             bitstring = format(convertedValue, 'b')
-
-    return bitstring
+    if len(bitstring) % 8 == 0:
+        rawbytes_ = int(bitstring, 2).to_bytes(len(bitstring)//8, byteorder="big")
+    else:
+        rawbytes_ = None
+    return bitstring,rawbytes_

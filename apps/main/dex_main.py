@@ -48,6 +48,7 @@ from telemetrySelector import TelemetryFieldSelector
 from commandBuilder import CommandBuilder
 from commandIDSelector import CommandIDSelector
 from command import TCPCommandSocket, UDPCommandSocket
+from packetReceiver import PacketReceiverItem
 
 from telemetrySimulation import SimTelemetryReceiver, SimCommandReceiver, SimulatedPacket
 # Colors
@@ -795,6 +796,7 @@ class DexMain():
         self.commandLink = None
         self.commandLinkParametersChanged = True
         self.activeSimulationPackets = []
+        self.telemetryReceivers = []
 
         self.simCommandReceiver = None
         self.simTlmReceiver = None
@@ -854,25 +856,41 @@ class DexMain():
 
         #telemetry controls
         self.ui.telemetryDefinitionsButton.clicked.connect(self.editTelemetryDefinitions)
-
+        databasePath = Path(cfgLoader.getPath('missionDatabases'))
+        subfolder_names = [x.name for x in databasePath.iterdir() if x.is_dir()]
+        self.ui.currentActiveDatabase.addItems(subfolder_names)
+        self.ui.currentActiveDatabase.currentTextChanged.connect(self.writeTelemetryConfig)
+        self.ui.addTelemetryReceiverButton.clicked.connect(self.addTelemetryReceiver)
+        self.ui.removePacketInterfaceButton.clicked.connect(self.removeTelemetryReceiver)
+        self.ui.packetReceiverTable.setColumnCount(5)        
+        self.ui.packetReceiverTable.setHorizontalHeaderLabels(['structure','protocol','port','listening','packets/s'])
+        self.ui.packetReceiverTable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.ui.packetReceiverTable.verticalHeader().setVisible(False)
+        self.populateTelemetryReceivers()
+        
         #config controls
         self.ui.messageLevelBox.currentTextChanged.connect(self.writeConfigOptions)
         self.ui.commandAutofillFields.checkStateChanged.connect(self.writeConfigOptions)
         self.ui.simAutofillFields.checkStateChanged.connect(self.writeConfigOptions)
         self.ui.simulationFloatNoise.valueChanged.connect(self.writeConfigOptions)
         self.ui.simulationDatabaseSizeBox.valueChanged.connect(self.writeConfigOptions)
-        self.ui.simPregeneratedPacketsBox.currentTextChanged.connect(self.writeConfigOptions)
-
+        self.ui.simPregeneratedPacketsBox.valueChanged.connect(self.writeConfigOptions)
+        self.ui.telemetryLaunchReceiversOnStartupBox.checkStateChanged.connect(self.writeConfigOptions)
 
     def writeConfigOptions(self):
         cfg = CONFIG()
-        cfg['autofillCommands'] = self.ui.simAutofillField.isChecked()
+        cfg['autofillCommands'] = self.ui.simAutofillFields.isChecked()
         cfg['autofillSimPackets'] = self.ui.simAutofillFields.isChecked()
         cfg['simulationFloatNoise'] = self.ui.simulationFloatNoise.value()
         cfg['simulationDatabaseSize'] = self.ui.simulationDatabaseSizeBox.value()
         cfg['simulationPregeneratedPackets'] = self.ui.simPregeneratedPacketsBox.value()
+        cfg['telemetryLaunchReceiversOnStartup'] = self.ui.telemetryLaunchReceiversOnStartupBox.isChecked()
 
         cfgLoader.configWrite(cfg)
+
+    def writeTelemetryConfig(self):
+
+        pass
 
 
     """
@@ -927,6 +945,7 @@ class DexMain():
         self.ui.simulationMessageBox.clear()
 
     def beginSimulation(self):
+        self.ui.currentActiveDatabase.setCurrentText("simulation")
         for packet in self.activeSimulationPackets:
             packet.stop()
         self.activeSimulationPackets = []
@@ -977,7 +996,24 @@ class DexMain():
     def editTelemetryDefinitions(self):
         packetDefinitionEditor = PacketDefinitionEditor()
 
+    def addTelemetryReceiver(self):
+        row = self.ui.packetReceiverTable.rowCount()
+        self.telemetryReceivers.append(PacketReceiverItem(self.ui.packetReceiverTable,row,self))
+        
 
+    def removeTelemetryReceiver(self):
+        row = self.ui.packetReceiverTable.currentRow()
+        if self.telemetryReceivers[row].listening:
+            self.telemetryReceivers[row].stopListening()
+
+        del self.telemetryReceivers[row]
+        self.ui.packetReceiverTable.removeRow(row)
+
+    def populateTelemetryReceivers(self):
+        pass
+
+    def writeTelemetryConfig(self):
+        pass
     """
     Command functions
     """
@@ -1105,9 +1141,9 @@ class DexMain():
         port = self.ui.commandPortBox.value()
         ip = self.ui.commandIPDestinationBox.text()
         linkType = self.ui.commandProtocolSelect.currentText()
-        if linkType == "TCP client":
+        if linkType == "TCP Client":
             self.commandLink = TCPCommandSocket(ip,port,self.commandMessage,'client')
-        if linkType == "TCP server":
+        if linkType == "TCP Cerver":
             self.commandLink = TCPCommandSocket(ip,port,self.commandMessage,'server')
         if linkType == "UDP":
             self.commandLink = UDPCommandSocket(ip,port,self.commandMessage)
