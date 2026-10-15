@@ -19,7 +19,7 @@ from loadConfig import Configs
 cfgLoader = Configs()
 CONFIG = cfgLoader.loadGlobalConfig
 
-TIMEOUT = 15
+TIMEOUT = 1
 socket.setdefaulttimeout(TIMEOUT)
 
 class UDPRXPort(socket.socket):
@@ -30,37 +30,21 @@ class UDPRXPort(socket.socket):
         self.msgFunction(f'UDP RX Port initialized and bound to port {port}')
         self.packetRXCallback = packetRXCallback
         self.listeningFlag = listeningFlag
-
+        self.listenThread = threading.Thread(target=self.listen)
+        self.listenThread.start()
+   
     def listen(self):
-        self.msgFunction(f'UDP RX Port listening for incoming packets on port {self.getsockname()[1]}')
+        self.msgFunction(f'UDP RX Port listening for incoming packets on port: {self.getsockname()[1]}')
         while self.listeningFlag.is_set():
             try:
-                data, addr = self.recvfrom(4096)  # buffer size is 4096 bytes
+                data, addr = self.recvfrom(65536)  # buffer size is 4096 bytes
                 self.msgFunction(f'Received packet from {addr}: {data}',"DEBUG")
                 self.packetRXCallback(data)
             except socket.timeout:
-                self.msgFunction('UDP RX Port timed out',"WARNING")
+                pass
 
-        if self.stopFlag.is_set():
-            self.msgFunction('Stop flag set, closing UDP RX Port')
-            self.close()
-
-
-    def listen(self):
-        while not self.stopFlag.is_set():
-            try:
-                data = self.recv(4096)  # buffer size is 4096 bytes
-                if not data:
-                    self.logger.warning('TCP connection closed by server')
-                    break
-                self.logger.debug(f'Received packet: {data}')
-                self.packetRXCallback(data)
-            except socket.timeout:
-                self.logger.warning('TCP RX Port timed out')
-        
-        if self.stopFlag.is_set():
-            self.logger.info('Stop flag set, closing TCP RX Port')
-            self.close()
+        self.msgFunction(f'Closing UDP RX port: {self.getsockname()[1]}')
+        self.close()
 
 class PktReceiver():
     def __init__(self, receiverDict, msgFunction,listeningFlag):
@@ -118,15 +102,20 @@ class PktReceiver():
             self.listener = UDPRXPort(self.receiverDict['IP'],self.receiverDict['port'],self.decodeConvertStore,self.msgFunction,self.listeningFlag)
         #TODO add tcp options
 
+    def closeAll(self):
+        self.listener.listenThread.join()
+
     def decodeConvertStore(self, packet, groundTimeStamp=True):
         """
-        This function interprets a raw packet from whichever packet interface,
+        This function interprets a raw pstacket from whichever packet interface,
         and then decodes and converts it to verify packet integrity
         and stores it upon completion.  This is the core function of dex.
         """
 
         #skipping malformed packet logging for now to cut processing time.
-        self.msgFunction(f"Received packet: {packet}","DEBUG")
+        self.msgFunction(f"Received packet.","DEBUG")
+        self.acceptedPackets += 1
+        return
         errors = []
         packetTemplate = []
         components = []
@@ -174,10 +163,3 @@ class PktReceiver():
             self.msgFunction(f"Failed to store packet: {decodedPacket}. Error: {exc}","ERROR")
             #self.malformedPacketHandler.logMalformedPacket(packet, packetTemplate=packetTemplate, errors=[{"stage": "storage", "message": str(exc)}], packetStructure=self.packetStructure, packetType=self.packetType, components=components, metadata=convertedPacket.get('metadata', {}))
             return
-
-    def decodeConvertStoreList(self, packetList):
-        for packet in packetList:
-            self.decodeConvertStore(packet)
-
-
-

@@ -28,6 +28,7 @@ class SimTelemetryTransmitter(sock):
             super().__init__(socket.AF_INET,socket.SOCK_DGRAM)
             self.destinationTuple = (self.packetConfig['ip'],self.packetConfig['port'])
             self.sendFunc = self.sendUDP
+            self.simulationMessageFunction(f"UDP transmitter opened to IP:{self.packetConfig['ip']}, Port:{self.packetConfig['port']}", "INFO")
 
         if self.packetConfig['protocol'] == 'TCP Client':
             #TODO
@@ -38,7 +39,8 @@ class SimTelemetryTransmitter(sock):
             pass
 
     def sendUDP(self,packet):
-        self.sendTo(packet,self.destinationTuple)
+        #self.simulationMessageFunction(f"Sending packet: {packet}","DEBUG")
+        self.sendto(packet,self.destinationTuple)
 
     def send(self,packet):
         self.sendFunc(packet)
@@ -61,6 +63,7 @@ class Field():
         self.packetBehaviors = packetBehaviors
         self.initialConditions = initialConditions
         self.fieldSimulationDict = fieldSimulationDict
+        self.fieldDict['value'] = fieldDict.get('defalutValue',0)
         self.prevValue = fieldDict.get('defaultValue',0)
         self.initReturn()
         self.valueList = []
@@ -106,18 +109,20 @@ class Field():
     def buildValueList(self):
         i = len(self.valueList)
         while i < STARTINGCONFIG['simulationPregeneratedPackets']:
-            self.valueList.append(self.buildValue)
+            self.valueList.append(self.buildValue())
             i += 1
             
     def buildValue(self):
         self.prevValue = self.fieldDict['value']
         val = next(self.behaviorGenerator)
+        self.fieldDict['value'] = val
         rawBits,rawBytes = serialize.returnBitstring(self.fieldDict)
         return {'val':val,'rawBits':rawBits,'rawBytes':rawBytes}    
 
     def returnValue(self):
         try:
             valDict = self.valueList.pop(0)
+
         except:
             self.simulatedPacket.simulationMessageFunction(f"Simulation field falling behind\n {self.fieldDict}","ERROR")
             valDict = self.buildValue()
@@ -129,18 +134,25 @@ class Field():
 class SimulatedPacket():
     def __init__(self, simDict, commandReceiver, telemetryReceiver, simulationMessageFunction):
         self.fields=[]
-        self.paused = False
-        self.stopped = False
+        self.paused = threading.Event()
+        self.stopped = threading.Event()
         self.queueLock = threading.Lock()
         self.autofiller = Autofiller()
         self.simDict = simDict
         self.period = 1 / self.simDict['packetConfig']['simulationRate']
+        self.simCapacity = 100
         self.commandReceiver = commandReceiver
         self.telemetryReceiver = telemetryReceiver
         self.simulationMessageFunction = simulationMessageFunction
         self.packetTemplate = PACKET_STRUCTURE_COMPONENTS[simDict['packetConfig']['structure']][simDict['packetConfig']['packet']]
         self.telemetryTransmitter = SimTelemetryTransmitter(simDict['packetConfig'],simulationMessageFunction)
         self.buildFieldList()
+        
+        self.packetBuilderThread = threading.Thread(target=self.packetBuilderThread)
+        self.transmitThread = threading.Thread(target=self.packetSenderThread)
+        self.packetBuilderThread.start()
+        time.sleep(2)
+        self.transmitThread.start()
 
     def buildFieldList(self):
         for component in self.packetTemplate:
@@ -156,12 +168,11 @@ class SimulatedPacket():
     def buildPacket(self):
         packetList = []
         for field in self.fields:
-            field.returnValue()
-            packetList.append(field)
+            fieldVal = field.returnValue()
+            packetList.append(fieldVal)
         return packetList
     
     def sendPacket(self,packet):
-
         if STARTINGCONFIG.get('autofillSimPackets'):
             packet = self.autofiller.autofillAllFields(packet)
         bitString = ''
@@ -172,11 +183,12 @@ class SimulatedPacket():
         self.telemetryTransmitter.send(packetBytes)
             
     def packetSenderThread(self):
-        nextTime = time.time()
         currentPacket = self.buildPacket()
-        while not self.stopped:
-            time.sleep(1)
-            while not self.paused:
+        self.simulationMessageFunction(f"Launching simulation thread of packet:{self.simDict['packetConfig']['structure']}")
+        while not self.stopped.is_set():
+            time.sleep(1) #unpause timer
+            nextTime = time.time() + self.period
+            while not self.paused.is_set() and not self.stopped.is_set():
                 nextTime = nextTime + self.period
                 with self.queueLock:
                     self.sendPacket(currentPacket)
@@ -191,20 +203,27 @@ class SimulatedPacket():
                     nextTime = time.time()
 
     def packetBuilderThread(self):
-        while not self.stopped:
+        while not self.stopped.is_set():
             fieldIdx = 0
-            while fieldIdx < len(self.fields):
+            self.simCapacity = 100 * len(self.fields[0].valueList) / STARTINGCONFIG['simulationPregeneratedPackets']
+            while fieldIdx < len(self.fields) and not self.stopped.is_set():
                 with self.queueLock:
                     self.fields[fieldIdx].buildValueList()
                     fieldIdx += 1
 
     
     def pause(self):
-        self.paused = True
+        self.paused.set()
+        self.simulationMessageFunction(f"Simulation paused: {self.simDict['packetConfig']['structure']}::{self.simDict['packetConfig']['packet']}")
     
     def resume(self):
-        self.paused = False
-        
+        self.paused.clear()
+        self.simulationMessageFunction(f"Simulation resuming: {self.simDict['packetConfig']['structure']}::{self.simDict['packetConfig']['packet']}")
+
     def stop(self):
-        self.stopped = True
+        self.stopped.set()
+        self.packetBuilderThread.join()
+        self.transmitThread.join()
+        self.telemetryTransmitter.close()
+        self.simulationMessageFunction(f"Simulation terminated: {self.simDict['packetConfig']['structure']}::{self.simDict['packetConfig']['packet']}")
         

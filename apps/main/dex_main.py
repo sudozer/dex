@@ -7,7 +7,7 @@ import csv
 import logging
 
 from PySide6.QtGui import QColor #for colors
-from PySide6.QtCore import QFile, Qt, QDateTime, QTimeZone
+from PySide6.QtCore import QFile, Qt, QDateTime, QTimeZone,QEvent, QObject
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (
     QApplication, 
@@ -778,9 +778,10 @@ class CommandField():
 Dex Main GUI
 """
     
-class DexMain():
+class DexMain(QObject):
 
     def __init__(self,logLevel = logging.WARNING):
+        super().__init__()
         self.logger = logging.getLogger(__name__)
         #TODO check config for log level
         logging.basicConfig(filename=cfgLoader.getPath(CONFIG()['logBasepath']), encoding='utf-8', level=logLevel)
@@ -796,6 +797,7 @@ class DexMain():
         self.commandLinkParametersChanged = True
         self.activeSimulationPackets = []
         self.telemetryReceivers = []
+        self.activeTelemetryReceivers = []
 
         self.simCommandReceiver = None
         self.simTlmReceiver = None
@@ -806,6 +808,7 @@ class DexMain():
     def initGUI(self):
         self.ui.setWindowTitle(f"Dex {CONFIG()['version']}")
         self.currentlyBuiltStructure = None
+        self.ui.installEventFilter(self)
         #simulation controls
         self.ui.simulationPacketsTree.setColumnCount(7)     
         self.ui.simulationPacketsTree.setHeaderLabels(['Enabled','Telemetry Structure','Packet','Simulation Rate (Hz)','IP','port','protocol','Behaviors'])
@@ -865,6 +868,7 @@ class DexMain():
         self.ui.packetReceiverTable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         self.ui.packetReceiverTable.verticalHeader().setVisible(False)
         self.ui.packetReceiverTable.itemChanged.connect(self.writeTelemetryConfig)
+        self.ui.clearTelemetryMessagesButton.clicked.connect(self.clearTelemetryMessageBox)
         self.populateTelemetryReceivers()
         
         #config controls
@@ -875,7 +879,7 @@ class DexMain():
         self.ui.simulationDatabaseSizeBox.valueChanged.connect(self.writeConfigOptions)
         self.ui.simPregeneratedPacketsBox.valueChanged.connect(self.writeConfigOptions)
         self.ui.telemetryLaunchReceiversOnStartupBox.checkStateChanged.connect(self.writeConfigOptions)
-
+        self.ui.staleDataSeconds.valueChanged.connect(self.writeConfigOptions)
     def writeConfigOptions(self):
         cfg = CONFIG()
         cfg['autofillCommands'] = self.ui.simAutofillFields.isChecked()
@@ -884,7 +888,7 @@ class DexMain():
         cfg['simulationDatabaseSize'] = self.ui.simulationDatabaseSizeBox.value()
         cfg['simulationPregeneratedPackets'] = self.ui.simPregeneratedPacketsBox.value()
         cfg['telemetryLaunchReceiversOnStartup'] = self.ui.telemetryLaunchReceiversOnStartupBox.isChecked()
-
+        cfg['staleDataSeconds'] = self.ui.staleDataSeconds.value()
         cfgLoader.configWrite(cfg)
 
     """
@@ -925,6 +929,7 @@ class DexMain():
         self.ui.simulationPacketsTree.takeTopLevelItem(row)
 
     def simulationMessage(self,msg,type_="INFO"):
+
         self.ui.simulationMessageBox.setTextColor(QColor("black"))
         if type_.lower() == "warning":
             self.ui.simulationMessageBox.setTextColor(MESSAGE_WARNING)
@@ -934,6 +939,7 @@ class DexMain():
             self.logger.error(msg)
 
         self.ui.simulationMessageBox.append(msg)
+        self.smart_append(self.ui.simulationMessageBox)
 
     def clearSimulationMessages(self):
         self.ui.simulationMessageBox.clear()
@@ -1039,6 +1045,7 @@ class DexMain():
             self.logger.error(msg)
 
         self.ui.telemetryMessageBox.append(msg)
+        self.smart_append(self.ui.telemetryMessageBox)
     """
     Command functions
     """
@@ -1086,6 +1093,7 @@ class DexMain():
             self.logger.error(msg)
 
         self.ui.commandMessageBox.append(msg)
+        self.smart_append(self.ui.commandMessageBox)
 
     def clearCommandMessageBox(self):
         self.ui.commandMessageBox.clear()
@@ -1301,6 +1309,30 @@ class DexMain():
     def launchCommandLog(self):
         #TODO write a command log
         pass
+
+    """
+    Miscellaneous
+    """
+    def smart_append(self,text_edit):
+        scroll_bar = text_edit.verticalScrollBar()
+
+        # Check if the user is near the bottom (within a 10-pixel threshold)
+        is_at_bottom = scroll_bar.value() >= (scroll_bar.maximum() - 10)
+
+        # Scroll down only if they were already at the bottom
+        if is_at_bottom:
+            text_edit.ensureCursorVisible()
+
+    def eventFilter(self, watched, event):
+        if watched is self.ui and event.type() == QEvent.Type.Close:
+            #close all active simulations
+            self.stopSimulation()
+            #close all active packet receivers
+            for receiver in self.activeTelemetryReceivers:
+                receiver.stopListening()
+
+            
+        return super().eventFilter(watched, event)
 
 if __name__ == "__main__":
     app = QApplication([])
