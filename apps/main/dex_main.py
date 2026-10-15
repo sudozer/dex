@@ -48,7 +48,7 @@ from telemetrySelector import TelemetryFieldSelector
 from commandBuilder import CommandBuilder
 from commandIDSelector import CommandIDSelector
 from command import TCPCommandSocket, UDPCommandSocket
-from packetReceiver import PacketReceiverItem
+from packetReceiverItem import PacketReceiverItem
 
 from telemetrySimulation import SimTelemetryReceiver, SimCommandReceiver, SimulatedPacket
 # Colors
@@ -584,7 +584,6 @@ class SimBehaviorWidget(QDialog):
             row = self.loaded_widget.wholePacketPlaybackTable.rowCount()
         self.packetSimItems.insert(row,PacketBehavior(self.loaded_widget.wholePacketPlaybackTable,self,row))
 
-
     def removePacketPlaybackTrigger(self):
         #remove the currently selected row from the packet playback table
 
@@ -818,7 +817,6 @@ class DexMain():
         self.ui.simulationPacketsTree.setColumnWidth(5,70)
         self.ui.simulationPacketsTree.setColumnWidth(6,130)
         self.ui.simulationPacketsTree.setColumnWidth(7,70)
-        
 
         self.ui.addSimPacketButton.clicked.connect(self.addPacketSimulation)
         self.ui.removeSimPacketButton.clicked.connect(self.removePacketSimulation)
@@ -850,7 +848,7 @@ class DexMain():
         self.ui.commandPortBox.valueChanged.connect(self.commandParameterChanged)
         self.ui.commandProtocolSelect.currentTextChanged.connect(self.commandParameterChanged)
         self.ui.clearCommandMessagesButton.clicked.connect(self.clearCommandMessageBox)
-
+        self.ui.commandLogButton.clicked.connect(self.launchCommandLog)
         self.populateCommandComponents()
         self.populateCommandStructures()
 
@@ -862,10 +860,11 @@ class DexMain():
         self.ui.currentActiveDatabase.currentTextChanged.connect(self.writeTelemetryConfig)
         self.ui.addTelemetryReceiverButton.clicked.connect(self.addTelemetryReceiver)
         self.ui.removePacketInterfaceButton.clicked.connect(self.removeTelemetryReceiver)
-        self.ui.packetReceiverTable.setColumnCount(5)        
-        self.ui.packetReceiverTable.setHorizontalHeaderLabels(['structure','protocol','port','listening','packets/s'])
-        self.ui.packetReceiverTable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.ui.packetReceiverTable.setColumnCount(7)  
+        self.ui.packetReceiverTable.setHorizontalHeaderLabels(['Label','Structure','Protocol','IP/Port','Listening','Packets/s','Accepted/Rejected'])
+        self.ui.packetReceiverTable.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         self.ui.packetReceiverTable.verticalHeader().setVisible(False)
+        self.ui.packetReceiverTable.itemChanged.connect(self.writeTelemetryConfig)
         self.populateTelemetryReceivers()
         
         #config controls
@@ -887,11 +886,6 @@ class DexMain():
         cfg['telemetryLaunchReceiversOnStartup'] = self.ui.telemetryLaunchReceiversOnStartupBox.isChecked()
 
         cfgLoader.configWrite(cfg)
-
-    def writeTelemetryConfig(self):
-
-        pass
-
 
     """
     Simulation functions
@@ -998,8 +992,7 @@ class DexMain():
 
     def addTelemetryReceiver(self):
         row = self.ui.packetReceiverTable.rowCount()
-        self.telemetryReceivers.append(PacketReceiverItem(self.ui.packetReceiverTable,row,self))
-        
+        self.telemetryReceivers.append(PacketReceiverItem(self.ui.packetReceiverTable,row,self)) 
 
     def removeTelemetryReceiver(self):
         row = self.ui.packetReceiverTable.currentRow()
@@ -1008,12 +1001,44 @@ class DexMain():
 
         del self.telemetryReceivers[row]
         self.ui.packetReceiverTable.removeRow(row)
+        self.writeTelemetryConfig()
 
     def populateTelemetryReceivers(self):
-        pass
-
+        receivers = CONFIG()['receivers']
+        for receiver in receivers:
+            row = self.ui.packetReceiverTable.rowCount()
+            self.telemetryReceivers.append(PacketReceiverItem(self.ui.packetReceiverTable,row,self,receiver))
+    
     def writeTelemetryConfig(self):
-        pass
+        cfg = CONFIG()
+        cfg['receivers'] = []
+        for receiver in self.telemetryReceivers:
+            receiverDict = {
+                "label": receiver.text(),
+                "telemetryStructure":receiver.structureBox.currentText(),
+                "protocol":receiver.protocolBox.currentText(),
+                "IP":receiver.ipField.text(),
+                "port":receiver.portField.value(),
+                "listening":receiver.listening.is_set()
+            }
+            cfg['receivers'].append(receiverDict)
+
+        cfgLoader.configWrite(cfg)
+        return cfg['receivers']
+
+    def clearTelemetryMessageBox(self):
+        self.ui.telemetryMessageBox.clear()
+
+    def telemetryMessage(self,msg,type_="INFO"):
+        self.ui.telemetryMessageBox.setTextColor(QColor("black"))
+        if type_.lower() == "warning":
+            self.ui.telemetryMessageBox.setTextColor(MESSAGE_WARNING)
+            self.logger.warning(msg)
+        if type_.lower() == "error":
+            self.ui.telemetryMessageBox.setTextColor(MESSAGE_ERROR)    
+            self.logger.error(msg)
+
+        self.ui.telemetryMessageBox.append(msg)
     """
     Command functions
     """
@@ -1272,6 +1297,10 @@ class DexMain():
             return float(strVal)
         if field['type'] == 'char':
             return strVal
+
+    def launchCommandLog(self):
+        #TODO write a command log
+        pass
 
 if __name__ == "__main__":
     app = QApplication([])

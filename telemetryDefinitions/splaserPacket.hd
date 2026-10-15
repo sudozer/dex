@@ -1012,5 +1012,6 @@
             "units": "UV",
             "bitstructType": "f64"
         }
-    ]
+    ],
+    "totalBitLength": 2968
 }

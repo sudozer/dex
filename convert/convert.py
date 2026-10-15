@@ -31,10 +31,9 @@ CONFIG = cfgLoader.loadGlobalConfig
 
 
 class Converter():
-    def __init__(self, logLevel=logging.WARNING):
-        self.logger = logging.getLogger(__name__)
-        logging.basicConfig(filename=cfgLoader.getPath(CONFIG()['logBasepath']), encoding='utf-8', level=logLevel)
-
+    def __init__(self, msgFunction):
+        pass
+    
     def convertField(self, field):
         try:
             conversionFunc = field['conversion']['conversionFunction']

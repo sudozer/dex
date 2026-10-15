@@ -22,7 +22,7 @@
      <item>
       <widget class="QTabWidget" name="tabs">
        <property name="currentIndex">
-        <number>2</number>
+        <number>7</number>
        </property>
        <widget class="QWidget" name="tab">
         <attribute name="title">
@@ -30,118 +30,208 @@
         </attribute>
         <layout class="QHBoxLayout" name="horizontalLayout_2">
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout">
+          <layout class="QVBoxLayout" name="verticalLayout_7">
+           <property name="rightMargin">
+            <number>5</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
            <item>
-            <layout class="QVBoxLayout" name="verticalLayout_4">
-             <property name="topMargin">
-              <number>4</number>
-             </property>
+            <layout class="QHBoxLayout" name="horizontalLayout" stretch="6,1">
              <item>
-              <layout class="QHBoxLayout" name="horizontalLayout_33">
-               <property name="bottomMargin">
-                <number>5</number>
-               </property>
-               <item>
-                <widget class="QLabel" name="label_27">
-                 <property name="text">
-                  <string>Database:</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QComboBox" name="currentActiveDatabase">
-                 <property name="minimumSize">
-                  <size>
-                   <width>150</width>
-                   <height>0</height>
-                  </size>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <spacer name="horizontalSpacer_11">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>40</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-              </layout>
-             </item>
-             <item>
-              <layout class="QHBoxLayout" name="horizontalLayout_10">
+              <layout class="QVBoxLayout" name="verticalLayout_4">
                <property name="topMargin">
-                <number>8</number>
-               </property>
-               <property name="bottomMargin">
-                <number>0</number>
+                <number>4</number>
                </property>
                <item>
-                <widget class="QLabel" name="label">
-                 <property name="text">
-                  <string>Packet Receivers:</string>
+                <layout class="QHBoxLayout" name="horizontalLayout_33">
+                 <property name="bottomMargin">
+                  <number>5</number>
                  </property>
-                </widget>
+                 <item>
+                  <widget class="QLabel" name="label_27">
+                   <property name="text">
+                    <string>Database:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QComboBox" name="currentActiveDatabase">
+                   <property name="minimumSize">
+                    <size>
+                     <width>150</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="telemetryAddNewDatabaseButton">
+                   <property name="text">
+                    <string>Add new Database</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_11">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
                </item>
                <item>
-                <widget class="QPushButton" name="addTelemetryReceiverButton">
-                 <property name="text">
-                  <string>Add</string>
+                <layout class="QHBoxLayout" name="horizontalLayout_10">
+                 <property name="topMargin">
+                  <number>8</number>
                  </property>
-                </widget>
+                 <property name="bottomMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="label">
+                   <property name="text">
+                    <string>Packet Receivers:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="addTelemetryReceiverButton">
+                   <property name="text">
+                    <string>Add</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="removePacketInterfaceButton">
+                   <property name="text">
+                    <string>Remove</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_12">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="telemetryDefinitionsButton">
+                   <property name="text">
+                    <string>Telemetry Definitions</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
                </item>
                <item>
-                <widget class="QPushButton" name="removePacketInterfaceButton">
-                 <property name="text">
-                  <string>Remove</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <spacer name="horizontalSpacer_12">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>40</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-               <item>
-                <widget class="QPushButton" name="telemetryDefinitionsButton">
-                 <property name="text">
-                  <string>Telemetry Definitions</string>
-                 </property>
-                </widget>
+                <widget class="QTableWidget" name="packetReceiverTable"/>
                </item>
               </layout>
              </item>
              <item>
-              <widget class="QTableWidget" name="packetReceiverTable"/>
+              <layout class="QVBoxLayout" name="verticalLayout_3">
+               <item>
+                <widget class="QLabel" name="label_2">
+                 <property name="maximumSize">
+                  <size>
+                   <width>300</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Displays:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QTableWidget" name="displayWidgetTable">
+                 <property name="maximumSize">
+                  <size>
+                   <width>300</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="pushButton">
+                 <property name="text">
+                  <string>Launch DIsplay</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </item>
             </layout>
            </item>
            <item>
-            <layout class="QVBoxLayout" name="verticalLayout_3">
+            <layout class="QHBoxLayout" name="horizontalLayout_34">
+             <property name="topMargin">
+              <number>0</number>
+             </property>
              <item>
-              <widget class="QLabel" name="label_2">
+              <widget class="QLabel" name="label_30">
                <property name="text">
-                <string>Displays:</string>
+                <string>Status:</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QTableWidget" name="displayWidgetTable"/>
+              <widget class="QPushButton" name="clearTelemetrMessagesButton">
+               <property name="maximumSize">
+                <size>
+                 <width>60</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+               <property name="text">
+                <string>Clear</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_16">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
              </item>
             </layout>
+           </item>
+           <item>
+            <widget class="QTextEdit" name="telemetryMessageBox">
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>150</height>
+              </size>
+             </property>
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
            </item>
           </layout>
          </item>
@@ -209,12 +299,12 @@
               <widget class="QComboBox" name="commandProtocolSelect">
                <item>
                 <property name="text">
-                 <string>TCP client</string>
+                 <string>TCP Client</string>
                 </property>
                </item>
                <item>
                 <property name="text">
-                 <string>TCP server</string>
+                 <string>TCP Server</string>
                 </property>
                </item>
                <item>
@@ -418,6 +508,13 @@
               <number>5</number>
              </property>
              <item>
+              <widget class="QPushButton" name="commandLogButton">
+               <property name="text">
+                <string>Command Log</string>
+               </property>
+              </widget>
+             </item>
+             <item>
               <spacer name="horizontalSpacer">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -510,6 +607,18 @@
            </item>
            <item>
             <widget class="QTextEdit" name="commandMessageBox">
+             <property name="minimumSize">
+              <size>
+               <width>0</width>
+               <height>150</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>16777215</width>
+               <height>151</height>
+              </size>
+             </property>
              <property name="readOnly">
               <bool>true</bool>
              </property>
@@ -647,10 +756,29 @@
                </item>
                <item>
                 <widget class="QPushButton" name="addExportTelemetryButton">
+                 <property name="maximumSize">
+                  <size>
+                   <width>40</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
                  <property name="text">
                   <string>Add</string>
                  </property>
                 </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_13">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
                </item>
               </layout>
              </item>
@@ -684,7 +812,20 @@
                 <number>10</number>
                </property>
                <item>
+                <widget class="QLabel" name="label_29">
+                 <property name="text">
+                  <string>Export as:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
                 <widget class="QPushButton" name="exportAsJsonButton">
+                 <property name="maximumSize">
+                  <size>
+                   <width>60</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
                  <property name="text">
                   <string>JSON</string>
                  </property>
@@ -692,17 +833,33 @@
                </item>
                <item>
                 <widget class="QPushButton" name="exportAsCsvButton">
+                 <property name="maximumSize">
+                  <size>
+                   <width>60</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
                  <property name="text">
                   <string>CSV</string>
                  </property>
                 </widget>
                </item>
+               <item>
+                <spacer name="horizontalSpacer_14">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
               </layout>
              </item>
             </layout>
-           </item>
-           <item>
-            <layout class="QVBoxLayout" name="verticalLayout_7"/>
            </item>
           </layout>
          </item>
@@ -981,7 +1138,7 @@
              <property name="maximumSize">
               <size>
                <width>16777215</width>
-               <height>200</height>
+               <height>150</height>
               </size>
              </property>
              <property name="readOnly">
@@ -1076,8 +1233,13 @@
                     </size>
                    </property>
                    <property name="toolTip">
-                    <string>Alter the verbosity of log messages</string>
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Alter the verbosity of log messages, Debug prints the most information, Warning only prints warnings and errors.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                    </property>
+                   <item>
+                    <property name="text">
+                     <string>Debug</string>
+                    </property>
+                   </item>
                    <item>
                     <property name="text">
                      <string>Info</string>
@@ -1086,16 +1248,6 @@
                    <item>
                     <property name="text">
                      <string>Warning</string>
-                    </property>
-                   </item>
-                   <item>
-                    <property name="text">
-                     <string>Error</string>
-                    </property>
-                   </item>
-                   <item>
-                    <property name="text">
-                     <string>Debug</string>
                     </property>
                    </item>
                   </widget>
@@ -1213,6 +1365,12 @@
                  </item>
                  <item>
                   <widget class="QDoubleSpinBox" name="simulationFloatNoise">
+                   <property name="minimumSize">
+                    <size>
+                     <width>90</width>
+                     <height>0</height>
+                    </size>
+                   </property>
                    <property name="maximumSize">
                     <size>
                      <width>100</width>
@@ -1259,6 +1417,12 @@
                  </item>
                  <item>
                   <widget class="QDoubleSpinBox" name="simulationDatabaseSizeBox">
+                   <property name="minimumSize">
+                    <size>
+                     <width>90</width>
+                     <height>0</height>
+                    </size>
+                   </property>
                    <property name="toolTip">
                     <string>Simulated data gets written to the simulation mission database.  Set how large this database can get before the oldest telemetry starts getting deleted.</string>
                    </property>
@@ -1288,7 +1452,32 @@
                   </widget>
                  </item>
                  <item>
+                  <spacer name="horizontalSpacer_15">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
                   <widget class="QSpinBox" name="simPregeneratedPacketsBox">
+                   <property name="minimumSize">
+                    <size>
+                     <width>90</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="maximumSize">
+                    <size>
+                     <width>9999</width>
+                     <height>16777215</height>
+                    </size>
+                   </property>
                    <property name="toolTip">
                     <string>Number of packets to pregenerate when running a simulation.  Larger numbers will cause the simulation to take longer to begin, smaller numbers may cause the simulation to bog down.</string>
                    </property>

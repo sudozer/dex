@@ -61,6 +61,32 @@
             }
         }
     },
+    "receivers": [
+        {
+            "label": "shrek",
+            "telemetryStructure": "splaser",
+            "protocol": "UDP",
+            "IP": "127.0.0.1",
+            "port": 4567,
+            "listening": false
+        },
+        {
+            "label": "fiona",
+            "telemetryStructure": "splaser",
+            "protocol": "UDP",
+            "IP": "127.0.0.1",
+            "port": 1,
+            "listening": false
+        },
+        {
+            "label": "donkey",
+            "telemetryStructure": "sampleStructure1",
+            "protocol": "TCP Server",
+            "IP": "127.0.0.1",
+            "port": 1,
+            "listening": false
+        }
+    ],
     "storage": {
         "polarsSchemaPath": "config/polarsSchemas.json",
         "activeStorageMethod": "parquet",
@@ -82,7 +108,7 @@
                 "enabled": true,
                 "simulationRate": 1.3,
                 "ip": "127.0.0.1",
-                "port": 1,
+                "port": 4567,
                 "protocol": "UDP",
                 "structure": "splaser",
                 "packet": "splaser"
@@ -99,7 +125,7 @@
         },
         {
             "packetConfig": {
-                "enabled": true,
+                "enabled": false,
                 "simulationRate": 3.2,
                 "ip": "127.0.0.1",
                 "port": 1,
@@ -107,40 +133,9 @@
                 "structure": "sampleStructure1",
                 "packet": "4101"
             },
-            "packetBehaviors": [
-                {
-                    "enabled": true,
-                    "trigger": {
-                        "triggerType": "Initial Condition",
-                        "triggerArgs": {}
-                    },
-                    "behavior": {
-                        "behaviorType": "Playback From Telemetry",
-                        "behaviorArgs": {
-                            "playbackDatabase": "sampleDatabase2",
-                            "playbackTime": "2001-01-23-05-00-00"
-                        }
-                    }
-                }
-            ],
+            "packetBehaviors": [],
             "fieldBehaviors": {
-                "primaryHeader": {
-                    "APID": [
-                        {
-                            "trigger": {
-                                "triggerType": "Initial Condition",
-                                "triggerArgs": {}
-                            },
-                            "behavior": {
-                                "behaviorType": "Hold Static Value",
-                                "behaviorArgs": {
-                                    "value": "7"
-                                }
-                            },
-                            "enabled": true
-                        }
-                    ]
-                },
+                "primaryHeader": {},
                 "secondaryHeader": {},
                 "4101": {}
             },

@@ -11,11 +11,8 @@ cfgLoader = Configs()
 CONFIG = cfgLoader.loadGlobalConfig
 
 class PolarsStructures():
-    def __init__(self,logLevel=logging.WARNING):
-        self.logger = logging.getLogger(__name__)
-        if not self.logger.handlers:
-            self.logger.addHandler(logging.NullHandler())
-        self.logger.setLevel(logLevel)
+    def __init__(self,msgFunction):
+        self.msgFunction = msgFunction
         self.loadPolarsSchema()
         self.datetimeFormat = CONFIG()['datetimeFormat']
 
@@ -23,10 +20,10 @@ class PolarsStructures():
         schemaPath = Path(cfgLoader.getPath(CONFIG()['storage']['polarsSchemaPath']))
         if not schemaPath.is_absolute():
             schemaPath = (Path(__file__).resolve().parent.parent / schemaPath).resolve()
-        self.logger.info(f"Loading polars storage schema from {schemaPath}...")
+        self.msgFunction(f"Loading polars storage schema from {schemaPath}...","INFO")
         start = perf_counter()
         if not schemaPath.exists():
-            self.logger.warning(f"Polars schema file not found at {schemaPath}; continuing without schema initialization")
+            self.msgFunction(f"Polars schema file not found at {schemaPath}; continuing without schema initialization")
             self.schemaDict = {}
             self.liveDataDict = {}
             self.liveDataVariableFields = {}
@@ -47,7 +44,7 @@ class PolarsStructures():
             else:
                 self.liveDataVariableFields[key] = []
         end = perf_counter()
-        self.logger.info(f"Polars schem successfully loaded in {end-start} seconds")
+        self.msgFunction(f"Polars scheme successfully loaded in {end-start} seconds","DEBUG")
         return self.liveDataDict, self.liveDataDict
 
     def loadPolarsSchemaField(self,field):

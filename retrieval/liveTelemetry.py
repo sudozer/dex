@@ -74,4 +74,4 @@ class LiveTelemetry():
         else:
             self.registry[component][field]['callbacks'].append(callback)
 
-live_telemetry = LiveTelemetry()
+LIVETLM = LiveTelemetry()

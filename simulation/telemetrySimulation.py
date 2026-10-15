@@ -13,7 +13,7 @@ CONFIG = cfgLoader.loadGlobalConfig
 STARTINGCONFIG = CONFIG()
 
 from dataStructures import PACKET_STRUCTURE_COMPONENTS, COMMAND_COMPONENTS
-from liveTelemetry import live_telemetry as LIVETLM
+from liveTelemetry import LIVETLM
 from command import CommandReceiver
 from behaviorGenerators import *
 
