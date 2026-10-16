@@ -58,6 +58,7 @@ COMMAND_STRUCTURE_BASE = (217,100,220) #this is correctly not set as a color
 
 MESSAGE_ERROR = QColor(250,123,12)
 MESSAGE_WARNING = QColor(247,239,74)
+MESSAGE_DEBUG = QColor(10,109,166)
 
 def colorGen(baseColor, hueStep=35):
     while True:
@@ -785,6 +786,7 @@ class DexMain(QObject):
         self.logger = logging.getLogger(__name__)
         #TODO check config for log level
         logging.basicConfig(filename=cfgLoader.getPath(CONFIG()['logBasepath']), encoding='utf-8', level=logLevel)
+        self.messageLevel = STARTING_CONFIG['messageVerbosity']
         self.mainGuiPath = cfgLoader.getPath('apps/main/ui/main.ui')
         self.pktDefUtil = PacketDefinitionUtility()
         ui_file = QFile(self.mainGuiPath)
@@ -873,6 +875,7 @@ class DexMain(QObject):
         
         #config controls
         self.ui.messageLevelBox.currentTextChanged.connect(self.writeConfigOptions)
+        self.ui.messageLevelBox.currentTextChanged.connect(self.changeVerbosity)
         self.ui.commandAutofillFields.checkStateChanged.connect(self.writeConfigOptions)
         self.ui.simAutofillFields.checkStateChanged.connect(self.writeConfigOptions)
         self.ui.simulationFloatNoise.valueChanged.connect(self.writeConfigOptions)
@@ -880,8 +883,11 @@ class DexMain(QObject):
         self.ui.simPregeneratedPacketsBox.valueChanged.connect(self.writeConfigOptions)
         self.ui.telemetryLaunchReceiversOnStartupBox.checkStateChanged.connect(self.writeConfigOptions)
         self.ui.staleDataSeconds.valueChanged.connect(self.writeConfigOptions)
+        self.ui.fieldDisplayUpdateDelay.valueChanged.connect(self.writeConfigOptions)
+    
     def writeConfigOptions(self):
         cfg = CONFIG()
+        cfg['messageVerbosity'] = self.ui.messageLevelBox.currentText()
         cfg['autofillCommands'] = self.ui.simAutofillFields.isChecked()
         cfg['autofillSimPackets'] = self.ui.simAutofillFields.isChecked()
         cfg['simulationFloatNoise'] = self.ui.simulationFloatNoise.value()
@@ -889,8 +895,11 @@ class DexMain(QObject):
         cfg['simulationPregeneratedPackets'] = self.ui.simPregeneratedPacketsBox.value()
         cfg['telemetryLaunchReceiversOnStartup'] = self.ui.telemetryLaunchReceiversOnStartupBox.isChecked()
         cfg['staleDataSeconds'] = self.ui.staleDataSeconds.value()
+        cfg['fieldDisplayUpdateDelay'] = self.ui.fieldDisplayUpdateDelay.value()
         cfgLoader.configWrite(cfg)
 
+    def changeVerbosity(self,text):
+        self.messageLevel = text
     """
     Simulation functions
     """
@@ -929,17 +938,7 @@ class DexMain(QObject):
         self.ui.simulationPacketsTree.takeTopLevelItem(row)
 
     def simulationMessage(self,msg,type_="INFO"):
-
-        self.ui.simulationMessageBox.setTextColor(QColor("black"))
-        if type_.lower() == "warning":
-            self.ui.simulationMessageBox.setTextColor(MESSAGE_WARNING)
-            self.logger.warning(msg)
-        if type_.lower() == "error":
-            self.ui.simulationMessageBox.setTextColor(MESSAGE_ERROR)    
-            self.logger.error(msg)
-
-        self.ui.simulationMessageBox.append(msg)
-        self.smart_append(self.ui.simulationMessageBox)
+        self.genericMessage(self.ui.simulationMessageBox,msg,type_)
 
     def clearSimulationMessages(self):
         self.ui.simulationMessageBox.clear()
@@ -958,9 +957,9 @@ class DexMain(QObject):
             self.simCommandReceiver = SimCommandReceiver(self.ui.simulationCommandListeningPortBox.value(),self.ui.simulationCommandProtocolSelect.currentText(),self.ui.simulationCommandStructureBox.currentText(),self.simulationMessage)
         
         self.activeSimulationPackets = []
-        for packet in simConfig:
+        for row, packet in enumerate(simConfig):
             if packet['packetConfig']['enabled']:
-                    self.activeSimulationPackets.append(SimulatedPacket(packet,self.simTlmReceiver,self.simCommandReceiver,self.simulationMessage))
+                self.activeSimulationPackets.append(SimulatedPacket(packet,self.simTlmReceiver,self.simCommandReceiver,row,self.simulationMessage))
 
         self.ui.simPlayButton.setText("Pause Simulation")
         self.ui.simPlayButton.clicked.disconnect()
@@ -1036,16 +1035,7 @@ class DexMain(QObject):
         self.ui.telemetryMessageBox.clear()
 
     def telemetryMessage(self,msg,type_="INFO"):
-        self.ui.telemetryMessageBox.setTextColor(QColor("black"))
-        if type_.lower() == "warning":
-            self.ui.telemetryMessageBox.setTextColor(MESSAGE_WARNING)
-            self.logger.warning(msg)
-        if type_.lower() == "error":
-            self.ui.telemetryMessageBox.setTextColor(MESSAGE_ERROR)    
-            self.logger.error(msg)
-
-        self.ui.telemetryMessageBox.append(msg)
-        self.smart_append(self.ui.telemetryMessageBox)
+        self.genericMessage(self.ui.telemetryMessageBox,msg,type_)
     """
     Command functions
     """
@@ -1084,16 +1074,7 @@ class DexMain(QObject):
                     self.commandMessage(f"In command structure: {structureName} component: {componentName} not found.  If filenames in commandDefinitions folder have been changed they must be reverted.","ERROR")
 
     def commandMessage(self,msg,type_="INFO"):
-        self.ui.commandMessageBox.setTextColor(QColor("black"))
-        if type_.lower() == "warning":
-            self.ui.commandMessageBox.setTextColor(MESSAGE_WARNING)
-            self.logger.warning(msg)
-        if type_.lower() == "error":
-            self.ui.commandMessageBox.setTextColor(MESSAGE_ERROR)    
-            self.logger.error(msg)
-
-        self.ui.commandMessageBox.append(msg)
-        self.smart_append(self.ui.commandMessageBox)
+        self.genericMessage(self.ui.commandMessageBox,msg,type_)
 
     def clearCommandMessageBox(self):
         self.ui.commandMessageBox.clear()
@@ -1313,6 +1294,30 @@ class DexMain(QObject):
     """
     Miscellaneous
     """
+    def genericMessage(self,textBox,msg,Level):
+        lvlDict = {"debug":0,"info":1,"warning":2,"error":2}
+        logLevel = lvlDict[self.messageLevel.lower()]
+        msgLevel = lvlDict[Level.lower()]
+
+        textBox.setTextColor(QColor("black"))
+        if Level.lower() == "warning":
+            textBox.setTextColor(MESSAGE_WARNING)
+            self.logger.warning(msg)
+        elif Level.lower() == "error":
+            textBox.setTextColor(MESSAGE_ERROR)    
+            self.logger.error(msg)
+        elif Level.lower() == "debug":
+            textBox.setTextColor(MESSAGE_DEBUG)
+            self.logger.debug(msg)
+        else:
+            self.logger.info(msg)
+
+        if msgLevel >= logLevel:
+            textBox.append(msg)
+            self.smart_append(textBox)
+
+        
+
     def smart_append(self,text_edit):
         scroll_bar = text_edit.verticalScrollBar()
 

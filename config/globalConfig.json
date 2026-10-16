@@ -75,7 +75,7 @@
             "telemetryStructure": "splaser",
             "protocol": "UDP",
             "IP": "127.0.0.1",
-            "port": 1,
+            "port": 4568,
             "listening": false
         },
         {
@@ -149,5 +149,6 @@
     "autofillSimPackets": true,
     "simulationFloatNoise": 0.0,
     "simulationDatabaseSize": 5000.0,
-    "simulationPregeneratedPackets": 1
+    "simulationPregeneratedPackets": 1,
+    "messageVerbosity": "INFO"
 }

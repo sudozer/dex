@@ -23,7 +23,7 @@ STARTINGCONFIG = CONFIG()
 from packetReceiver import PktReceiver
 
 
-COUNTER_UPDATE_DWELL = 1
+COUNTER_UPDATE_DWELL = 2
 
 class UpdateCountersThread(QThread):
     newValue = Signal(float,str)
@@ -35,14 +35,17 @@ class UpdateCountersThread(QThread):
         self._running = True
         prevPackets = 0
         while self.receiverItem.listening.is_set():
-            accepted = self.receiverItem.receiver.acceptedPackets
-            rejected = self.receiverItem.receiver.malformedPackets
-            packetsPerSec = (accepted - prevPackets) / COUNTER_UPDATE_DWELL
+        
+            accepted = self.receiverItem.receiver.processor.acceptedPackets
+            rejected = self.receiverItem.receiver.processor.rejectedPackets
+            currentTotalPackets = accepted + rejected
+            packetsPerSec = (currentTotalPackets - prevPackets) / COUNTER_UPDATE_DWELL
 
             self.newValue.emit(packetsPerSec,f"{accepted}/{rejected}")
             time.sleep(COUNTER_UPDATE_DWELL)
+            prevPackets = currentTotalPackets
         self.newValue.emit(0.0,f"{accepted}/{rejected}")
-        self._running - False
+        self._running = False
 
 class PacketReceiverItem(QTableWidgetItem):
     def __init__(self,parentTable,row,dexMain,initConfig = None):

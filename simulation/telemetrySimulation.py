@@ -132,8 +132,9 @@ class Field():
         pass
 
 class SimulatedPacket():
-    def __init__(self, simDict, commandReceiver, telemetryReceiver, simulationMessageFunction):
+    def __init__(self, simDict, commandReceiver, telemetryReceiver,row, simulationMessageFunction):
         self.fields=[]
+        self.row = row
         self.paused = threading.Event()
         self.stopped = threading.Event()
         self.queueLock = threading.Lock()
@@ -184,7 +185,7 @@ class SimulatedPacket():
             
     def packetSenderThread(self):
         currentPacket = self.buildPacket()
-        self.simulationMessageFunction(f"Launching simulation thread of packet:{self.simDict['packetConfig']['structure']}")
+        self.simulationMessageFunction(f"Launching simulation thread of packet: {self.simDict['packetConfig']['structure']}")
         while not self.stopped.is_set():
             time.sleep(1) #unpause timer
             nextTime = time.time() + self.period
@@ -211,7 +212,6 @@ class SimulatedPacket():
                     self.fields[fieldIdx].buildValueList()
                     fieldIdx += 1
 
-    
     def pause(self):
         self.paused.set()
         self.simulationMessageFunction(f"Simulation paused: {self.simDict['packetConfig']['structure']}::{self.simDict['packetConfig']['packet']}")

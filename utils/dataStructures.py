@@ -110,22 +110,27 @@ class DataDictionaries():
         self.packetTemplates = {}
         self.packetStructures = {}
         self.packetStructureComponents = {}
+        self.packetStructureSizes = {}
         ##TODO support dynamic sized fields
         for structureName, structure in self.structures.items():
             self.packetStructures[structureName] = {}
+            self.packetStructureSizes[structureName] = {}
             if not 'packetIdField' in structure:
-                #just one packet
+                #just one packet defined with header files
                 self.packetTemplates[structureName] = []
                 self.packetStructureComponents[structureName]={structureName:[]}
+                bitSum = 0
                 for file in structure['headers']:
                     path_ = cfgLoader.getPath(file)
                     with open(path_,'r') as file_:
                         packetDict = json.load(file_)
                         self.packetTemplates[structureName].extend(packetDict['fields'])
                         self.packetStructureComponents[structureName][structureName].append({'component':path_.stem,'fields':packetDict['fields']})
-            
+                        bitSum += sum([field['bitLength'] for field in packetDict['fields']])
                 self.packetStructures[structureName][structureName] = self.packetTemplates[structureName]
+                self.packetStructureSizes[structureName][structureName] = int(bitSum / 8)
             else:
+
                 self.packetStructureComponents[structureName]= {}
                 packetFilePath = cfgLoader.getPath(structure['packets'])
                 with open(packetFilePath,'r') as packetDefFile:
@@ -133,22 +138,26 @@ class DataDictionaries():
                 for packetId, packetDef in packetDefDict.items():
                     self.packetTemplates[f"{structureName}_{packetId}"] = []
                     self.packetStructureComponents[structureName][packetId] =[]
+                    bitSum = 0
                     for file in structure['headers']:
                         path_ = cfgLoader.getPath(file)
                         with open(path_,'r') as file_:
                             packetDict = json.load(file_)
                             self.packetTemplates[f"{structureName}_{packetId}"].extend(packetDict['fields'])
                             self.packetStructureComponents[structureName][packetId].append({'component':path_.stem,'fields':packetDict['fields']})
+                            bitSum += sum([field['bitLength'] for field in packetDict['fields']])
                     self.packetTemplates[f"{structureName}_{packetId}"].extend(packetDef['fields'])
+                    bitSum += sum([field['bitLength'] for field in packetDef['fields']])
                     self.packetStructureComponents[structureName][packetId].append({'component':packetId,'fields':packetDef['fields']})
 
                     for file in structure['footers']:
                         with open(cfgLoader.getPath(file),'r') as file_:
                             packetDict = json.load(file_)
                             self.packetTemplates[f"{structureName}_{packetId}"].extend(packetDict['fields'])
-
+                            bitSum += sum([field['bitLength'] for field in packetDict['fields']])
                     self.packetStructures[structureName][f"{structureName}_{packetId}"] = self.packetTemplates[f"{structureName}_{packetId}"]
-
+                    self.packetStructureSizes[structureName][packetId] = int(bitSum / 8)
+    
     def loadCommandTemplates(self):
         commandFilePath = cfgLoader.getPath("commandDefinitions")
         self.commandComponents = {"static components":{},"command definitions":{}}
@@ -169,4 +178,4 @@ PACKET_TEMPLATES = Datadicts.packetTemplates
 PACKET_STRUCTURES = Datadicts.packetStructures
 COMMAND_COMPONENTS = Datadicts.commandComponents
 PACKET_STRUCTURE_COMPONENTS = Datadicts.packetStructureComponents
-
+PACKET_STRUCTURE_SIZES = Datadicts.packetStructureSizes
