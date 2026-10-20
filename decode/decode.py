@@ -8,41 +8,22 @@ import sys
 import bitstruct
 import logging
 import pdb
-from pathlib import Path
 from copy import deepcopy, copy
-
-REPO_ROOT = Path(__file__).resolve().parents[1]
-UTILS_DIR = REPO_ROOT / 'utils'
-CONVERSIONS_DIR = REPO_ROOT / 'conversions'
-for candidate in [REPO_ROOT, UTILS_DIR, CONVERSIONS_DIR]:
-    candidate_str = str(candidate)
-    if candidate_str not in sys.path:
-        sys.path.insert(0, candidate_str)
+from pathlib import Path
+from loadConfig import cfgLoader, GLOBAL_CONFIG
 
 #from fieldwiseConversions import FieldConverter
 #load configs
 import dynamicLengthFields
-from loadConfig import Configs
-
-try:
-    from malformedPackets.malformedPacketHandler import PacketProcessingError
-except ImportError:
-    from malformedPacketHandler import PacketProcessingError
-
-CFGLOADER = Configs()
-CONFIG = CFGLOADER.loadGlobalConfig
-
 
 class Decoder():
-    def __init__(self, structureName, logLevel=logging.WARNING):
+    def __init__(self, structureName, msgFunction):
         self.packet_counter = 0
-        self.logger = logging.getLogger(__name__)
-        logging.basicConfig(filename=CFGLOADER.getPath(CONFIG()['logBasepath']), encoding='utf-8', level=logLevel)
-        self.packetStructures = CONFIG()['telemetryStructures']
+        self.msgFunction = msgFunction
+        self.packetStructures = GLOBAL_CONFIG['telemetryStructures']
         if structureName not in self.packetStructures:
-            self.logger.error(f"Structure {structureName} not found in globalConfig ({CFGLOADER.global_config_path}) packetStructures.")
-            self.logger.error(f"Available structures: {list(self.packetStructures.keys())}")
-            self.logger.error(f"Unable to initialize RXPacketReader. Without a valid packet structure.")
+            self.msgFunction(f"Structure {structureName} not found in configured packet Structures.\nAvailable structures: \n{list(self.packetStructures.keys())}","Error")
+            return
         else:
             self.structureName = structureName
 
@@ -56,26 +37,23 @@ class Decoder():
                 return bytes.fromhex(packet)
             except ValueError:
                 return packet.encode("utf-8")
-        raise PacketProcessingError("decode", f"Unsupported packet type {type(packet)}", raw_packet=packet)
 
     def readPacket(self, hexPacket):
         structureName = self.structureName
-        self.logger.debug(f'received packet:\n\n{hexPacket}\n\ndecoding with structure:\n\n{structureName}')
+        self.msgFunction(f'Received packet:\n\n{hexPacket}\n\nDecoding with structure:\n\n{structureName}',"Debug")
         structure = deepcopy(self.packetStructures[structureName])
         packetTemplate = []
         components = []
         try:
             packetTemplate, components = self.createPacketTemplate(structure, hexPacket)
             if not packetTemplate:
-                raise PacketProcessingError("decode", "Unable to build a packet template for the malformed packet", raw_packet=hexPacket, packet_template=packetTemplate)
+                self.msgSignal("Unable to build a packet template for the malformed packet", "ERROR")
             packet, order = self.readFromTemplate(hexPacket, packetTemplate)
             if not packet:
-                raise PacketProcessingError("decode", "The packet decoder produced no interpret-able fields", raw_packet=hexPacket, packet_template=packetTemplate)
+                self.msgFunction("The packet decoder produced no interpretable fields", "ERROR")
             return packet, components, order, packetTemplate
-        except PacketProcessingError:
-            raise
-        except Exception as exc:
-            raise PacketProcessingError("decode", f"Failed to decode packet: {exc}", raw_packet=hexPacket, packet_template=packetTemplate) from exc
+        except Exception as E:
+            self.msgFunction(f"Decoding error: {E}","ERROR")
 
     def findPacketType(self, hexPacket, structure):
         #if packetIdField is present in packet structure, a static header field must identify the packet type. Use this to determine how to interpret the rest of the packet.
@@ -88,11 +66,11 @@ class Decoder():
             idField = structure['packetIdField']['field']
             pktID = partialPacket[f"{idFile}__{idField}"]['rawValue']
             packetFile = structure['format'][structure['packetIdField']['packetDefinitionsIndex']]
-            with open(CFGLOADER.getPath(packetFile)) as f:
+            with open(cfgLoader.getPath(packetFile)) as f:
                 pktDef = json.load(f)
                 try:
                     dynamicStructureComponent = pktDef[str(pktID)]
-                    dynamicStructureComponent['fileSource'] = CFGLOADER.getPath(packetFile)
+                    dynamicStructureComponent['fileSource'] = cfgLoader.getPath(packetFile)
                     components = []
                     for component in packetComponents:
                         if component == packetFile:
@@ -100,14 +78,12 @@ class Decoder():
                         else:
                             components.append(Path(component).stem)
                 except KeyError as exc:
-                    raise PacketProcessingError("decode", f"Packet ID {pktID} not found in packet definition file {packetFile}", raw_packet=hexPacket, packet_template=packetTemplate) from exc
+                    self.msgFunction(f"Packet ID {pktID} not found in packet definition file {packetFile}", "ERROR")
 
             structure['format'][structure['packetIdField']['packetDefinitionsIndex']] = dynamicStructureComponent
             return structure, components
-        except PacketProcessingError:
-            raise
-        except Exception as exc:
-            raise PacketProcessingError("decode", f"Unable to resolve packet structure: {exc}", raw_packet=hexPacket, packet_template=packetTemplate) from exc
+        except Exception as E:
+            self.msgFunction(f"Error determining packet type: {E}", "ERROR")
 
     def assembleHeaderTemplate(self, structure):
         #assemble a packet template for just the static header fields that identify the packet type, based on the packetIdentifier settings in globalConfig.
@@ -115,16 +91,16 @@ class Decoder():
         idField = structure['packetIdField']['field']
         pktDefFile = structure['format'][structure['packetIdField']['packetDefinitionsIndex']]
         try:
-            with open(CFGLOADER.getPath(pktDefFile), 'r') as f:
+            with open(cfgLoader.getPath(pktDefFile), 'r') as f:
                 pktDef = json.load(f)
-        except Exception as exc:
-            raise PacketProcessingError("decode", f"Unable to read packet definition file {pktDefFile}: {exc}") from exc
+        except Exception as E:
+            self.msgFunction(f"Unable to read packet definition file {pktDefFile}:]n{E}","ERROR")
         packetTemplate = []
         pktIDFound = False
         i = 0
         while i <= idFileIndex:
             pktdef = structure['format'][i]
-            with open(CFGLOADER.getPath(pktdef)) as f:
+            with open(cfgLoader.getPath(pktdef)) as f:
                 staticComponent = json.load(f)
                 for field in staticComponent['fields']:
                     field['definitionSource'] = pktdef
@@ -139,7 +115,7 @@ class Decoder():
                     if pktIDFound:
                         break
                     else:
-                        raise PacketProcessingError("decode", f"Packet identifier field {idField} not found in packet definition file {pktDefFile}", packet_template=packetTemplate)
+                        self.msgFunction(f"Packet identifier field {idField} not found in packet definition file {pktDefFile}", "ERROR")
             i += 1
         return packetTemplate
 
@@ -152,7 +128,7 @@ class Decoder():
         if 'packetIdField' in structure:
             structure, components = self.findPacketType(hexPacket, structure)
             if not structure:
-                raise PacketProcessingError("decode", 'Unable to interpret packet: Unable to resolve packet structure', raw_packet=hexPacket)
+                self.msgFunction(f'Unable to interpret packet: Unable to resolve packet structure','ERROR')
         else:
             components = [Path(component).stem for component in structure['format']]
         packetTemplate = []
@@ -160,7 +136,7 @@ class Decoder():
         packetFormat = structure['format']
         for pktdef in packetFormat:
             if type(pktdef) == str:
-                with open(CFGLOADER.getPath(pktdef)) as f:
+                with open(cfgLoader.getPath(pktdef)) as f:
                     staticComponent = json.load(f)
                     for field in staticComponent['fields']:
                         field['definitionSource'] = Path(pktdef).stem
@@ -188,11 +164,10 @@ class Decoder():
             expectedBitNum += field['bitLength']
 
         if expectedBitNum / 8 > len(packetBytes):
-            raise PacketProcessingError("decode", "Packet is too short to deserialize with the provided template", raw_packet=hexPacket, packet_template=packetTemplate)
+            self.msgFunction("Packet is too short to deserialize with the provided template","ERROR")
 
         elif expectedBitNum / 8 < len(packetBytes) and verifyLength:
-            self.logger.warning(f"Too many bytes supplied by packet.  Expected {expectedBitNum} and recieved {len(packetBytes)}")
-            self.logger.warning("Truncating packet to interpret with the provided template.")
+            self.msgFunction("Too many bytes supplied by packet.  Expected {expectedBitNum} and recieved {len(packetBytes)}","WARNING")
             packetValues = bitstruct.unpack(bitstructString, packetBytes[0:int(expectedBitNum / 8)])
         else:
             packetValues = bitstruct.unpack(bitstructString, packetBytes)
@@ -214,8 +189,8 @@ class Decoder():
                 fieldKey = f"{defSource}__{fieldName}"
                 interpretedFields[fieldKey] = field
                 order.append(fieldKey)
-            except Exception as exc:
-                raise PacketProcessingError("decode", f"Failed to parse field {fieldName}: {exc}", raw_packet=hexPacket, packet_template=packetTemplate, field_names=[fieldName]) from exc
+            except Exception as E:
+                self.msgFunction(f"Failed to parse field {fieldName}: {E}","ERROR")
         return interpretedFields, order
 
     def convertBinary(self, packet):

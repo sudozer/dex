@@ -6,11 +6,10 @@ import serialize
 from autofill import Autofiller
 import threading
 import time
+
+from PySide6.QtCore import QObject, QThread, Signal, Slot
  
-from loadConfig import Configs
-cfgLoader = Configs()
-CONFIG = cfgLoader.loadGlobalConfig
-STARTINGCONFIG = CONFIG()
+from loadConfig import cfgLoader, GLOBAL_CONFIG
 
 from dataStructures import PACKET_STRUCTURE_COMPONENTS, COMMAND_COMPONENTS
 from liveTelemetry import LIVETLM
@@ -53,6 +52,17 @@ class SimTelemetryReceiver():
 class SimCommandReceiver(CommandReceiver):
     def __init__(self,commandPort,commandProtocol,commandStructure,simulationMessageFunction):
         super().__init__('127.0.0.1',commandPort,commandProtocol,commandStructure,simulationMessageFunction)
+
+class PlaybackArchive():
+    #object to store playback 
+    def __init__(self):
+        pass
+
+    def addPacketToArchive(self):
+        pass
+
+    def retrievePackets(self,packet):
+        pass
 
 class Field():
     def __init__(self,component,fieldDict,packetConfig,packetBehaviors,initialConditions,fieldSimulationDict,simulatedPacket):
@@ -102,16 +112,7 @@ class Field():
 
         if self.currentBehavior['behaviorType'] == "Playback From Telemetry":
             self.behaviorGenerator = behaviorPlayBackTelemetry(self.fieldDict,self.currentBehavior['behaviorArgs']['playbackDatabase'],self.currentBehavior['behaviorArgs']['playbackTime'])
-        
-        self.valueList = []
-        self.buildValueList()
-
-    def buildValueList(self):
-        i = len(self.valueList)
-        while i < STARTINGCONFIG['simulationPregeneratedPackets']:
-            self.valueList.append(self.buildValue())
-            i += 1
-            
+                    
     def buildValue(self):
         self.prevValue = self.fieldDict['value']
         val = next(self.behaviorGenerator)
@@ -131,8 +132,10 @@ class Field():
     def registerTriggers(self):
         pass
 
-class SimulatedPacket():
-    def __init__(self, simDict, commandReceiver, telemetryReceiver,row, simulationMessageFunction):
+class SimulatedPacket(QObject):
+    messageSignal = Signal(str,str)
+    def __init__(self, simDict, commandReceiver, telemetryReceiver,row):
+        super().__init__()
         self.fields=[]
         self.row = row
         self.paused = threading.Event()
@@ -142,17 +145,17 @@ class SimulatedPacket():
         self.simDict = simDict
         self.period = 1 / self.simDict['packetConfig']['simulationRate']
         self.simCapacity = 100
+        self.packetsSent = 0
         self.commandReceiver = commandReceiver
         self.telemetryReceiver = telemetryReceiver
-        self.simulationMessageFunction = simulationMessageFunction
+        self.simulationMessageFunction = self.messageSignal
         self.packetTemplate = PACKET_STRUCTURE_COMPONENTS[simDict['packetConfig']['structure']][simDict['packetConfig']['packet']]
-        self.telemetryTransmitter = SimTelemetryTransmitter(simDict['packetConfig'],simulationMessageFunction)
+        self.telemetryTransmitter = SimTelemetryTransmitter(simDict['packetConfig'],self.simulationMessageFunction)
         self.buildFieldList()
-        
         self.packetBuilderThread = threading.Thread(target=self.packetBuilderThread)
         self.transmitThread = threading.Thread(target=self.packetSenderThread)
         self.packetBuilderThread.start()
-        time.sleep(2)
+        time.sleep(1)
         self.transmitThread.start()
 
     def buildFieldList(self):
@@ -174,7 +177,7 @@ class SimulatedPacket():
         return packetList
     
     def sendPacket(self,packet):
-        if STARTINGCONFIG.get('autofillSimPackets'):
+        if GLOBAL_CONFIG.get('autofillSimPackets'):
             packet = self.autofiller.autofillAllFields(packet)
         bitString = ''
         for field in packet:
@@ -185,7 +188,7 @@ class SimulatedPacket():
             
     def packetSenderThread(self):
         currentPacket = self.buildPacket()
-        self.simulationMessageFunction(f"Launching simulation thread of packet: {self.simDict['packetConfig']['structure']}")
+        self.simulationMessageFunction.emit(f"Launching simulation thread of structure: {self.simDict['packetConfig']['structure']} packet:{self.simDict['packetConfig']['packet']}","INFO")
         while not self.stopped.is_set():
             time.sleep(1) #unpause timer
             nextTime = time.time() + self.period
@@ -193,20 +196,24 @@ class SimulatedPacket():
                 nextTime = nextTime + self.period
                 with self.queueLock:
                     self.sendPacket(currentPacket)
+                    self.packetsSent += 1
                 currentPacket = self.buildPacket()
-
+                if GLOBAL_CONFIG['simulationSendLimitedPackets']:
+                    if GLOBAL_CONFIG['simulationNumberOfPackets'] <= self.packetsSent:
+                        self.stopped.set()
                 now = time.time()
                 dwellPeriod = nextTime - now
                 if dwellPeriod > 0:
                     time.sleep(dwellPeriod)
                 else:
-                    self.simulationMessageFunction("Simulation falling behind.","ERROR")
+                    self.simulationMessageFunction.emit(f"Simulation falling behind: {self.simDict['packetConfig']['structure']}::{self.simDict['packetConfig']['packet']} ","ERROR")
                     nextTime = time.time()
+        self.simulationMessageFunction.emit(f"Simulation thread completed: {self.simDict['packetConfig']['structure']}::{self.simDict['packetConfig']['packet']}")
 
     def packetBuilderThread(self):
         while not self.stopped.is_set():
             fieldIdx = 0
-            self.simCapacity = 100 * len(self.fields[0].valueList) / STARTINGCONFIG['simulationPregeneratedPackets']
+            self.simCapacity = 100 * len(self.fields[0].valueList) / GLOBAL_CONFIG['simulationPregeneratedPackets']
             while fieldIdx < len(self.fields) and not self.stopped.is_set():
                 with self.queueLock:
                     self.fields[fieldIdx].buildValueList()
@@ -214,16 +221,25 @@ class SimulatedPacket():
 
     def pause(self):
         self.paused.set()
-        self.simulationMessageFunction(f"Simulation paused: {self.simDict['packetConfig']['structure']}::{self.simDict['packetConfig']['packet']}")
+        self.simulationMessageFunction.emit(f"Simulation paused: {self.simDict['packetConfig']['structure']}::{self.simDict['packetConfig']['packet']}")
     
     def resume(self):
         self.paused.clear()
-        self.simulationMessageFunction(f"Simulation resuming: {self.simDict['packetConfig']['structure']}::{self.simDict['packetConfig']['packet']}")
+        self.simulationMessageFunction.emit(f"Simulation resuming: {self.simDict['packetConfig']['structure']}::{self.simDict['packetConfig']['packet']}")
 
     def stop(self):
         self.stopped.set()
-        self.packetBuilderThread.join()
-        self.transmitThread.join()
+        if self.packetBuilderThread.is_alive():
+            self.packetBuilderThread.join()
+        if self.packetSenderThread.is_alive():
+            self.transmitThread.join()
         self.telemetryTransmitter.close()
-        self.simulationMessageFunction(f"Simulation terminated: {self.simDict['packetConfig']['structure']}::{self.simDict['packetConfig']['packet']}")
-        
+        self.simulationMessageFunction.emit(f"Simulation terminated: {self.simDict['packetConfig']['structure']}::{self.simDict['packetConfig']['packet']}")
+
+class SimulatedPacketContainer():
+    def __init__(self,packet,simCommandReceiver,simTlmReceiver,row,simulationMessage):
+        self.simPacket = SimulatedPacket(packet,simCommandReceiver,simTlmReceiver,row)
+        self.transmitThread = QThread()
+        self.simPacket.moveToThread(self.transmitThread)
+        self.transmitThread.started.connect(self.simPacket.packetSenderThread)
+        self.simPacket.messageSignal.connect(simulationMessage)

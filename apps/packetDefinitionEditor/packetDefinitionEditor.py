@@ -30,9 +30,7 @@ from PySide6.QtWidgets import (
 )
 from qt_material import apply_stylesheet
 
-from loadConfig import Configs
-cfgLoader = Configs()
-CONFIG = cfgLoader.loadGlobalConfig
+from loadConfig import cfgLoader, GLOBAL_CONFIG
 
 from packetDefinitionLib import PacketDefinitionUtility
 
@@ -182,7 +180,7 @@ class PacketDefinitionEditor():
         self.ui = loader.load(ui_file)
         ui_file.close()
         
-        #apply_stylesheet(self.window, theme=CONFIG()['guiTheme'])
+        #apply_stylesheet(self.window, theme=GLOBAL_CONFIG['guiTheme'])
         self.ui.show()
         self.initGUI()
     
@@ -249,7 +247,7 @@ class PacketDefinitionEditor():
 
     def populateTelemetryDefinitions(self):
         self.ui.telemetryDefinitionsTree.clear()
-        tdefPath = Path(cfgLoader.getPath(CONFIG()['telemetryDefinitionsBasepath']))
+        tdefPath = Path(cfgLoader.getPath(GLOBAL_CONFIG['telemetryDefinitionsBasepath']))
 
         files = [f for f in tdefPath.rglob('*') if f.is_file() and f.suffix in ('.hd')]
         self.telemetryDefinitions = {}
@@ -271,7 +269,7 @@ class PacketDefinitionEditor():
 
     def populateTelemetryStructures(self):
         self.ui.structureTree.clear()
-        for structureName, structure in CONFIG()['telemetryStructures'].items():
+        for structureName, structure in GLOBAL_CONFIG['telemetryStructures'].items():
             item = StructureItem(structureName,structure,self.ui.structureTree)
             #self.ui.structureTree.addTopLevelItem(item)
 
@@ -533,7 +531,7 @@ class PacketDefinitionEditor():
 
     def saveTelemetryDefinition(self, sourceFile):
         defDict = self.telemetryDefinitions[sourceFile]
-        savePath = cfgLoader.getPath(CONFIG()['telemetryDefinitionsBasepath']) / sourceFile
+        savePath = cfgLoader.getPath(GLOBAL_CONFIG['telemetryDefinitionsBasepath']) / sourceFile
         with open(savePath,'w') as f:
             json.dump(defDict,f,indent=4)
 

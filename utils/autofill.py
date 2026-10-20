@@ -3,9 +3,7 @@ import datetime
 import pdb
 import struct
 
-from loadConfig import Configs
-cfgLoader = Configs()
-CONFIG = cfgLoader.loadGlobalConfig
+from loadConfig import cfgLoader, GLOBAL_CONFIG
 
 class Autofiller():
     def __init__(self):
@@ -96,4 +94,4 @@ class Autofiller():
         return bitLen // 8
 
     def primarySequenceCount(self):
-        return CONFIG()['commandSequenceNumber']
+        return GLOBAL_CONFIG['commandSequenceNumber']

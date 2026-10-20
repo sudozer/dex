@@ -3,13 +3,11 @@ import logging
 import pdb
 import sys
 sys.path.append('../utils')
-from loadConfig import Configs
-CFGLOADER = Configs()
-CONFIG = CFGLOADER.loadGlobalConfig
+from loadConfig import cfgLoader, GLOBAL_CONFIG
 logger = logging.getLogger(__name__)
 logLevel = logging.ERROR
 
-logging.basicConfig(filename=CFGLOADER.getPath(CONFIG()['logBasepath']), encoding='utf-8', level=logLevel)
+logging.basicConfig(filename=cfgLoader.getPath(GLOBAL_CONFIG['logBasepath']), encoding='utf-8', level=logLevel)
 
 #hell
 

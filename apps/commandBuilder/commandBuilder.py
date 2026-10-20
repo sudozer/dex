@@ -25,14 +25,11 @@ from PySide6.QtWidgets import (
     QDateTimeEdit
 )
 from dataStructures import COMMAND_COMPONENTS
-from loadConfig import Configs
 from packetDefinitionLib import PacketDefinitionUtility
 from autofill import Autofiller
 ERROR_COLOR = QColor(237,71,59)
 
-cfgLoader = Configs()
-CONFIG = cfgLoader.loadGlobalConfig
-startingConfig = CONFIG()
+from loadConfig import cfgLoader, GLOBAL_CONFIG
 
 class CommandItem(QListWidgetItem):
     def __init__(self,parentList,commandID,commandDict):
@@ -88,7 +85,7 @@ class CommandBuilder(QDialog):
         self.ui = loader.load(ui_file, self)
         ui_file.close()
         self.commandStructureName = commandStructureName
-        self.commandStructure = CONFIG()['commandStructures'][commandStructureName]
+        self.commandStructure = GLOBAL_CONFIG['commandStructures'][commandStructureName]
         layout = QVBoxLayout()
         layout.addWidget(self.ui)
         self.setLayout(layout)

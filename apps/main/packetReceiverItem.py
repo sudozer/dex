@@ -16,10 +16,8 @@ from PySide6.QtGui import QIcon
 
 import time
 
-from loadConfig import Configs
-cfgLoader = Configs()
-CONFIG = cfgLoader.loadGlobalConfig
-STARTINGCONFIG = CONFIG()
+from loadConfig import cfgLoader, GLOBAL_CONFIG
+
 from packetReceiver import PktReceiver
 
 
@@ -59,7 +57,7 @@ class PacketReceiverItem(QTableWidgetItem):
         self.receiver = None
         self.listening = threading.Event()
         self.structureBox = QComboBox()
-        for structure in CONFIG()['telemetryStructures']:
+        for structure in GLOBAL_CONFIG['telemetryStructures']:
             self.structureBox.addItem(structure)
 
         self.protocolBox = QComboBox()
@@ -133,7 +131,7 @@ class PacketReceiverItem(QTableWidgetItem):
         if self.protocolBox.currentText() == 'TCP Client':
             self.ipField.setEnabled(True)
             self.ipField.setText(self.initConfig['IP'])
-        if self.initConfig['listening'] and STARTINGCONFIG.get("telemetryLaunchReceiversOnStartup",False):
+        if self.initConfig['listening'] and GLOBAL_CONFIG.get("telemetryLaunchReceiversOnStartup",False):
             self.startListening()
 
     def protocolChanged(self):

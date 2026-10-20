@@ -68,7 +68,7 @@
             "protocol": "UDP",
             "IP": "127.0.0.1",
             "port": 4567,
-            "listening": false
+            "listening": true
         },
         {
             "label": "fiona",
@@ -149,6 +149,11 @@
     "autofillSimPackets": true,
     "simulationFloatNoise": 0.0,
     "simulationDatabaseSize": 5000.0,
-    "simulationPregeneratedPackets": 1,
-    "messageVerbosity": "INFO"
+    "simulationPregeneratedPackets": 60,
+    "messageVerbosity": "Debug",
+    "simulationSendLimitedPackets": true,
+    "simulationNumberOfPackets": 1,
+    "telemetryLaunchReceiversOnStartup": false,
+    "staleDataSeconds": 5,
+    "fieldDisplayUpdateDelay": 0.0
 }

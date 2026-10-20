@@ -4,9 +4,7 @@ import logging
 import pdb
 import polars as pl
 sys.path.append('../utils')
-from loadConfig import Configs
-CFGLOADER = Configs()
-CONFIG = CFGLOADER.loadGlobalConfig
+from loadConfig import cfgLoader, GLOBAL_CONFIG
 
 
 
@@ -14,7 +12,7 @@ class PacketDefinitionUtility():
 
     def __init__(self,logLevel=logging.WARNING):
         self.logger = logging.getLogger(__name__)
-        logging.basicConfig(filename=CFGLOADER.getPath(CONFIG()['logBasepath']), encoding='utf-8', level=logLevel)
+        logging.basicConfig(filename=cfgLoader.getPath(GLOBAL_CONFIG['logBasepath']), encoding='utf-8', level=logLevel)
 
     def addBitstructStrings(self,pktDefPath):
         with open(pktDefPath,'r') as f:

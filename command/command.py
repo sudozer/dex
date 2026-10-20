@@ -5,13 +5,11 @@ from autofill import Autofiller
 import struct
 import logging
 
-from loadConfig import Configs
-cfgLoader = Configs()
-CONFIG = cfgLoader.loadGlobalConfig
-startingConfig = CONFIG()
+from loadConfig import cfgLoader, GLOBAL_CONFIG
+
 
 LOGGER = logging.getLogger(__name__)
-logging.basicConfig(filename=cfgLoader.getPath(CONFIG()['logBasepath']), encoding='utf-8', level=logging.INFO)
+logging.basicConfig(filename=cfgLoader.getPath(GLOBAL_CONFIG['logBasepath']), encoding='utf-8', level=logging.INFO)
 
 def defaultLog(msg,level):
     LOGGER.info(msg)

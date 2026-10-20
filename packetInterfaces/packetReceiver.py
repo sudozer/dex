@@ -1,4 +1,4 @@
-from PySide6.QtCore import QObject, QThread, Signal, Slot, QMutex, QWaitCondition
+from PySide6.QtCore import QObject, QThread, Signal, Slot
 
 import json
 import sys
@@ -19,10 +19,7 @@ from store import Storage
 from liveTelemetry import LIVETLM
 from malformedPacketHandler import MalformedPacketLogger, PacketProcessingError
 
-from loadConfig import Configs
-cfgLoader = Configs()
-CONFIG = cfgLoader.loadGlobalConfig
-STARTINGCONFIG = CONFIG()
+from loadConfig import cfgLoader, GLOBAL_CONFIG
 
 from dataStructures import PACKET_STRUCTURE_SIZES
 
@@ -63,16 +60,14 @@ class PacketProcessor(QObject):
 
             packetTemplate = []
             components = []
-            self.acceptedPackets += 1
-            self.rejectedPackets += 1
-            return
+
             #decode
             try:
                 decodedPacket, components, order, packetTemplate = self.decoder.readPacket(packet)
                 decodedPacket['metadata'] = {'components': components, 'order': order}
                 if decodedPacket:
                     self.logger.debug(f"Decoded packet:\n\n{decodedPacket}")
-                    decodedPacket['metadata']['groundTimestampUTC'] = datetime.datetime.now(datetime.UTC).strftime(STARTINGCONFIG['datetimeFormat'])
+                    decodedPacket['metadata']['groundTimestampUTC'] = datetime.datetime.now(datetime.UTC).strftime(GLOBAL_CONFIG['datetimeFormat'])
                     decodedPacket['metadata']['telemetryStructure'] = self.packetType
             except PacketProcessingError as exc:
                 self.msgFunction(f"Failed to decode packet: {packet}. Error: {exc}","ERROR")
@@ -82,11 +77,12 @@ class PacketProcessor(QObject):
                 self.msgFunction(f"Failed to decode packet: {packet}. Error: {exc}","ERROR")
                 #self.malformedPacketHandler.logMalformedPacket(packet, packetTemplate=packetTemplate, errors=[{"stage": "decode", "message": str(exc)}], packetStructure=self.packetStructure, packetType=self.packetType, components=components)
                 return
+            return
             
             #convert
             try:
                 convertedPacket = self.converter.convertPacket(decodedPacket, packetTemplate=packetTemplate)
-                convertedPacket['metadata']['primaryTimestamp'] = decodedPacket['metadata'].get('groundTimestampUTC', datetime.datetime.now(datetime.UTC).strftime(STARTINGCONFIG['datetimeFormat']))
+                convertedPacket['metadata']['primaryTimestamp'] = decodedPacket['metadata'].get('groundTimestampUTC', datetime.datetime.now(datetime.UTC).strftime(GLOBAL_CONFIG['datetimeFormat']))
                 self.msgFunction(f"Converted packet:\n\n{convertedPacket}","DEBUG")
             except PacketProcessingError as exc:
                 self.msgFunction(f"Failed to convert packet: {decodedPacket}. Error: {exc}","ERROR")
@@ -149,7 +145,7 @@ class PktReceiver():
         self.msgFunction = msgFunction
         self.pktDefUtil = PacketDefinitionUtility()
         self.validatePacketType(self.receiverDict['telemetryStructure'])
-        packetStructure = STARTINGCONFIG['telemetryStructures'][self.receiverDict['telemetryStructure']]
+        packetStructure = GLOBAL_CONFIG['telemetryStructures'][self.receiverDict['telemetryStructure']]
 
         self.packetStructure = packetStructure
         self.malformedPacketHandler = MalformedPacketLogger(msgFunction)
@@ -161,9 +157,9 @@ class PktReceiver():
         self.openListener()
 
     def validatePacketType(self, packetType):
-        cfg = CONFIG()
+        cfg = GLOBAL_CONFIG
         if not packetType in cfg['telemetryStructures']:
-            self.msgFunction(f"{packetType} not a recognized packet type.  Current packets types are: {STARTINGCONFIG['telemetryStructures'].keys()}","ERROR")
+            self.msgFunction(f"{packetType} not a recognized packet type.  Current packets types are: {GLOBAL_CONFIG['telemetryStructures'].keys()}","ERROR")
         validatedDataType = True
         
         #headers

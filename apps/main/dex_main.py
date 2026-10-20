@@ -34,10 +34,7 @@ from PySide6.QtWidgets import (
 )
 from qt_material import apply_stylesheet
 
-from loadConfig import Configs
-cfgLoader = Configs()
-CONFIG = cfgLoader.loadGlobalConfig
-STARTING_CONFIG = CONFIG() #for when it's not necessary to reload the whole config
+from loadConfig import cfgLoader, GLOBAL_CONFIG
 
 from packetDefinitionLib import PacketDefinitionUtility
 from decode import Decoder
@@ -86,7 +83,7 @@ class PacketBehavior(QTableWidgetItem):
         self.playbackTimeField = QDateTimeEdit()
         self.playbackTimeField.setCalendarPopup(True)
         self.playbackTimeField.setTimeZone(QTimeZone.UTC)
-        self.playbackTimeField.setDisplayFormat(STARTING_CONFIG['qtDateFormat'])
+        self.playbackTimeField.setDisplayFormat(GLOBAL_CONFIG['qtDateFormat'])
         self.setFlags(Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled)
         self.setCheckState(Qt.CheckState.Checked)
 
@@ -133,7 +130,7 @@ class PacketBehavior(QTableWidgetItem):
                 self.commandDict = triggerArgs
 
         self.behaviorPlaybackDatabaseSelect.setCurrentText(behaviorArgs['playbackDatabase'])
-        qDate = QDateTime.fromString(behaviorArgs['playbackTime'],STARTING_CONFIG['qtDateFormat'])
+        qDate = QDateTime.fromString(behaviorArgs['playbackTime'],GLOBAL_CONFIG['qtDateFormat'])
         qDate.setTimeZone(QTimeZone.utc())
         self.playbackTimeField.setDateTime(qDate)
 
@@ -206,7 +203,7 @@ class PacketBehavior(QTableWidgetItem):
                 triggerArgs = {"structure":self.commandDict['structure'],"commandList":relevantCmdList}
 
         packetSimConfig['trigger']['triggerArgs'] = triggerArgs
-        packetSimConfig['behavior']['behaviorArgs'] = {"playbackDatabase":self.behaviorPlaybackDatabaseSelect.currentText(),"playbackTime":self.playbackTimeField.dateTime().toString(STARTING_CONFIG['qtDateFormat'])}
+        packetSimConfig['behavior']['behaviorArgs'] = {"playbackDatabase":self.behaviorPlaybackDatabaseSelect.currentText(),"playbackTime":self.playbackTimeField.dateTime().toString(GLOBAL_CONFIG['qtDateFormat'])}
         self.packetSimConfig = packetSimConfig
         return packetSimConfig
 
@@ -318,9 +315,9 @@ class FieldBehavior(QTreeWidgetItem):
                 self.behaviorRampType.setCurrentIndex(idx)
 
             case "Playback From Telemetry":
-                #behaviorArgs = {"playbackTime":self.behaviorPlaybackTime.dateTime().toString(STARTING_CONFIG['qtDateFormat'])}
+                #behaviorArgs = {"playbackTime":self.behaviorPlaybackTime.dateTime().toString(GLOBAL_CONFIG['qtDateFormat'])}
                 self.behaviorPlaybackDatabaseSelect.setCurrentText(behaviorArgs['playbackDatabase'])
-                qDate = QDateTime.fromString(behaviorArgs['playbackTime'],STARTING_CONFIG['qtDateFormat'])
+                qDate = QDateTime.fromString(behaviorArgs['playbackTime'],GLOBAL_CONFIG['qtDateFormat'])
                 qDate.setTimeZone(QTimeZone.utc())
                 self.behaviorPlaybackTime.setDateTime(qDate)
 
@@ -376,7 +373,7 @@ class FieldBehavior(QTreeWidgetItem):
             self.behaviorPlaybackTime = QDateTimeEdit()
             self.behaviorPlaybackTime.setCalendarPopup(True)
             self.behaviorPlaybackTime.setTimeZone(QTimeZone.UTC)
-            self.behaviorPlaybackTime.setDisplayFormat(STARTING_CONFIG['qtDateFormat'])
+            self.behaviorPlaybackTime.setDisplayFormat(GLOBAL_CONFIG['qtDateFormat'])
             layout.addWidget(self.behaviorPlaybackDatabaseSelect)
             layout.addWidget(self.behaviorPlaybackTime)
             self.parentItem.parentTree.setItemWidget(self,4,container)
@@ -437,7 +434,7 @@ class FieldBehavior(QTreeWidgetItem):
                 behaviorArgs = {'value':self.behaviorRampValue.text(),"rampSeconds":self.behaviorRampSeconds.text(),"rampType":self.behaviorRampType.currentText()}
 
             case "Playback From Telemetry":
-                behaviorArgs = {"playbackDatabase":self.behaviorPlaybackDatabaseSelect.currentText(),"playbackTime":self.behaviorPlaybackTime.dateTime().toString(STARTING_CONFIG['qtDateFormat'])}
+                behaviorArgs = {"playbackDatabase":self.behaviorPlaybackDatabaseSelect.currentText(),"playbackTime":self.behaviorPlaybackTime.dateTime().toString(GLOBAL_CONFIG['qtDateFormat'])}
         
         fieldSimConfig={'trigger':{'triggerType':self.triggerComboBox.currentText(),'triggerArgs':triggerArgs},"behavior":{"behaviorType":self.behaviorComboBox.currentText(),"behaviorArgs":behaviorArgs}}
         fieldSimConfig['enabled'] = True if self.checkState(0) == Qt.Checked else False
@@ -508,7 +505,7 @@ class SimBehaviorWidget(QDialog):
         loader = QUiLoader()
         self.loaded_widget = loader.load(ui_file, self)
         ui_file.close()
-        self.simParameterDict = CONFIG()['simulation'][self.row]
+        self.simParameterDict = GLOBAL_CONFIG['simulation'][self.row]
 
         # Set up layout to display the loaded form
         from PySide6.QtWidgets import QVBoxLayout
@@ -572,7 +569,7 @@ class SimBehaviorWidget(QDialog):
     def populateInitialConditions(self):
         self.loaded_widget.simInitConditions.setCheckState(Qt.CheckState.Checked if self.simParameterDict['initialConditions']['enabled'] else Qt.CheckState.Unchecked)
         self.loaded_widget.databaseSelectBox.setCurrentText(self.simParameterDict['initialConditions']['playbackDatabase'])
-        qDate = QDateTime.fromString(self.simParameterDict['initialConditions']['playbackTime'],STARTING_CONFIG['qtDateFormat'])
+        qDate = QDateTime.fromString(self.simParameterDict['initialConditions']['playbackTime'],GLOBAL_CONFIG['qtDateFormat'])
         qDate.setTimeZone(QTimeZone.utc())
         self.loaded_widget.databaseTimeEdit.setDateTime(qDate)
 
@@ -614,7 +611,7 @@ class SimBehaviorWidget(QDialog):
         self.simInitialConditions = {
             "enabled":True if self.loaded_widget.simInitConditions.checkState() == Qt.Checked else False,
             "playbackDatabase":self.loaded_widget.databaseSelectBox.currentText(),
-            "playbackTime":self.loaded_widget.databaseTimeEdit.dateTime().toString(STARTING_CONFIG['qtDateFormat'])
+            "playbackTime":self.loaded_widget.databaseTimeEdit.dateTime().toString(GLOBAL_CONFIG['qtDateFormat'])
         }
         self.accept()
         pass
@@ -628,7 +625,7 @@ class SimPacket(QTreeWidgetItem):
         self.setCheckState(0, Qt.CheckState.Checked)
         self.packetBehaviors = []
         self.fieldBehaviors = {}
-        self.initialConditions = {"enabled":False,"initConditionsDatabase":"","initConditionsDatetime":QDateTime.currentDateTimeUtc().toString(STARTING_CONFIG['qtDateFormat'])}
+        self.initialConditions = {"enabled":False,"initConditionsDatabase":"","initConditionsDatetime":QDateTime.currentDateTimeUtc().toString(GLOBAL_CONFIG['qtDateFormat'])}
         for comp in PACKET_STRUCTURE_COMPONENTS[structure][packet]:
             self.fieldBehaviors[comp['component']] = {}
         self.structure = structure
@@ -681,7 +678,7 @@ class SimPacket(QTreeWidgetItem):
     def writeSimConfig(self):
         simConfig = self.simPacketDict()
         row = self.parentWidget.indexOfTopLevelItem(self)
-        cfg = CONFIG()
+        cfg = GLOBAL_CONFIG
         simList = cfg['simulation']
         simList[row] = simConfig
         cfgLoader.configWrite(cfg)
@@ -704,7 +701,7 @@ class SimPacket(QTreeWidgetItem):
         return simConfig
 
     def addSimPacketConfig(self):
-        cfg = CONFIG()
+        cfg = GLOBAL_CONFIG
         simList = cfg['simulation']
         simList.append(self.simPacketDict())
         cfgLoader.configWrite(cfg)
@@ -785,8 +782,8 @@ class DexMain(QObject):
         super().__init__()
         self.logger = logging.getLogger(__name__)
         #TODO check config for log level
-        logging.basicConfig(filename=cfgLoader.getPath(CONFIG()['logBasepath']), encoding='utf-8', level=logLevel)
-        self.messageLevel = STARTING_CONFIG['messageVerbosity']
+        logging.basicConfig(filename=cfgLoader.getPath(GLOBAL_CONFIG['logBasepath']), encoding='utf-8', level=logLevel)
+        self.messageLevel = GLOBAL_CONFIG['messageVerbosity']
         self.mainGuiPath = cfgLoader.getPath('apps/main/ui/main.ui')
         self.pktDefUtil = PacketDefinitionUtility()
         ui_file = QFile(self.mainGuiPath)
@@ -808,7 +805,7 @@ class DexMain(QObject):
         self.ui.show()
 
     def initGUI(self):
-        self.ui.setWindowTitle(f"Dex {CONFIG()['version']}")
+        self.ui.setWindowTitle(f"Dex {GLOBAL_CONFIG['version']}")
         self.currentlyBuiltStructure = None
         self.ui.installEventFilter(self)
         #simulation controls
@@ -832,7 +829,7 @@ class DexMain(QObject):
         self.ui.simulationPacketsTree.setHeaderHidden(False)
         self.ui.roundTripDelaySpinBox.valueChanged.connect(self.setRoundTripDelay)
         self.populateSimPackets()
-        cfg = CONFIG()
+        cfg = GLOBAL_CONFIG
         for commandStructure in cfg['commandStructures']:
             self.ui.simulationCommandStructureBox.addItem(commandStructure)
         self.ui.clearSimulationMessagesButton.clicked.connect(self.clearSimulationMessages)
@@ -874,10 +871,13 @@ class DexMain(QObject):
         self.populateTelemetryReceivers()
         
         #config controls
+        self.initConfigOptions()
         self.ui.messageLevelBox.currentTextChanged.connect(self.writeConfigOptions)
         self.ui.messageLevelBox.currentTextChanged.connect(self.changeVerbosity)
         self.ui.commandAutofillFields.checkStateChanged.connect(self.writeConfigOptions)
         self.ui.simAutofillFields.checkStateChanged.connect(self.writeConfigOptions)
+        self.ui.simSendNumberOfPackets.checkStateChanged.connect(self.setSimPacketNumber)
+        self.ui.simulationNumberOfPackets.valueChanged.connect(self.writeConfigOptions)
         self.ui.simulationFloatNoise.valueChanged.connect(self.writeConfigOptions)
         self.ui.simulationDatabaseSizeBox.valueChanged.connect(self.writeConfigOptions)
         self.ui.simPregeneratedPacketsBox.valueChanged.connect(self.writeConfigOptions)
@@ -886,10 +886,12 @@ class DexMain(QObject):
         self.ui.fieldDisplayUpdateDelay.valueChanged.connect(self.writeConfigOptions)
     
     def writeConfigOptions(self):
-        cfg = CONFIG()
+        cfg = GLOBAL_CONFIG
         cfg['messageVerbosity'] = self.ui.messageLevelBox.currentText()
-        cfg['autofillCommands'] = self.ui.simAutofillFields.isChecked()
+        cfg['autofillCommands'] = self.ui.commandAutofillFields.isChecked()
         cfg['autofillSimPackets'] = self.ui.simAutofillFields.isChecked()
+        cfg['simulationSendLimitedPackets'] = self.ui.simSendNumberOfPackets.isChecked()
+        cfg['simulationNumberOfPackets'] = self.ui.simulationNumberOfPackets.value()
         cfg['simulationFloatNoise'] = self.ui.simulationFloatNoise.value()
         cfg['simulationDatabaseSize'] = self.ui.simulationDatabaseSizeBox.value()
         cfg['simulationPregeneratedPackets'] = self.ui.simPregeneratedPacketsBox.value()
@@ -898,6 +900,29 @@ class DexMain(QObject):
         cfg['fieldDisplayUpdateDelay'] = self.ui.fieldDisplayUpdateDelay.value()
         cfgLoader.configWrite(cfg)
 
+    def initConfigOptions(self):
+        cfg = GLOBAL_CONFIG
+        self.ui.messageLevelBox.setCurrentText(cfg['messageVerbosity'])
+        self.ui.commandAutofillFields.setChecked(cfg['autofillCommands'])
+        self.ui.simAutofillFields.setChecked(cfg['autofillSimPackets'])
+        self.ui.simSendNumberOfPackets.setChecked(cfg['simulationSendLimitedPackets'])
+        self.ui.simulationNumberOfPackets.setValue(cfg['simulationNumberOfPackets'])
+        self.ui.simulationFloatNoise.setValue(cfg['simulationFloatNoise'])
+        self.ui.simulationDatabaseSizeBox.setValue(cfg['simulationDatabaseSize'])
+        self.ui.simPregeneratedPacketsBox.setValue(cfg['simulationPregeneratedPackets'])
+        self.ui.telemetryLaunchReceiversOnStartupBox.setChecked(cfg['telemetryLaunchReceiversOnStartup'])
+        self.ui.staleDataSeconds.setValue(cfg['staleDataSeconds'])
+        self.ui.fieldDisplayUpdateDelay.setValue(cfg['fieldDisplayUpdateDelay'])
+        self.ui.simulationNumberOfPackets.setEnabled(cfg['simulationSendLimitedPackets'])
+        self.messageLevel = cfg['messageVerbosity']
+
+    def setSimPacketNumber(self):
+        if self.ui.simSendNumberOfPackets.isChecked():
+            self.ui.simulationNumberOfPackets.setEnabled(True)
+        else:
+            self.ui.simulationNumberOfPackets.setEnabled(False)
+        self.writeConfigOptions()
+
     def changeVerbosity(self,text):
         self.messageLevel = text
     """
@@ -905,13 +930,13 @@ class DexMain(QObject):
     """
 
     def setRoundTripDelay(self):
-        cfg = CONFIG()
+        cfg = GLOBAL_CONFIG
         cfg['simulationRoundTripDelay'] = self.ui.roundTripDelaySpinBox.value()
         cfgLoader.configWrite(cfg)
 
     def populateSimPackets(self):
         self.simPacketItems = []
-        for simPacketConfig in CONFIG()['simulation']:
+        for simPacketConfig in GLOBAL_CONFIG['simulation']:
             structure = simPacketConfig['packetConfig']['structure']
             packet = simPacketConfig['packetConfig']['packet']
             self.simPacketItems.append(SimPacket(self.ui.simulationPacketsTree,self,structure,packet,simPacketConfig))
@@ -930,7 +955,7 @@ class DexMain(QObject):
             removeItem = currentItem
         else:
             return
-        cfg = CONFIG()
+        cfg = GLOBAL_CONFIG
         #remove from config
         row = self.ui.simulationPacketsTree.indexOfTopLevelItem(removeItem)
         del cfg['simulation'][row]
@@ -949,7 +974,7 @@ class DexMain(QObject):
             packet.stop()
         self.activeSimulationPackets = []
 
-        simConfig = CONFIG()['simulation']
+        simConfig = GLOBAL_CONFIG['simulation']
         #launch telemetryReader and commandReceiver
         if self.simTlmReceiver is None:
             self.simTlmReceiver = SimTelemetryReceiver(self.simulationMessage)
@@ -959,7 +984,7 @@ class DexMain(QObject):
         self.activeSimulationPackets = []
         for row, packet in enumerate(simConfig):
             if packet['packetConfig']['enabled']:
-                self.activeSimulationPackets.append(SimulatedPacket(packet,self.simTlmReceiver,self.simCommandReceiver,row,self.simulationMessage))
+                self.activeSimulationPackets.append(SimulatedPacketContainer(packet,self.simCommandReceiver,self.simTlmReceiver,row,self.simulationMessage))
 
         self.ui.simPlayButton.setText("Pause Simulation")
         self.ui.simPlayButton.clicked.disconnect()
@@ -968,7 +993,7 @@ class DexMain(QObject):
 
     def stopSimulation(self):
         for packet in self.activeSimulationPackets:
-            packet.stop()
+            packet.simPacket.stop()
         self.activeSimulationPackets = []
         self.ui.simPlayButton.setText("Begin Simulation")
         self.ui.simPlayButton.clicked.disconnect()
@@ -1009,13 +1034,13 @@ class DexMain(QObject):
         self.writeTelemetryConfig()
 
     def populateTelemetryReceivers(self):
-        receivers = CONFIG()['receivers']
+        receivers = GLOBAL_CONFIG['receivers']
         for receiver in receivers:
             row = self.ui.packetReceiverTable.rowCount()
             self.telemetryReceivers.append(PacketReceiverItem(self.ui.packetReceiverTable,row,self,receiver))
     
     def writeTelemetryConfig(self):
-        cfg = CONFIG()
+        cfg = GLOBAL_CONFIG
         cfg['receivers'] = []
         for receiver in self.telemetryReceivers:
             receiverDict = {
@@ -1049,7 +1074,7 @@ class DexMain(QObject):
         
     def populateCommandStructures(self):
         #populate already built command structures from global config
-        commandStructures = CONFIG()['commandStructures']
+        commandStructures = GLOBAL_CONFIG['commandStructures']
         for structureName,structureDict in commandStructures.items():
             componentList = []
             if len(structureDict['headers']) > 0:
@@ -1186,7 +1211,7 @@ class DexMain(QObject):
             if not structureItem.commandIdField == None:
                 commandStructures[structureItem.structureName]['packetIdField'] = structureItem.commandIdField
                 
-        currentConfig = CONFIG()
+        currentConfig = GLOBAL_CONFIG
         currentConfig['commandStructures'] = commandStructures
         cfgLoader.configWrite(currentConfig)
 
@@ -1236,7 +1261,7 @@ class DexMain(QObject):
         self.ui.rawPacketTextBox.setText(result_bytes.hex(' '))
 
     def writeDefaultCommandValues(self):
-        commandStructure = CONFIG()['commandStructures'][self.currentlyBuiltStructure]
+        commandStructure = GLOBAL_CONFIG['commandStructures'][self.currentlyBuiltStructure]
         fieldNum = 0
         #headers
         for hdr in commandStructure['headers']:

@@ -14,19 +14,17 @@ from pathlib import Path
 import polars
 
 from dataStructures import PolarsStructures
-from loadConfig import Configs
-from postgresAdapter import PGConnection
+from loadConfig import cfgLoader, GLOBAL_CONFIG
 
 
 from malformedPacketHandler import PacketProcessingError
 
-cfgLoader = Configs()
-CONFIG = cfgLoader.loadGlobalConfig
+
 
 
 class Storage():
     def __init__(self, msgFunction):
-        cfg = CONFIG()
+        cfg = GLOBAL_CONFIG
         self.msgFunction = msgFunction
         self.storageMethod = str(cfg['storage']['activeStorageMethod']).lower()
         self.transientStorageBytes = int(cfg['storage']['transientWriteSizeBytes'])

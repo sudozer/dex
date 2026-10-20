@@ -6,18 +6,16 @@ import datetime
 from time import perf_counter
 from pathlib import Path
 
-from loadConfig import Configs
-cfgLoader = Configs()
-CONFIG = cfgLoader.loadGlobalConfig
+from loadConfig import cfgLoader, GLOBAL_CONFIG
 
 class PolarsStructures():
     def __init__(self,msgFunction):
         self.msgFunction = msgFunction
         self.loadPolarsSchema()
-        self.datetimeFormat = CONFIG()['datetimeFormat']
+        self.datetimeFormat = GLOBAL_CONFIG['datetimeFormat']
 
     def loadPolarsSchema(self):
-        schemaPath = Path(cfgLoader.getPath(CONFIG()['storage']['polarsSchemaPath']))
+        schemaPath = Path(cfgLoader.getPath(GLOBAL_CONFIG['storage']['polarsSchemaPath']))
         if not schemaPath.is_absolute():
             schemaPath = (Path(__file__).resolve().parent.parent / schemaPath).resolve()
         self.msgFunction(f"Loading polars storage schema from {schemaPath}...","INFO")
@@ -103,7 +101,7 @@ class DataDictionaries():
         self.loadCommandTemplates()
 
     def loadStructures(self):
-        self.structures = CONFIG()['telemetryStructures']
+        self.structures = GLOBAL_CONFIG['telemetryStructures']
 
     def loadPacketTemplates(self):
         #read all structures and create a packet dictionary for each
