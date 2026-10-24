@@ -1,6 +1,6 @@
 {
     "version": "0.0.0",
-    "mission": "development",
+    "missionTitle": "Development",
     "datetimeFormat": "%Y-%m-%d_%H:%M:%S.%f %Z",
     "datetimeFileFormat": "%Y-%m-%d_%H-%M-%S%Z",
     "datetimeDayOfYearFormat": "%Y-%j_%H:%M:%S.%f %Z",
@@ -68,11 +68,11 @@
             "protocol": "UDP",
             "IP": "127.0.0.1",
             "port": 4567,
-            "listening": true
+            "listening": false
         },
         {
             "label": "fiona",
-            "telemetryStructure": "splaser",
+            "telemetryStructure": "sampleStructure1",
             "protocol": "UDP",
             "IP": "127.0.0.1",
             "port": 4568,
@@ -105,7 +105,7 @@
     "simulation": [
         {
             "packetConfig": {
-                "enabled": true,
+                "enabled": false,
                 "simulationRate": 1.0,
                 "ip": "127.0.0.1",
                 "port": 4567,
@@ -125,10 +125,10 @@
         },
         {
             "packetConfig": {
-                "enabled": false,
+                "enabled": true,
                 "simulationRate": 3.2,
                 "ip": "127.0.0.1",
-                "port": 1,
+                "port": 4568,
                 "protocol": "UDP",
                 "structure": "sampleStructure1",
                 "packet": "4101"

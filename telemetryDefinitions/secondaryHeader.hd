@@ -7,7 +7,7 @@
             "description": "Packet creation time (seconds since midnight January 5-6 1980); see ISS SSP 41175-02 for format specification.",
             "bitstructType": "u40",
             "defaultValue": 0,
-            "autofill":"issTime"
+            "autofill": "issTime"
         },
         {
             "fieldName": "dataControl_timeId",
@@ -15,7 +15,7 @@
             "bitLength": 2,
             "description": "Secondary header data control fields, per ISS SSP 52050.",
             "defaultValue": 0,
-            "bitstructType":"u2"
+            "bitstructType": "u2"
         },
         {
             "fieldName": "dataControl_checkWord",
@@ -31,7 +31,7 @@
             "bitLength": 1,
             "description": "Secondary header data control fields, per ISS SSP 52050.",
             "defaultValue": 0,
-            "bitstructType":"u1"
+            "bitstructType": "u1"
         },
         {
             "fieldName": "dataControl_packetType",

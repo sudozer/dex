@@ -41,7 +41,7 @@
             "bitLength": 14,
             "bitstructType": "u14",
             "defaultValue": 0,
-            "autofill":"primarySequenceCount"
+            "autofill": "primarySequenceCount"
         },
         {
             "fieldName": "PacketDataLength",
@@ -49,8 +49,7 @@
             "bitLength": 16,
             "bitstructType": "u16",
             "defaultValue": 0,
-            "autofill":"primaryLengthField"
-
+            "autofill": "primaryLengthField"
         }
     ],
     "totalBitLength": 48

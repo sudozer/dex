@@ -1,8 +1,9 @@
-from PySide6.QtCore import QObject, QThread, Signal, Slot
+from PySide6.QtCore import QObject, QThread, Signal, Slot, Qt
 
 import json
 import sys
 import socket
+import time
 
 import datetime
 import pdb
@@ -57,51 +58,34 @@ class PacketProcessor(QObject):
             """
     
             #skipping malformed packet logging for now to cut processing time.
-
-            packetTemplate = []
-            components = []
-
             #decode
             try:
-                decodedPacket, components, order, packetTemplate = self.decoder.readPacket(packet)
-                decodedPacket['metadata'] = {'components': components, 'order': order}
-                if decodedPacket:
-                    self.logger.debug(f"Decoded packet:\n\n{decodedPacket}")
-                    decodedPacket['metadata']['groundTimestampUTC'] = datetime.datetime.now(datetime.UTC).strftime(GLOBAL_CONFIG['datetimeFormat'])
-                    decodedPacket['metadata']['telemetryStructure'] = self.packetType
-            except PacketProcessingError as exc:
-                self.msgFunction(f"Failed to decode packet: {packet}. Error: {exc}","ERROR")
-                #self.malformedPacketHandler.logMalformedPacket(packet, packetTemplate=packetTemplate or exc.packet_template, errors=exc.to_error_list(), packetStructure=self.packetStructure, packetType=self.packetType, components=components)
-                return
+                decodedPacket, order, packetTemplate = self.decoder.readPacket(packet)
+                decodedPacket['metadata'] = { 'order': order,
+                                            'groundTimestampUTC': datetime.datetime.now(datetime.UTC).strftime(GLOBAL_CONFIG['datetimeFormat']),
+                                            'telemetryStructure': self.receiverDict['telemetryStructure']
+                                            }
+                self.msgFunction(f"Decoded packet successfully.","DEBUG")
             except Exception as exc:
                 self.msgFunction(f"Failed to decode packet: {packet}. Error: {exc}","ERROR")
                 #self.malformedPacketHandler.logMalformedPacket(packet, packetTemplate=packetTemplate, errors=[{"stage": "decode", "message": str(exc)}], packetStructure=self.packetStructure, packetType=self.packetType, components=components)
                 return
-            return
             
             #convert
             try:
-                convertedPacket = self.converter.convertPacket(decodedPacket, packetTemplate=packetTemplate)
+                convertedPacket = self.converter.convertPacket(decodedPacket, packetTemplate)
                 convertedPacket['metadata']['primaryTimestamp'] = decodedPacket['metadata'].get('groundTimestampUTC', datetime.datetime.now(datetime.UTC).strftime(GLOBAL_CONFIG['datetimeFormat']))
-                self.msgFunction(f"Converted packet:\n\n{convertedPacket}","DEBUG")
-            except PacketProcessingError as exc:
-                self.msgFunction(f"Failed to convert packet: {decodedPacket}. Error: {exc}","ERROR")
-                #self.malformedPacketHandler.logMalformedPacket(packet, packetTemplate=packetTemplate or exc.packet_template, errors=exc.to_error_list(), packetStructure=self.packetStructure, packetType=self.packetType, components=components, metadata=decodedPacket.get('metadata', {}))
-                return
+                self.msgFunction(f"Converted packet successfully.","DEBUG")
             except Exception as exc:
-                self.msgFunction(f"Failed to convert packet: {decodedPacket}. Error: {exc}","ERROR")
+                self.msgFunction(f"Failed to convert packet. Error: {exc}","ERROR")
                 #self.malformedPacketHandler.logMalformedPacket(packet, packetTemplate=packetTemplate, errors=[{"stage": "convert", "message": str(exc)}], packetStructure=self.packetStructure, packetType=self.packetType, components=components, metadata=decodedPacket.get('metadata', {}))
                 return
             LIVETLM.pushPacket(convertedPacket)
             #store
             try:
                 self.storage.storePacket(convertedPacket, packet)
-            except PacketProcessingError as exc:
-                self.msgFunction(f"Failed to store packet: {decodedPacket}. Error: {exc}","ERROR")
-                #self.malformedPacketHandler.logMalformedPacket(packet, packetTemplate=packetTemplate, errors=exc.to_error_list(), packetStructure=self.packetStructure, packetType=self.packetType, components=components, metadata=convertedPacket.get('metadata', {}))
-                return
             except Exception as exc:
-                self.msgFunction(f"Failed to store packet: {decodedPacket}. Error: {exc}","ERROR")
+                self.msgFunction(f"Failed to store packet. Error: {exc}","ERROR")
                 #self.malformedPacketHandler.logMalformedPacket(packet, packetTemplate=packetTemplate, errors=[{"stage": "storage", "message": str(exc)}], packetStructure=self.packetStructure, packetType=self.packetType, components=components, metadata=convertedPacket.get('metadata', {}))
                 return
 
@@ -138,8 +122,9 @@ class UDPRXPort(QObject):
         self.messageSignal.emit(f'Closing UDP RX port: {self.sock.getsockname()[1]}','INFO')
         self.sock.close()
 
-class PktReceiver():
+class PktReceiver(QObject):
     def __init__(self, receiverDict, msgFunction,listeningFlag):
+        super().__init__()
         
         self.receiverDict = receiverDict
         self.msgFunction = msgFunction
@@ -199,18 +184,17 @@ class PktReceiver():
         
         if clientType == "UDP":
             self.listener = UDPRXPort(self.receiverDict['IP'],self.receiverDict['port'],self.addToProcessingQueue,self.largestPacket,self.listeningFlag)
-            self.listener.messageSignal.connect(self.message_)
+            self.listener.messageSignal.connect(self.message_, Qt.ConnectionType.QueuedConnection)
             self.listener.bind_()
         #TODO add tcp options
 
         self.listener.moveToThread(self.listenThread)
-        self.processor = PacketProcessor(self.receiverDict,self.packetProcessingQueue,self.listeningFlag)
         self.processor.moveToThread(self.processThread)
 
         self.processThread.started.connect(self.processor.processPacketQueue)
         self.listenThread.started.connect(self.listener.listen)
         self.listener.pktSignal.connect(self.newPacketTrigger)
-
+        self.processor.messageSignal.connect(self.message_, Qt.ConnectionType.QueuedConnection)
         self.listenThread.start()
 
     def closeAll(self):
@@ -227,4 +211,5 @@ class PktReceiver():
 
     @Slot(str,str)
     def message_(self,msg,level):
+        #exists to be decorated with Slot
         self.msgFunction(msg,level)

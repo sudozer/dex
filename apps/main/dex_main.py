@@ -47,14 +47,14 @@ from commandIDSelector import CommandIDSelector
 from command import TCPCommandSocket, UDPCommandSocket
 from packetReceiverItem import PacketReceiverItem
 
-from telemetrySimulation import SimTelemetryReceiver, SimCommandReceiver, SimulatedPacket
+from telemetrySimulation import SimTelemetryReceiver, SimCommandReceiver, SimulatedPacketContainer
 # Colors
 COMMAND_HEADER = QColor(132,197,227)
 COMMAND_STRUCTURE = QColor(250,212,117)
 COMMAND_STRUCTURE_BASE = (217,100,220) #this is correctly not set as a color
 
-MESSAGE_ERROR = QColor(250,123,12)
-MESSAGE_WARNING = QColor(247,239,74)
+MESSAGE_ERROR = QColor(235,75,7)
+MESSAGE_WARNING = QColor(255,141,3)
 MESSAGE_DEBUG = QColor(10,109,166)
 
 def colorGen(baseColor, hueStep=35):
@@ -805,7 +805,7 @@ class DexMain(QObject):
         self.ui.show()
 
     def initGUI(self):
-        self.ui.setWindowTitle(f"Dex {GLOBAL_CONFIG['version']}")
+        self.setMissionTitle()
         self.currentlyBuiltStructure = None
         self.ui.installEventFilter(self)
         #simulation controls
@@ -874,6 +874,8 @@ class DexMain(QObject):
         self.initConfigOptions()
         self.ui.messageLevelBox.currentTextChanged.connect(self.writeConfigOptions)
         self.ui.messageLevelBox.currentTextChanged.connect(self.changeVerbosity)
+        self.ui.missionTitleBox.editingFinished.connect(self.setMissionTitle)
+        self.ui.missionTitleBox.editingFinished.connect(self.writeConfigOptions)
         self.ui.commandAutofillFields.checkStateChanged.connect(self.writeConfigOptions)
         self.ui.simAutofillFields.checkStateChanged.connect(self.writeConfigOptions)
         self.ui.simSendNumberOfPackets.checkStateChanged.connect(self.setSimPacketNumber)
@@ -888,6 +890,7 @@ class DexMain(QObject):
     def writeConfigOptions(self):
         cfg = GLOBAL_CONFIG
         cfg['messageVerbosity'] = self.ui.messageLevelBox.currentText()
+        cfg['missionTitle'] = self.ui.missionTitleBox.currentText()
         cfg['autofillCommands'] = self.ui.commandAutofillFields.isChecked()
         cfg['autofillSimPackets'] = self.ui.simAutofillFields.isChecked()
         cfg['simulationSendLimitedPackets'] = self.ui.simSendNumberOfPackets.isChecked()
@@ -903,6 +906,7 @@ class DexMain(QObject):
     def initConfigOptions(self):
         cfg = GLOBAL_CONFIG
         self.ui.messageLevelBox.setCurrentText(cfg['messageVerbosity'])
+        self.ui.missionTitleBox.setText(cfg['missionTitle'])
         self.ui.commandAutofillFields.setChecked(cfg['autofillCommands'])
         self.ui.simAutofillFields.setChecked(cfg['autofillSimPackets'])
         self.ui.simSendNumberOfPackets.setChecked(cfg['simulationSendLimitedPackets'])
@@ -915,6 +919,9 @@ class DexMain(QObject):
         self.ui.fieldDisplayUpdateDelay.setValue(cfg['fieldDisplayUpdateDelay'])
         self.ui.simulationNumberOfPackets.setEnabled(cfg['simulationSendLimitedPackets'])
         self.messageLevel = cfg['messageVerbosity']
+
+    def setMissionTitle(self):
+        self.ui.setWindowTitle(f"Dex {GLOBAL_CONFIG['version']} - {GLOBAL_CONFIG['missionTitle']}")
 
     def setSimPacketNumber(self):
         if self.ui.simSendNumberOfPackets.isChecked():
@@ -994,6 +1001,8 @@ class DexMain(QObject):
     def stopSimulation(self):
         for packet in self.activeSimulationPackets:
             packet.simPacket.stop()
+        for packet in self.activeSimulationPackets:
+            packet.transmitThread.wait()
         self.activeSimulationPackets = []
         self.ui.simPlayButton.setText("Begin Simulation")
         self.ui.simPlayButton.clicked.disconnect()
@@ -1002,14 +1011,14 @@ class DexMain(QObject):
 
     def pauseSimulation(self):
         for packet in self.activeSimulationPackets:
-            packet.pause()
+            packet.simPacket.pause()
         self.ui.simPlayButton.setText("Resume Simulation")
         self.ui.simPlayButton.clicked.disconnect()
         self.ui.simPlayButton.clicked.connect(self.resumeSimulation)
 
     def resumeSimulation(self):
         for packet in self.activeSimulationPackets:
-            packet.resume()
+            packet.simPacket.resume()
         self.ui.simPlayButton.setText("Pause Simulation")
         self.ui.simPlayButton.clicked.disconnect()
         self.ui.simPlayButton.clicked.connect(self.pauseSimulation)
@@ -1340,8 +1349,6 @@ class DexMain(QObject):
         if msgLevel >= logLevel:
             textBox.append(msg)
             self.smart_append(textBox)
-
-        
 
     def smart_append(self,text_edit):
         scroll_bar = text_edit.verticalScrollBar()

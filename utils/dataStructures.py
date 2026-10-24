@@ -123,6 +123,8 @@ class DataDictionaries():
                     with open(path_,'r') as file_:
                         packetDict = json.load(file_)
                         self.packetTemplates[structureName].extend(packetDict['fields'])
+                        for field in packetDict['fields']:
+                            field['definitionSource'] = path_.stem
                         self.packetStructureComponents[structureName][structureName].append({'component':path_.stem,'fields':packetDict['fields']})
                         bitSum += sum([field['bitLength'] for field in packetDict['fields']])
                 self.packetStructures[structureName][structureName] = self.packetTemplates[structureName]
@@ -141,18 +143,26 @@ class DataDictionaries():
                         path_ = cfgLoader.getPath(file)
                         with open(path_,'r') as file_:
                             packetDict = json.load(file_)
+                            for field in packetDict['fields']:
+                                field['definitionSource'] = path_.stem
                             self.packetTemplates[f"{structureName}_{packetId}"].extend(packetDict['fields'])
                             self.packetStructureComponents[structureName][packetId].append({'component':path_.stem,'fields':packetDict['fields']})
                             bitSum += sum([field['bitLength'] for field in packetDict['fields']])
+                    for field in packetDef['fields']:
+                        field['definitionSource'] = packetFilePath.stem
                     self.packetTemplates[f"{structureName}_{packetId}"].extend(packetDef['fields'])
                     bitSum += sum([field['bitLength'] for field in packetDef['fields']])
                     self.packetStructureComponents[structureName][packetId].append({'component':packetId,'fields':packetDef['fields']})
 
                     for file in structure['footers']:
+                        path_ = cfgLoader.getPath(file)
                         with open(cfgLoader.getPath(file),'r') as file_:
                             packetDict = json.load(file_)
+                            for field in packetDict['fields']:
+                                field['definitionSource'] = path_.stem
                             self.packetTemplates[f"{structureName}_{packetId}"].extend(packetDict['fields'])
                             bitSum += sum([field['bitLength'] for field in packetDict['fields']])
+                            self.packetStructureComponents[structureName][packetId].append({'component':path_.stem,'fields':packetDict['fields']})
                     self.packetStructures[structureName][f"{structureName}_{packetId}"] = self.packetTemplates[f"{structureName}_{packetId}"]
                     self.packetStructureSizes[structureName][packetId] = int(bitSum / 8)
     
