@@ -22,7 +22,7 @@ from malformedPacketHandler import MalformedPacketLogger, PacketProcessingError
 
 from loadConfig import cfgLoader, GLOBAL_CONFIG
 
-from dataStructures import PACKET_STRUCTURE_SIZES
+from dataStructures import PACKET_STRUCTURE_SIZES, PACKET_STRUCTURE_COMPONENTS
 
 TIMEOUT = 1
 socket.setdefaulttimeout(TIMEOUT)
@@ -35,8 +35,15 @@ class PacketProcessor(QObject):
         self.processQueue = packetQueue
         self.processingFlag = processingFlag
         self.receiverDict = receiverDict
+        self.packetTemplates = PACKET_STRUCTURE_COMPONENTS[receiverDict['telemetryStructure']]
         self.acceptedPackets = 0
         self.rejectedPackets = 0
+
+        #count packets received of each type in structure
+        self.receivedPackets = {}
+        for pktType in self.packetTemplates:
+            self.receivedPackets[pktType] = 0
+
         self.decoder = Decoder(self.receiverDict['telemetryStructure'], self.msgFunction)
         self.converter = Converter(self.msgFunction)
         self.storage = Storage(self.msgFunction)
@@ -60,28 +67,28 @@ class PacketProcessor(QObject):
             #skipping malformed packet logging for now to cut processing time.
             #decode
             try:
-                decodedPacket, order, packetTemplate = self.decoder.readPacket(packet)
-                decodedPacket['metadata'] = { 'order': order,
+                decodedPacket, order, packetTemplate, packetType = self.decoder.readPacket(packet)
+                decodedPacket['metadata_'] = { 'order': order,
+                                             'packetType':packetType,
                                             'groundTimestampUTC': datetime.datetime.now(datetime.UTC).strftime(GLOBAL_CONFIG['datetimeFormat']),
                                             'telemetryStructure': self.receiverDict['telemetryStructure']
                                             }
                 self.msgFunction(f"Decoded packet successfully.","DEBUG")
+                self.receivedPackets[packetType] += 1
             except Exception as exc:
                 self.msgFunction(f"Failed to decode packet: {packet}. Error: {exc}","ERROR")
                 #self.malformedPacketHandler.logMalformedPacket(packet, packetTemplate=packetTemplate, errors=[{"stage": "decode", "message": str(exc)}], packetStructure=self.packetStructure, packetType=self.packetType, components=components)
                 return
             
             #convert
-            try:
-                convertedPacket = self.converter.convertPacket(decodedPacket, packetTemplate)
-                convertedPacket['metadata']['primaryTimestamp'] = decodedPacket['metadata'].get('groundTimestampUTC', datetime.datetime.now(datetime.UTC).strftime(GLOBAL_CONFIG['datetimeFormat']))
-                self.msgFunction(f"Converted packet successfully.","DEBUG")
-            except Exception as exc:
-                self.msgFunction(f"Failed to convert packet. Error: {exc}","ERROR")
-                #self.malformedPacketHandler.logMalformedPacket(packet, packetTemplate=packetTemplate, errors=[{"stage": "convert", "message": str(exc)}], packetStructure=self.packetStructure, packetType=self.packetType, components=components, metadata=decodedPacket.get('metadata', {}))
-                return
+        
+            convertedPacket, brokenPacket = self.converter.convertPacket(decodedPacket, packetTemplate)
+            self.msgFunction(f"Completed packet conversion.","DEBUG")
+            # if brokenPacket:
+                #launch broken packet handler
             LIVETLM.pushPacket(convertedPacket)
             #store
+            return
             try:
                 self.storage.storePacket(convertedPacket, packet)
             except Exception as exc:

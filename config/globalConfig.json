@@ -76,7 +76,7 @@
             "protocol": "UDP",
             "IP": "127.0.0.1",
             "port": 4568,
-            "listening": false
+            "listening": true
         },
         {
             "label": "donkey",

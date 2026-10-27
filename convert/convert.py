@@ -25,6 +25,7 @@ CONFIG = cfgLoader.loadGlobalConfig
 
 class Converter():
     def __init__(self, msgFunction):
+        self.msgFunction = msgFunction
         pass
     
     def convertField(self, field):
@@ -36,11 +37,10 @@ class Converter():
                 callString = f"conversionFunctions.{conversionFunc}({conversionVal},{conversionArgs})"
                 field['convertedValue'] = eval(callString)
                 return field
-            raise PacketProcessingError("convert", f"Conversion function {conversionFunc} not present in conversionFunctions.py", field_names=[field.get('fieldName')], packet_template=[field])
-        except PacketProcessingError:
-            raise
+            else:
+                self.msgFunction(f"Conversion function {conversionFunc} not present in conversionFunctions.py", "WARNING")
         except Exception as exc:
-            raise PacketProcessingError("convert", f"Error converting field {field.get('fieldName')}: {exc}", field_names=[field.get('fieldName')], packet_template=[field]) from exc
+            raise self.msgFunction(f"Error converting field {field.get('fieldName')}: {exc}","WARNING")
 
     def convertPacket(self, decodedPacket, packetTemplate=None):
         self.brokenPacket = False
@@ -49,8 +49,7 @@ class Converter():
             if 'conversion' in field:
                 try:
                     decodedPacket[fld] = self.convertField(field)
-                except PacketProcessingError as exc:
-                    exc.packet_template = packetTemplate or list(decodedPacket.values())
-                    exc.field_names = exc.field_names or [field.get('fieldName')]
-                    raise
-        return decodedPacket
+                except:
+                    self.brokenPacket = True
+                    pass #error handeled in convert field, allow porcessing to continue when 
+        return decodedPacket, self.brokenPacket

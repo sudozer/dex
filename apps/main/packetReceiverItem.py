@@ -173,7 +173,5 @@ class PacketReceiverItem(QTableWidgetItem):
         self.packetsPerSecField.setText(str(packetsPerSec))
         self.countersField.setText(count_)
 
-
-
     def launchStructureDisplay(self):
         pass

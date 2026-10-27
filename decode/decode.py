@@ -50,7 +50,7 @@ class Decoder():
         self.msgFunction(f'Received packet:\n\n{hexPacket}\n\nDecoding with structure: {structureName}',"Debug")
         try:
             try:
-                packetTemplate = self.createPacketTemplate(hexPacket)
+                packetTemplate, packetType = self.createPacketTemplate(hexPacket)
             except Exception as E:
                 self.msgFunction(f"Decoder unable to build a packet template for decoding.\n{E}", "ERROR")
                 return False
@@ -59,7 +59,7 @@ class Decoder():
             except Exception as E:
                 self.msgFunction(f"Decoder unable to interpret packet.\n{E}","ERROR")
                 return False
-            return packet, order, packetTemplate
+            return packet, order, packetTemplate, packetType
         except Exception as E:
             self.msgFunction(f"Decoding error: {E}","ERROR")
             return False
@@ -93,6 +93,7 @@ class Decoder():
                 #add headers to packetTemplate
                 for component in self.structureDict[pktId]:
                     packetTemplate.extend(component['fields'])
+                packetType = pktId
             else:
                 #error
                 self.msgFunction(f"Decoding Error: packetId: {pktId} not found in structure: {self.structureName}. \nAvailable packet IDs: {[i for i in self.structureDict]}")
@@ -102,7 +103,8 @@ class Decoder():
             packetTemplate = []
             for component in self.structureDict[self.structureName]:
                 packetTemplate.extend(component['fields'])
-        return packetTemplate
+            packetType = self.structureName
+        return packetTemplate,packetType
 
     def readFromTemplate(self, hexPacket, packetTemplate, verifyLength=True):
         #given a binary packet and a packet template, read the fields from the binary packet according to the template and return a dict containing the field names and values.

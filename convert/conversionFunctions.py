@@ -161,22 +161,3 @@ additional conversion functions for mission-specific cases can be written here
 ###################################
 """
 
-###O2O conversion functions
-
-def modemFbgCountsToC(val, args):
-    """ Converts Modem Heater Counts to Degrees C
-    """
-    therm_beta = 3966
-    r_25 = 10000
-    kelvin_offset = 273.15
-
-    r_inf = r_25 * math.exp(-1*therm_beta / (kelvin_offset + 25))
-    r = (r_25 * val) / (4096 - val)
-    temperature = therm_beta / math.log(r/r_inf) - kelvin_offset
-    return temperature
-
-def quadCountsToDbm(val, args):
-    """ Converts Quad Counts to dBm
-    """
-    dbm = 10 * math.log10(val * 1.2e-10)
-    return dbm

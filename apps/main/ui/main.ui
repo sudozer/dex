@@ -1430,7 +1430,7 @@
                     </size>
                    </property>
                    <property name="toolTip">
-                    <string>Send just a certain number of packets.  Useful for debugging.</string>
+                    <string>Send just a certain number of packets.  Useful for debugging.  Uncheck to simulate continuously until manually stopped.</string>
                    </property>
                    <property name="minimum">
                     <number>1</number>
@@ -1715,7 +1715,7 @@
                     </size>
                    </property>
                    <property name="toolTip">
-                    <string>Set how often the standard field data displays update.</string>
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Set how often the standard field data displays update.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                    </property>
                    <property name="minimum">
                     <double>1.000000000000000</double>
