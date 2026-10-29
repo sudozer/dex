@@ -19,7 +19,7 @@ import time
 from loadConfig import cfgLoader, GLOBAL_CONFIG
 from packetReceiver import PktReceiver
 from structureDisplay import StructureDisplay
-from guiProcess import launch_gui_process
+from childProcess import launch_gui_process
 
 COUNTER_UPDATE_DWELL = 2
 
@@ -182,4 +182,8 @@ class PacketReceiverItem(QTableWidgetItem):
 
     def launchStructureDisplay(self):
         structure = self.structureBox.currentText()
-        self.structureViewer = launch_gui_process(StructureDisplay, structure)
+        self.structureViewer = launch_gui_process(
+            StructureDisplay,
+            structure,
+            share_telemetry=True,
+        )

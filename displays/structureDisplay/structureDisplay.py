@@ -1,4 +1,7 @@
 
+import datetime
+
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import(
     QApplication,
     QWidget,
@@ -13,9 +16,10 @@ from PySide6.QtWidgets import(
 from telemetryDisplayField import TelemetryField
 from dataStructures import PACKET_STRUCTURE_COMPONENTS
 from liveTelemetry import LIVETLM
+from loadConfig import GLOBAL_CONFIG
 import pdb
 
-PACKET_META_STATS_UPDATE = 2  #how often the packets received and last received fields update
+UPDATE_PACKET_META_STATS_SECONDS = 2  #how often the packets received and last received fields update
 
 class PacketTab():
     def __init__(self,structureDisplay,packetName,packet):
@@ -57,13 +61,43 @@ class PacketTab():
                 self.scrollLayout.addWidget(tField)
                 self.packetFields[componentName].append(tField)
 
-    def metaUpdate(self):
-        #update packet count and packet latency timer
-        pass
+        self.metaStatsTimer = QTimer(self.page)
+        self.metaStatsTimer.timeout.connect(self.metaUpdate)
+        self.metaStatsTimer.start(
+            max(1, int(UPDATE_PACKET_META_STATS_SECONDS * 1000))
+        )
 
+    def metaUpdate(self):
+        packet = LIVETLM.mostRecentPacket.get(self.packetName)
+        if packet is None:
+            return
+
+        metadata = packet.get('metadata_')
+        if metadata is None:
+            return
+
+        packets_received = metadata.get('packetsOfThisTypeReceived')
+        if packets_received is not None:
+            self.packetsReceivedLabel.setText(
+                f"Packets Received: {packets_received}"
+            )
+
+        last_packet_receipt = metadata.get('groundTimestampUTC')
+        if last_packet_receipt is not None:
+            packet_time = datetime.datetime.strptime(
+                last_packet_receipt,
+                GLOBAL_CONFIG['datetimeFormat'],
+            ).replace(tzinfo=datetime.UTC)
+            seconds_ago = max(
+                0,
+                int((datetime.datetime.now(datetime.UTC) - packet_time).total_seconds()),
+            )
+            self.lastPacketReceiptLabel.setText(
+                f"Last Packet Received: {seconds_ago} seconds ago"
+            )
 
 class StructureDisplay(QWidget):
-    def __init__(self,structure):
+    def __init__(self, structure, telemetry_queue=None):
         super().__init__()
         self.structureName = structure
         self.structure = PACKET_STRUCTURE_COMPONENTS[structure]
@@ -74,6 +108,8 @@ class StructureDisplay(QWidget):
         layout.addWidget(self.tabs)
         self.tabObjects = []
         self.addPacketTabs()
+        if telemetry_queue is not None:
+            LIVETLM.listenToQueue(telemetry_queue)
         self.show()
     
     def addPacketTabs(self):

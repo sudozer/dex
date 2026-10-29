@@ -68,14 +68,18 @@ class PacketProcessor(QObject):
             #decode
             try:
                 decodedPacket, order, packetTemplate, packetType = self.decoder.readPacket(packet)
+                self.receivedPackets[packetType] += 1
+                self.acceptedPackets += 1
                 decodedPacket['metadata_'] = { 'order': order,
                                              'packetType':packetType,
                                             'groundTimestampUTC': datetime.datetime.now(datetime.UTC).strftime(GLOBAL_CONFIG['datetimeFormat']),
-                                            'telemetryStructure': self.receiverDict['telemetryStructure']
+                                            'telemetryStructure': self.receiverDict['telemetryStructure'],
+                                            'packetsOfThisTypeReceived':self.receivedPackets[packetType]
                                             }
                 self.msgFunction(f"Decoded packet successfully.","DEBUG")
-                self.receivedPackets[packetType] += 1
+
             except Exception as exc:
+                self.rejectedPackets += 1
                 self.msgFunction(f"Failed to decode packet: {packet}. Error: {exc}","ERROR")
                 #self.malformedPacketHandler.logMalformedPacket(packet, packetTemplate=packetTemplate, errors=[{"stage": "decode", "message": str(exc)}], packetStructure=self.packetStructure, packetType=self.packetType, components=components)
                 return
@@ -87,7 +91,6 @@ class PacketProcessor(QObject):
             # if brokenPacket:
                 #launch broken packet handler
             LIVETLM.pushPacket(convertedPacket)
-            print(LIVETLM.mostRecentPacket)
             #store
             return
             try:
