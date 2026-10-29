@@ -24,7 +24,7 @@ from loadConfig import cfgLoader, GLOBAL_CONFIG
 
 from dataStructures import PACKET_STRUCTURE_SIZES, PACKET_STRUCTURE_COMPONENTS
 
-TIMEOUT = 1
+TIMEOUT = 4
 socket.setdefaulttimeout(TIMEOUT)
 
 class PacketProcessor(QObject):
@@ -87,6 +87,7 @@ class PacketProcessor(QObject):
             # if brokenPacket:
                 #launch broken packet handler
             LIVETLM.pushPacket(convertedPacket)
+            print(LIVETLM.mostRecentPacket)
             #store
             return
             try:

@@ -17,9 +17,9 @@ from PySide6.QtGui import QIcon
 import time
 
 from loadConfig import cfgLoader, GLOBAL_CONFIG
-
 from packetReceiver import PktReceiver
-
+from structureDisplay import StructureDisplay
+from guiProcess import launch_gui_process
 
 COUNTER_UPDATE_DWELL = 2
 
@@ -66,7 +66,6 @@ class PacketReceiverItem(QTableWidgetItem):
         self.ipField = QLineEdit()
         self.ipField.setText("127.0.0.1")
         self.ipField.setEnabled(False)
-
 
         self.slashLabel = QLabel("/")
 
@@ -145,6 +144,7 @@ class PacketReceiverItem(QTableWidgetItem):
     
     def startListening(self):
         self.listenButton.setEnabled(False)
+        self.enableControls(False)
         self.listening.set()
         #spawn listener and write to telemetry database
         self.receiverDict = self.writeTelemetryConfig()[self.row()]
@@ -158,6 +158,12 @@ class PacketReceiverItem(QTableWidgetItem):
         self.listenButton.setEnabled(True)
         self.dexMain.activeTelemetryReceivers.append(self)
 
+    def enableControls(self,enable):
+        self.protocolBox.setEnabled(enable)
+        self.ipField.setEnabled(enable)
+        self.portField.setEnabled(enable)
+        self.structureBox.setEnabled(enable)
+
     def stopListening(self):
         self.listening.clear()
         self.receiver.closeAll()
@@ -167,6 +173,7 @@ class PacketReceiverItem(QTableWidgetItem):
         self.counterUpdater.wait()
         self.dexMain.activeTelemetryReceivers.remove(self)
         self.writeTelemetryConfig()
+        self.enableControls(True)
 
     @Slot(float,str)
     def updateCounters(self,packetsPerSec,count_):
@@ -174,4 +181,5 @@ class PacketReceiverItem(QTableWidgetItem):
         self.countersField.setText(count_)
 
     def launchStructureDisplay(self):
-        pass
+        structure = self.structureBox.currentText()
+        self.structureViewer = launch_gui_process(StructureDisplay, structure)

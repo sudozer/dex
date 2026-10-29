@@ -6,30 +6,40 @@ from PySide6.QtWidgets import (
     QWidget,
     QHBoxLayout
 )
+import datetime
+
 from liveTelemetry import LIVETLM
 from loadConfig import GLOBAL_CONFIG
 
+STALE = "(80,80,80)"
 class ValueFetch(QObject):
     valueUpdate = Signal(dict,str)
     def __init__(self,telemetryField,refreshDelay):
+        super().__init__(telemetryField)
         self.telemetryField = telemetryField
         self.packet = self.telemetryField.packet
         self.field = self.telemetryField.field
+        self.valueUpdate.connect(self.telemetryField.updateValue)
         if refreshDelay > 0:
             #self-manage an updating thread
-            self.updateTimer = QTimer()
-            self.updateTimer.timeout.connect(self.updateValue)
+            self.updateTimer = QTimer(self)
+            self.updateTimer.timeout.connect(self.fetchValue)
             self.updateTimer.start(refreshDelay * 1000)
         else:
-            LIVETLM.registerCallback(self.packet,self.updateValue)
+            LIVETLM.registerCallback(self.packet,self.fetchValue)
 
     @Slot()
-    def updateValue(self):
-        newField = LIVETLM.mostRecentPacket[self.packet][self.field]
-        updateTime = LIVETLM.mostRecentPacket[self.packet]['metadata_']['groundTimestampUTC']
-        self.valueUpdate.emit(newField,updateTime)
+    def fetchValue(self):
+        #print(LIVETLM.mostRecentPacket)
+        try:
+            newField = LIVETLM.mostRecentPacket[self.packet][self.field]
+            updateTime = LIVETLM.mostRecentPacket[self.packet]['metadata_']['groundTimestampUTC']
+            self.valueUpdate.emit(newField,updateTime)
+        except:
+            pass
+        
 
-class TelemetryField(QObject):
+class TelemetryField(QWidget):
     def __init__(self,packet,field,timerOverride = None):
         super().__init__()
         self.running = True
@@ -39,15 +49,17 @@ class TelemetryField(QObject):
         self.timerOverride = timerOverride
         self.nameLabel = QLabel(field['fieldName'])
         self.valueLabel = QLabel("N/A")
+        self.valueLabel.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.lastUpdate = "N/A"
         self.layout = QHBoxLayout(self)
         self.layout.setContentsMargins(4,4,4,4)
         self.layout.setSpacing(4)
-        self.layout.addWidget(self.label)
-        self.layout.addWidget(self.value)
+        self.layout.addWidget(self.nameLabel)
+        self.layout.addWidget(self.valueLabel)
         self.stale = True
         self.previousValue = None
         self.currentValue = None
+        self.setStale()
 
         self.setRetrievalThread()
 
@@ -55,22 +67,17 @@ class TelemetryField(QObject):
         if self.timerOverride == None:
             if GLOBAL_CONFIG['fieldDisplayUpdateDelay'] < 1:
                 #just register fetcher to LIVETLM callback registry
-                self.fetcher = ValueFetch(self.packet,self.field,0)
-                self.fetcher.valueUpdate.connect(self.updateValue)
-                LIVETLM.registerCallback(self.packet,self.fetcher.run)
+                self.fetcher = ValueFetch(self,0)
             else:
-                self.updateTimer = QTimer(self)
-                self.updateTimer.timeout.connect(self.fetcher.run)
+                self.fetcher = ValueFetch(self,GLOBAL_CONFIG['fieldDisplayUpdateDelay'])
         else:
-            pass
-            #override global timer with something else
-
+            self.fetcher = ValueFetch(self,self.timerOverride)
 
     @Slot()
     def updateValue(self,valueField,dateTime):
         self.prevField = self.field
-        self.field = LIVETLM.mostRecentPacket[self.packet][self.field['fieldName']]
-        self.lastUpdate = LIVETLM.mostRecentPacket[self.packet]['metadata_']['groundTimestampUTC']
+        self.field = valueField
+        self.lastUpdate = dateTime
         #calculate if data is stale
         self.updateDisplay()
 
@@ -79,15 +86,20 @@ class TelemetryField(QObject):
         toolTipString = f"""
         Raw Value:\t\t{self.field['rawValue']}\n
         Converted Value:\t\t{self.field.get('convertedValue',"None")}\n
+        Previous Value:\t\t{self.prevField.get('convertedValue',self.prevField.get('rawvalue',"N/A"))}\n
         Conversion Function:\t\t{self.field.get("conversion","None").get("conversionFuncion","None")}\n
         Packet Last Received:\t\t{self.lastUpdate}\n
         Double-click to graph.
         """
-        
-    def registerLiveTlm(self):
+        self.setToolTip(toolTipString)
+        self.setStale()
+
+    def setStale(self):
+        if self.stale:
+            self.valueLabel.setStyleSheet(f"color:rgb{STALE}")
+        else:
+            self.valueLabel.setStyleSheet("color:black")
+
+    def mouseDoubleClickEvent(self,event):
+        #graph
         pass
-
-
-
-
-        

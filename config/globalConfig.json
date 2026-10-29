@@ -76,14 +76,6 @@
             "protocol": "UDP",
             "IP": "127.0.0.1",
             "port": 4568,
-            "listening": true
-        },
-        {
-            "label": "donkey",
-            "telemetryStructure": "sampleStructure1",
-            "protocol": "TCP Server",
-            "IP": "127.0.0.1",
-            "port": 1,
             "listening": false
         }
     ],
@@ -155,5 +147,5 @@
     "simulationNumberOfPackets": 1,
     "telemetryLaunchReceiversOnStartup": false,
     "staleDataSeconds": 5,
-    "fieldDisplayUpdateDelay": 0.0
+    "fieldDisplayUpdateDelay": 2.0
 }

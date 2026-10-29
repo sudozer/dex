@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 import pdb
 import logging
+
 class Configs():
     def __init__(self, logLevel=logging.WARNING):
         self.root_path = Path(__file__).resolve().parent.parent
@@ -23,7 +24,6 @@ class Configs():
         with open(self.global_config_path,'w') as f:
             json.dump(configDict, f, indent=4)
         self.globalConfig = configDict
-
     
     def getPath(self,path):
         """

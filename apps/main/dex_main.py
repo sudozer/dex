@@ -890,7 +890,7 @@ class DexMain(QObject):
     def writeConfigOptions(self):
         cfg = GLOBAL_CONFIG
         cfg['messageVerbosity'] = self.ui.messageLevelBox.currentText()
-        cfg['missionTitle'] = self.ui.missionTitleBox.currentText()
+        cfg['missionTitle'] = self.ui.missionTitleBox.text()
         cfg['autofillCommands'] = self.ui.commandAutofillFields.isChecked()
         cfg['autofillSimPackets'] = self.ui.simAutofillFields.isChecked()
         cfg['simulationSendLimitedPackets'] = self.ui.simSendNumberOfPackets.isChecked()
