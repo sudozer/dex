@@ -49,9 +49,82 @@ class SimTelemetryReceiver():
         self.simulationMessageFunction = simulationMessageFunction
         self.telemetryTriggerRegistry = {}
 
+    def registerTrigger(self,behaviorCallback,simPair):
+        onTlmArgs = simPair['trigger']['triggerArgs']
+        structure,packet,component,field = onTlmArgs['telemetryField'].split('.')
+
+        packetType = packet
+        if 'packetIdField' not in GLOBAL_CONFIG['telemetryStructures'][structure]:
+            packetType = structure
+
+        packetComponents = PACKET_STRUCTURE_COMPONENTS[structure][packet]
+        selectedField = next(
+            fieldDefinition
+            for packetComponent in packetComponents
+            if packetComponent['component'] == component
+            for fieldDefinition in packetComponent['fields']
+            if fieldDefinition['fieldName'] == field
+        )
+        fieldKey = f"{selectedField['definitionSource']}__{field}"
+        behaviorChange = lambda: behaviorCallback(simPair['behavior'])
+        triggerLock = threading.Lock()
+        triggered = False
+
+        def triggerCallback():
+            nonlocal triggered
+            with triggerLock:
+                if triggered:
+                    return
+
+                packetData = LIVETLM.mostRecentPacket.get(packetType)
+                if packetData is None:
+                    return
+                fieldData = packetData.get(fieldKey)
+                if fieldData is None:
+                    return
+
+                fieldValue = fieldData.get('convertedValue', fieldData.get('rawValue'))
+                if fieldValue is None:
+                    return
+
+                triggerValue = onTlmArgs['value']
+                if isinstance(fieldValue, (int, float)) and not isinstance(fieldValue, bool):
+                    try:
+                        triggerValue = int(triggerValue)
+                    except (TypeError, ValueError):
+                        try:
+                            triggerValue = float(triggerValue)
+                        except (TypeError, ValueError):
+                            self.simulationMessageFunction.emit(
+                                f"Invalid telemetry trigger value for {onTlmArgs['telemetryField']}: {triggerValue}",
+                                "ERROR",
+                            )
+                            return
+
+                comparator = onTlmArgs['comparator']
+                if comparator == '>=':
+                    conditionMet = fieldValue >= triggerValue
+                elif comparator == '<=':
+                    conditionMet = fieldValue <= triggerValue
+                else:
+                    conditionMet = fieldValue == triggerValue
+
+                if conditionMet:
+                    behaviorChange()
+                    triggered = True
+                    LIVETLM.removeCallback(packetType, triggerCallback)
+
+        LIVETLM.registerCallback(packetType, triggerCallback)
+
 class SimCommandReceiver(CommandReceiver):
     def __init__(self,commandPort,commandProtocol,commandStructure,simulationMessageFunction):
         super().__init__('127.0.0.1',commandPort,commandProtocol,commandStructure,simulationMessageFunction)
+        self.commandTriggerRegistry = {}
+
+    def registerTrigger(self,behaviorCallback,simPair):
+        pass
+        pdb.set_trace()
+        self.commandTriggerRegistry
 
 class Field():
     def __init__(self,component,fieldDict,packetConfig,packetBehaviors,initialConditions,fieldSimulationDict,simulatedPacket):
@@ -70,7 +143,7 @@ class Field():
     def initReturn(self):
         #first enabled field behavior initial condition gets set
         for simPair in self.fieldSimulationDict:
-            if simPair['trigger']['triggerType'] == "Initial COndition" and simPair['enabled']:
+            if simPair['trigger']['triggerType'] == "Initial Condition" and simPair['enabled']:
                 self.changeBehavior(simPair['behavior'])
                 return
         #first enabled packet behavior initial condition gets set
@@ -118,8 +191,11 @@ class Field():
         return self.fieldDict | valDict
     
     def registerTriggers(self):
-        pass
-
+        for simPair in self.fieldSimulationDict:
+            if simPair['trigger']['triggerType'] == "On TelemetryValue":
+                self.simulatedPacket.telemetryReceiver.registerTrigger(self.changeBehavior,simPair)
+            if simPair['trigger']['triggerType'] == "On Command Received":
+                self.simulatedPacket.commandReceiver.registerTrigger(self.changeBehavior,simPair)
 
 class SimulatedPacket(QObject):
     messageSignal = Signal(str,str)
@@ -157,7 +233,8 @@ class SimulatedPacket(QObject):
                 self.pktIdFieldIdx = len(self.fields) + pktIdField['fieldIndex']
             for i,field in enumerate(component['fields']):
                 self.fields.append(Field(component['component'],
-                                         field,self.simDict['packetConfig'],
+                                         field,
+                                         self.simDict['packetConfig'],
                                          self.simDict['packetBehaviors'],
                                          self.simDict['initialConditions'],
                                          self.simDict['fieldBehaviors'].get(componentName,{}).get(field['fieldName'],{}),

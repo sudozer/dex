@@ -1,5 +1,5 @@
 {
-    "version": "0.0.0",
+    "version": "0.1.0",
     "missionTitle": "Development",
     "datetimeFormat": "%Y-%m-%d_%H:%M:%S.%f %Z",
     "datetimeFileFormat": "%Y-%m-%d_%H-%M-%S%Z",
@@ -76,7 +76,7 @@
             "protocol": "UDP",
             "IP": "127.0.0.1",
             "port": 4568,
-            "listening": false
+            "listening": true
         }
     ],
     "storage": {
@@ -101,7 +101,7 @@
                 "simulationRate": 1.0,
                 "ip": "127.0.0.1",
                 "port": 4567,
-                "protocol": "UDP",
+                "protocol": "TCP Client",
                 "structure": "splaser",
                 "packet": "splaser"
             },
@@ -118,18 +118,157 @@
         {
             "packetConfig": {
                 "enabled": true,
-                "simulationRate": 3.2,
+                "simulationRate": 1.0,
                 "ip": "127.0.0.1",
                 "port": 4568,
                 "protocol": "UDP",
                 "structure": "sampleStructure1",
                 "packet": "4101"
             },
-            "packetBehaviors": [],
+            "packetBehaviors": [
+                {
+                    "enabled": true,
+                    "trigger": {
+                        "triggerType": "Initial Condition",
+                        "triggerArgs": {}
+                    },
+                    "behavior": {
+                        "behaviorType": "Playback From Telemetry",
+                        "behaviorArgs": {
+                            "playbackDatabase": "sampleDatabase1",
+                            "playbackTime": "2000-01-01-05-00-00"
+                        }
+                    }
+                },
+                {
+                    "enabled": true,
+                    "trigger": {
+                        "triggerType": "On Telemetry Value",
+                        "triggerArgs": {
+                            "telemetryField": "sampleStructure1.4101.4101.totalTicks",
+                            "comparator": ">=",
+                            "value": "7"
+                        }
+                    },
+                    "behavior": {
+                        "behaviorType": "Playback From Telemetry",
+                        "behaviorArgs": {
+                            "playbackDatabase": "sampleDatabase1",
+                            "playbackTime": "2000-01-20-05-00-00"
+                        }
+                    }
+                },
+                {
+                    "enabled": true,
+                    "trigger": {
+                        "triggerType": "On Command Received",
+                        "triggerArgs": {
+                            "structure": "spacecraft commands",
+                            "commandList": [
+                                {
+                                    "fieldName": "sampleMode",
+                                    "description": "blah blah arg1",
+                                    "type": "uint8_t",
+                                    "bitLength": 8,
+                                    "defaultValue": 0,
+                                    "enumerationTable": {
+                                        "0": "Mode A",
+                                        "1": "Mode B",
+                                        "2": "Mode C",
+                                        "3": "Mode D"
+                                    },
+                                    "component": "2001",
+                                    "value": "3",
+                                    "bitstring": "00000011",
+                                    "relevant": true
+                                }
+                            ]
+                        }
+                    },
+                    "behavior": {
+                        "behaviorType": "Playback From Telemetry",
+                        "behaviorArgs": {
+                            "playbackDatabase": "sampleDatabase2",
+                            "playbackTime": "2000-01-26-05-00-00"
+                        }
+                    }
+                }
+            ],
             "fieldBehaviors": {
                 "primaryHeader": {},
                 "secondaryHeader": {},
-                "4101": {}
+                "4101": {
+                    "totalTicks": [
+                        {
+                            "trigger": {
+                                "triggerType": "Initial Condition",
+                                "triggerArgs": {}
+                            },
+                            "behavior": {
+                                "behaviorType": "Ramp To",
+                                "behaviorArgs": {
+                                    "value": "50",
+                                    "rampSeconds": "50",
+                                    "rampType": "Linear",
+                                    "coefficient": 0.01
+                                }
+                            },
+                            "enabled": true
+                        }
+                    ],
+                    "temperature": [
+                        {
+                            "trigger": {
+                                "triggerType": "Initial Condition",
+                                "triggerArgs": {}
+                            },
+                            "behavior": {
+                                "behaviorType": "Hold Static Value",
+                                "behaviorArgs": {
+                                    "value": "8"
+                                }
+                            },
+                            "enabled": true
+                        },
+                        {
+                            "trigger": {
+                                "triggerType": "On Telemetry Value",
+                                "triggerArgs": {
+                                    "telemetryField": "sampleStructure1.4101.4101.totalTicks",
+                                    "comparator": ">=",
+                                    "value": "8"
+                                }
+                            },
+                            "behavior": {
+                                "behaviorType": "Ramp To",
+                                "behaviorArgs": {
+                                    "value": "50",
+                                    "rampSeconds": "30",
+                                    "rampType": "Exponential",
+                                    "coefficient": 0.01
+                                }
+                            },
+                            "enabled": true
+                        },
+                        {
+                            "trigger": {
+                                "triggerType": "On Telemetry Value",
+                                "triggerArgs": {
+                                    "telemetryField": "sampleStructure1.4101.4101.totalTicks",
+                                    "comparator": ">=",
+                                    "value": "20"
+                                }
+                            },
+                            "behavior": {
+                                "behaviorType": "Hold Static Value",
+                                "behaviorArgs": {
+                                    "value": "7"
+                                }
+                            },
+                            "enabled": true
+                        }
+                    ]
+                }
             },
             "initialConditions": {
                 "enabled": false,

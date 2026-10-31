@@ -156,7 +156,7 @@ class CommandBuilder(QDialog):
             self.ui.argumentTable.itemChanged.connect(self.validateField)
 
         #autofill here
-        if startingConfig['autofillCommands']:
+        if GLOBAL_CONFIG['autofillCommands']:
             commandFieldList = []
             for comp in self.fieldItems:
                 for field in comp:

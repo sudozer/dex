@@ -21,22 +21,33 @@ from PySide6.QtWidgets import (
 )
 import pdb
 
-from dataStructures import PACKET_TEMPLATES
+from dataStructures import PACKET_STRUCTURE_COMPONENTS
 from loadConfig import Configs
 cfgLoader = Configs()
 
 class FieldItem(QTreeWidgetItem):
-    def __init__(self, parent, field):
-        self.field = field
+    def __init__(self, parent, fieldName):
+        self.fieldName = fieldName
         super().__init__(parent)
-        self.setText(0, field['fieldName'])
+        self.setText(0, fieldName)
 
 class PacketItem(QTreeWidgetItem):
-    def __init__(self, parent, packetName, packetDict):
+    def __init__(self, parent, packetName, packetList):
         super().__init__(parent)
         self.setText(0, packetName)
-        for field in packetDict:
-            fieldItem = FieldItem(self, field)
+        for component in packetList:
+            componentName = component['component']
+            fieldList = component['fields']
+            for field in fieldList:
+                fieldItem = FieldItem(self, f"{componentName}.{field['fieldName']}")
+
+class StructureItem(QTreeWidgetItem):
+    def __init__(self,parent,structureName,structureDict):
+        super().__init__(parent)
+        self.setText(0,structureName)
+        for packetName,packet in structureDict.items():
+            packetItem = PacketItem(self,packetName,packet)
+
 
 class TelemetryFieldSelector(QDialog):
     def __init__(self, parent=None):
@@ -55,6 +66,7 @@ class TelemetryFieldSelector(QDialog):
         self.setLayout(layout)
         self.setModal(True)
         self.ui.okButton.clicked.connect(self.accept)
+        self.ui.okButton.setEnabled(False)
         # Populate the tree widget with telemetry fields
         self.populateTelemetryFields()
         self.setWindowTitle("Select Telemetry Field")
@@ -64,13 +76,16 @@ class TelemetryFieldSelector(QDialog):
         self.show()
 
     def populateTelemetryFields(self):
-        for packetName, packetDict in PACKET_TEMPLATES.items():
-            packetItem = PacketItem(self.ui.telemetryTree, packetName, packetDict)
+        for structureName, structureDict in PACKET_STRUCTURE_COMPONENTS.items():
+            structureItem = StructureItem(self.ui.telemetryTree, structureName, structureDict)
 
     def onItemClicked(self, item):
         if isinstance(item, FieldItem):
             self.selectedField = item.text(0)
             self.selectedPacket = item.parent().text(0)
+            self.selectedStructure = item.parent().parent().text(0)
+            self.returnSelection = f"{self.selectedStructure}.{self.selectedPacket}.{self.selectedField}"
+            #field returns in the form telemetryStructure.packet.component.field
             self.ui.okButton.setEnabled(True)
         else:
             #packet item selected

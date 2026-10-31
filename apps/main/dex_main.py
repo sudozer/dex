@@ -124,6 +124,7 @@ class PacketBehavior(QTableWidgetItem):
             case "On Telemetry Value":
                 #triggerArgs={"telemetryField":self.telemetryFieldButton.text(),"value":self.telemetryValue.text()}
                 self.telemetryFieldButton.setText(triggerArgs['telemetryField'])
+                self.telemetryFieldComparator.setCurrentText(triggerArgs['comparator'])
                 self.telemetryValue.setText(triggerArgs['value'])
             case "On Command Received":
                 #triggerArgs = {"commandList":self.commandList}
@@ -155,10 +156,14 @@ class PacketBehavior(QTableWidgetItem):
 
             self.telemetryFieldButton = QPushButton("Telemetry Field")
             self.telemetryFieldButton.clicked.connect(self.selectTelemetryField)
+            self.telemetryFieldComparator = QComboBox()
+            self.telemetryFieldComparator.addItems(["=", ">=", "<="])
+
             self.telemetryValue = QLineEdit()
             self.telemetryValue.setPlaceholderText("Value")
 
             cell_layout.addWidget(self.telemetryFieldButton)
+            cell_layout.addWidget(self.telemetryFieldComparator)
             cell_layout.addWidget(self.telemetryValue)
             self.parentTable.setCellWidget(self.row(),2,container)
 
@@ -171,9 +176,7 @@ class PacketBehavior(QTableWidgetItem):
     def selectTelemetryField(self):
         selector = TelemetryFieldSelector()
         if selector.exec() == QDialog.Accepted:
-            self.onTelemetryField = selector.selectedField
-            self.onTelemetryPacket = selector.selectedPacket
-            self.telemetryFieldButton.setText(f"{self.onTelemetryPacket}.{self.onTelemetryField}")
+            self.telemetryFieldButton.setText(selector.returnSelection)
 
     def selectCommand(self):
         structureName = self.behaviorWidget.dexMainWidget.ui.simulationCommandStructureBox.currentText()
@@ -193,7 +196,7 @@ class PacketBehavior(QTableWidgetItem):
                 pass
             case "On Telemetry Value":
                 #TODO validate that value matches telemetry Field type
-                triggerArgs={"telemetryField":self.telemetryFieldButton.text(),"value":self.telemetryValue.text()}
+                triggerArgs={"telemetryField":self.telemetryFieldButton.text(),"comparator":self.telemetryFieldComparator.currentText(),"value":self.telemetryValue.text()}
             
             case "On Command Received":
                 relevantCmdList = []
@@ -298,6 +301,7 @@ class FieldBehavior(QTreeWidgetItem):
             case "On Telemetry Value":
                 #triggerArgs={"telemetryField":self.telemetryFieldButton.text(),"value":self.telemetryValue.text()}
                 self.telemetryFieldButton.setText(triggerArgs['telemetryField'])
+                self.telemetryComparator.setCurrentText(triggerArgs['comparator'])
                 self.telemetryValue.setText(triggerArgs['value'])
             case "On Command Received":
                 #triggerArgs = {"commandList":self.commandList}
@@ -313,6 +317,7 @@ class FieldBehavior(QTreeWidgetItem):
                 self.behaviorRampSeconds.setText(behaviorArgs['rampSeconds'])
                 idx = self.behaviorRampType.findText(behaviorArgs['rampType'])
                 self.behaviorRampType.setCurrentIndex(idx)
+                self.behaviorRampCoefficient.setValue(behaviorArgs['coefficient'])
 
             case "Playback From Telemetry":
                 #behaviorArgs = {"playbackTime":self.behaviorPlaybackTime.dateTime().toString(GLOBAL_CONFIG['qtDateFormat'])}
@@ -335,14 +340,17 @@ class FieldBehavior(QTreeWidgetItem):
         
             # Configure layout margins to fit nicely inside the cell
             cell_layout.setContentsMargins(4, 4, 4, 4)
-            cell_layout.setSpacing(6)
+            cell_layout.setSpacing(2)
 
             self.telemetryFieldButton = QPushButton("Telemetry Field")
             self.telemetryFieldButton.clicked.connect(self.selectTelemetryField)
+            self.telemetryComparator = QComboBox()
+            self.telemetryComparator.addItems(["=", ">=","<="])
             self.telemetryValue = QLineEdit()
             self.telemetryValue.setPlaceholderText("Value")
 
             cell_layout.addWidget(self.telemetryFieldButton)
+            cell_layout.addWidget(self.telemetryComparator)
             cell_layout.addWidget(self.telemetryValue)
             self.parentItem.parentTree.setItemWidget(self,2,container)
 
@@ -365,7 +373,7 @@ class FieldBehavior(QTreeWidgetItem):
             container = QWidget()
             layout = QHBoxLayout(container)
             layout.setContentsMargins(4, 4, 4, 4)
-            layout.setSpacing(6)
+            layout.setSpacing(2)
             self.behaviorPlaybackDatabaseSelect = QComboBox()
             databasePath = Path(cfgLoader.getPath('missionDatabases'))
             subfolder_names = [x.name for x in databasePath.iterdir() if x.is_dir()]
@@ -382,24 +390,28 @@ class FieldBehavior(QTreeWidgetItem):
             container = QWidget()
             layout = QHBoxLayout(container)
             layout.setContentsMargins(4, 4, 4, 4)
-            layout.setSpacing(6)
+            layout.setSpacing(2)
             self.behaviorRampValue = QLineEdit()
             self.behaviorRampValue.setPlaceholderText("Final Value")
             self.behaviorRampSeconds = QLineEdit()
             self.behaviorRampSeconds.setPlaceholderText("Ramp Time (s)")
             self.behaviorRampType = QComboBox()
             self.behaviorRampType.addItems(['Linear','Exponential'])
+            self.behaviorRampCoefficient = QDoubleSpinBox()
+            self.behaviorRampCoefficient.setMinimum(0.0001)
+            self.behaviorRampCoefficient.setValue(0.1)
+            self.behaviorRampCoefficient.setDecimals(4)
+            self.behaviorRampCoefficient.setToolTip("Exponential Ramp only: this is the value of k in the exponential ramping equation: V = Vf +(V0 - Vf)e^(-kt)")
             layout.addWidget(self.behaviorRampValue)
             layout.addWidget(self.behaviorRampSeconds)
             layout.addWidget(self.behaviorRampType)
+            layout.addWidget(self.behaviorRampCoefficient)
             self.parentItem.parentTree.setItemWidget(self,4,container)
 
     def selectTelemetryField(self):
         selector = TelemetryFieldSelector()
         if selector.exec() == QDialog.Accepted:
-            self.onTelemetryField = selector.selectedField
-            self.onTelemetryPacket = selector.selectedPacket
-            self.telemetryFieldButton.setText(f"{self.onTelemetryPacket}.{self.onTelemetryField}")
+            self.telemetryFieldButton.setText(selector.returnSelection)
     
     def selectCommand(self):
         structureName = self.parentItem.behaviorsWidget.dexMainWidget.ui.simulationCommandStructureBox.currentText()
@@ -417,7 +429,7 @@ class FieldBehavior(QTreeWidgetItem):
                 triggerArgs = {}
 
             case "On Telemetry Value":
-                triggerArgs={"telemetryField":self.telemetryFieldButton.text(),"value":self.telemetryValue.text()}
+                triggerArgs={"telemetryField":self.telemetryFieldButton.text(),"comparator":self.telemetryComparator.currentText(),"value":self.telemetryValue.text()}
             
             case "On Command Received":
                 relevantCmdList = []
@@ -431,7 +443,7 @@ class FieldBehavior(QTreeWidgetItem):
                 behaviorArgs = {'value':self.behaviorParamsValue.text()}
 
             case "Ramp To":
-                behaviorArgs = {'value':self.behaviorRampValue.text(),"rampSeconds":self.behaviorRampSeconds.text(),"rampType":self.behaviorRampType.currentText()}
+                behaviorArgs = {'value':self.behaviorRampValue.text(),"rampSeconds":self.behaviorRampSeconds.text(),"rampType":self.behaviorRampType.currentText(),"coefficient":self.behaviorRampCoefficient.value()}
 
             case "Playback From Telemetry":
                 behaviorArgs = {"playbackDatabase":self.behaviorPlaybackDatabaseSelect.currentText(),"playbackTime":self.behaviorPlaybackTime.dateTime().toString(GLOBAL_CONFIG['qtDateFormat'])}
