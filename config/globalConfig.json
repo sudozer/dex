@@ -7,7 +7,6 @@
     "qtDateFormat": "yyyy-MM-dd-HH-mm-ss",
     "parentPath": "C:\\Users\\jmgrego2\\Desktop\\vmshare\\dex",
     "logBasepath": "logs/ActiveLog.log",
-    "guiTheme": "dark_cyan.xml",
     "hostOS": "linux",
     "telemetryDefinitionsBasepath": "telemetryDefinitions/",
     "malformedPacketPath": "malformedPackets/malformedPacketStorage",
@@ -85,8 +84,9 @@
             "tagStartup": true,
             "tagShutdown": true,
             "tagAllCommands": true,
-            "commandList": [],
-            "telemetryList": []
+            "commands": {
+                "spacecraft commands": []
+            }
         }
     },
     "simulation": [

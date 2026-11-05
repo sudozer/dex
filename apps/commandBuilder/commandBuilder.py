@@ -31,20 +31,13 @@ ERROR_COLOR = QColor(237,71,59)
 
 from loadConfig import cfgLoader, GLOBAL_CONFIG
 
-class CommandItem(QTreeWidgetItem):
-    def __init__(self,structure,commandID,commandDict):
-        self.parentTree = parentTree
+class CommandItem(QListWidgetItem):
+    def __init__(self,parentList,commandID,commandDict):
+        self.parentList = parentList
         self.commandID = commandID
         self.commandDict = commandDict
         super().__init__(f"{commandID}: {commandDict['commandName']}")
-        parentTree.addItem(self)
-
-class CommandStructureItem(QTreeWidgetItem):
-    def __init__(self,parentTree,structureName):
-        self.parentTree = parentTree
-        self.structureName = structureName
-        super().__init__(f"{structureName}")
-        parentTree.addItem(self)
+        parentList.addItem(self)
 
 class FieldItem():
     def __init__(self,argDict,fieldTable,commandItem=True,relevantFields=False):
@@ -176,9 +169,14 @@ class CommandBuilder(QDialog):
         if packetIdField is not None:
             componentIndex = packetIdField['componentIndex']
             fieldIndex = packetIdField['fieldIndex']
-            self.fieldItems[componentIndex][fieldIndex].valueCell.setText(
-                str(commandItem.commandID)
-            )
+            packetIdFieldItem = self.fieldItems[componentIndex][fieldIndex]
+            packetIdFieldItem.valueCell.setText(str(commandItem.commandID))
+            if self.relevantFields:
+                packetIdFieldItem.fieldCell.setCheckState(Qt.CheckState.Checked)
+                packetIdFieldItem.fieldCell.setFlags(
+                    packetIdFieldItem.fieldCell.flags()
+                    & ~Qt.ItemFlag.ItemIsUserCheckable
+                )
 
         self.validateAllFields()
         self.checkAllFieldsValid()
@@ -291,4 +289,3 @@ class CommandBuilder(QDialog):
                 commandList.append(item.argDict)
         self.commandList = commandList
         self.accept()
-

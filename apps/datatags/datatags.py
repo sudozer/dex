@@ -3,6 +3,7 @@ from PySide6.QtCore import QFile
 from PySide6.QtWidgets import (
     QDialog,
     QListWidgetItem,
+    QTreeWidgetItem,
     QVBoxLayout,
     QComboBox,
     QPushButton,
@@ -31,7 +32,6 @@ class CommandStructureDialog(QDialog):
 
     def populateCommandStructures(self):
         self.structureBox.clear()
-        pdb.set_trace()
         for structure in COMMAND_STRUCTURE_COMPONENTS.keys():
             self.structureBox.addItem(structure)
 
@@ -40,11 +40,22 @@ class CommandStructureDialog(QDialog):
             commandItem = CommandItem(command)
             self.ui.commandList.addItem(commandItem)
 
-class CommandItem(QListWidgetItem):
-    def __init__(self, command, parent=None):
+class CommandItem(QTreeWidgetItem):
+    def __init__(self, command, parent):
         super().__init__(parent)
         self.command = command
-        self.setText(command)
+        self.parentItem = parent
+        cmdText = ""
+        for field in self.command:
+            cmdText = cmdText + f"{field['fieldName']}: {field['value']}; "
+        self.setText(0,cmdText)
+
+class CommandStructureItem(QTreeWidgetItem):
+    def __init__(self, structure, parent=None):
+        super().__init__(parent)
+        self.commands = []
+        self.structure = structure
+        self.setText(0,structure)
 
 class TelemetryItem(QListWidgetItem):
     def __init__(self, telemetry, parent=None):
@@ -68,10 +79,9 @@ class DataTagConfig(QDialog):
         layout.addWidget(self.ui)
         self.setLayout(layout)    
 
+        self.ui.commandTagTree.setHeaderHidden(True)
         self.ui.addCommandButton.clicked.connect(self.addCommand)
         self.ui.removeCommandButton.clicked.connect(self.removeCommand)
-        self.ui.addTelemetryButton.clicked.connect(self.addTelemetry)
-        self.ui.removeTelemetryButton.clicked.connect(self.removeTelemetry)
         self.ui.okButton.clicked.connect(self.writeConfig)
         self.ui.tagAllCommandsBox.stateChanged.connect(self.setCommandLabel)
         self.setWindowTitle("Configure Automatic Datatags")
@@ -83,7 +93,6 @@ class DataTagConfig(QDialog):
         self.ui.tagShutdownBox.setChecked(self.dataTagCfg['tagShutdown'])
         self.ui.tagAllCommandsBox.setChecked(self.dataTagCfg['tagAllCommands'])
         self.populateCommandList()
-        self.populateTelemetryList()
 
     def setCommandLabel(self):
         if self.ui.tagAllCommandsBox.isChecked():
@@ -92,35 +101,46 @@ class DataTagConfig(QDialog):
             self.ui.commandListLabel.setText("Tagged Commands:")
 
     def writeConfig(self):
+        commandDict = {}
+        for structureName,structureItem in self.structureItems.items():
+            commandDict[structureItem.structure]=[]
+            for command in structureItem.commands:
+                commandDict[structureItem.structure].append(command.command)
+        dataTagCfg = {
+            "tagStartup":self.ui.tagStartupBox.isChecked(),
+            "tagShutdown":self.ui.tagShutdownBox.isChecked(),
+            "tagAllCommands":self.ui.tagAllCommandsBox.isChecked(),
+            "commands":commandDict
+        }
+        GLOBAL_CONFIG['storage']['dataTags'] = dataTagCfg
+        cfgLoader.configWrite(GLOBAL_CONFIG)
         self.accept()
-        pass
 
     def populateCommandList(self):
+        self.structureItems = {}
+        for structure in COMMAND_STRUCTURE_COMPONENTS.keys():
+            self.structureItems[structure] = CommandStructureItem(structure,self.ui.commandTagTree)
 
-        pass
-
-    def populateTelemetryList(self):
-        pass
-
+        for structureName,structure in self.dataTagCfg['commands'].items():
+            for command in structure:
+                self.addCommandItem(structureName,command)
+        
     def addCommand(self):
         structureSelector = CommandStructureDialog(self)
         if structureSelector.exec() == QDialog.Accepted:
             selectedStructure = structureSelector.structureBox.currentText()
             commandBuilder = CommandBuilder(selectedStructure, True)
             if commandBuilder.exec() == QDialog.Accepted:
-                selectedCommand = commandBuilder.selectedCommand
+                commandList = [field for field in commandBuilder.commandList if field['relevant']]
                 # Add the selected command to the list
-                commandItem = CommandItem(selectedCommand)
-                self.ui.commandList.addItem(commandItem)
+                self.addCommandItem(selectedStructure,commandList)
 
+    def addCommandItem(self,structure,command):
+        structureItem = self.structureItems[structure]
+        structureItem.commands.append(CommandItem(command,structureItem))
+        structureItem.setExpanded(True)
     def removeCommand(self):
-        pass
-
-    def addTelemetry(self):
-        selector = TelemetryFieldSelector()
-        if selector.exec == QDialog.Accepted:
-            telemetrySelection = selector.returnSelection
-        pass
-
-    def removeTelemetry(self):
-        pass    
+        selectedCommand = self.ui.commandTagTree.currentItem() 
+        if isinstance(selectedCommand,CommandItem):
+            selectedCommand.parentItem.commands.remove(selectedCommand)
+            selectedCommand.parentItem.removeChild(selectedCommand)
