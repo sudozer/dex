@@ -171,7 +171,8 @@ class PacketReceiverItem(QTableWidgetItem):
         self.listenButton.clicked.disconnect()
         self.listenButton.clicked.connect(self.startListening)
         self.counterUpdater.wait()
-        self.dexMain.activeTelemetryReceivers.remove(self)
+        if self in self.dexMain.activeTelemetryReceivers:
+            self.dexMain.activeTelemetryReceivers.remove(self)
         self.writeTelemetryConfig()
         self.enableControls(True)
 
@@ -187,3 +188,4 @@ class PacketReceiverItem(QTableWidgetItem):
             structure,
             share_telemetry=True,
         )
+        self.dexMain.childProcesses.append(self.structureViewer)

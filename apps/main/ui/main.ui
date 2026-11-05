@@ -22,7 +22,7 @@
      <item>
       <widget class="QTabWidget" name="tabs">
        <property name="currentIndex">
-        <number>0</number>
+        <number>7</number>
        </property>
        <widget class="QWidget" name="tab">
         <attribute name="title">
@@ -291,12 +291,17 @@
                 <number>65535</number>
                </property>
                <property name="value">
-                <number>5555</number>
+                <number>4542</number>
                </property>
               </widget>
              </item>
              <item>
               <widget class="QComboBox" name="commandProtocolSelect">
+               <item>
+                <property name="text">
+                 <string>UDP</string>
+                </property>
+               </item>
                <item>
                 <property name="text">
                  <string>TCP Client</string>
@@ -305,11 +310,6 @@
                <item>
                 <property name="text">
                  <string>TCP Server</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>UDP</string>
                 </property>
                </item>
               </widget>
@@ -901,6 +901,9 @@
                <property name="maximum">
                 <number>65535</number>
                </property>
+               <property name="value">
+                <number>4542</number>
+               </property>
               </widget>
              </item>
              <item>
@@ -926,23 +929,6 @@
                  <string>TCP Server</string>
                 </property>
                </item>
-              </widget>
-             </item>
-             <item>
-              <widget class="QLabel" name="label_19">
-               <property name="text">
-                <string>Round trip delay (s):</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QDoubleSpinBox" name="roundTripDelaySpinBox">
-               <property name="buttonSymbols">
-                <enum>QAbstractSpinBox::NoButtons</enum>
-               </property>
-               <property name="singleStep">
-                <double>0.100000000000000</double>
-               </property>
               </widget>
              </item>
              <item>
@@ -1599,6 +1585,46 @@
                 </layout>
                </item>
                <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_35">
+                 <property name="topMargin">
+                  <number>3</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="label_19">
+                   <property name="text">
+                    <string>Lightspeed Delay (s):</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_21">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QDoubleSpinBox" name="simulationLightDelay">
+                   <property name="minimumSize">
+                    <size>
+                     <width>140</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The light delay for simulation.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
                 <widget class="Line" name="line_5">
                  <property name="orientation">
                   <enum>Qt::Horizontal</enum>
@@ -1721,6 +1747,50 @@
                     <double>1.000000000000000</double>
                    </property>
                   </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <widget class="QLabel" name="label_34">
+                 <property name="text">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Storage:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="Line" name="line_6">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_36">
+                 <property name="topMargin">
+                  <number>0</number>
+                 </property>
+                 <item>
+                  <widget class="QPushButton" name="configureDatatagsButton">
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Datatags are markers stored automatically in telemetry databases indicating when certain events happen.  They are useful for retrieving data later or configuring playback from a particular event.  Configure when automatic datatags are written.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
+                   <property name="text">
+                    <string>Configure Datatags</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_22">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
                  </item>
                 </layout>
                </item>

@@ -1,11 +1,13 @@
 import socket
 from socket import socket as sock
 import pdb
+import threading
 from autofill import Autofiller
 import struct
 import logging
 
 from loadConfig import cfgLoader, GLOBAL_CONFIG
+from dataStructures import COMMAND_STRUCTURE_SIZES
 
 
 LOGGER = logging.getLogger(__name__)
@@ -80,8 +82,8 @@ class TCPCommandSocket(sock):
     def sendCommand(self,command):
         wrappedCommand = buildCommandFromDict(command)
         if self.role == "client":
-            if startingConfig['autofillCommands']:
-                command = self.autofill.autofillAllFields(command)
+            if GLOBAL_CONFIG['autofillCommands']:
+                command = self.autofiller.autofillAllFields(command)
             pass
 
 
@@ -95,7 +97,7 @@ class UDPCommandSocket(sock):
 
     def sendCommand(self,command):
         try:
-            if startingConfig['autofillCommands']:
+            if GLOBAL_CONFIG['autofillCommands']:
                 command = self.autofill.autofillAllFields(command)
                 
             wrappedCommand = buildCommandFromDict(command)
@@ -105,35 +107,48 @@ class UDPCommandSocket(sock):
             self.messageFunction(f"Command Failed:\n{E}\n", 'error')
 
 class CommandReceiver(sock):
-    def __init__(self,IP,port,protocol,structure,messageFunction):
+    def __init__(self,IP,port,protocol,structure,messageFunction,commandCallback = None):
         super().__init__(socket.AF_INET,socket.SOCK_DGRAM)
     
         self.IP = IP
         self.port = port
         self.protocol = protocol
         self.structure = structure
+        self.commandCallback = commandCallback
         self.messageFunction = messageFunction
+        self.maxCommandSize = max(COMMAND_STRUCTURE_SIZES[structure].values())
+        self.listeningFlag = threading.Event()
+        self.listeningFlag.set()
+        self.settimeout(1.0)
         self.bind((self.IP,self.port))
         self.commandQueue = []
 
     def openListeningPort(self):
         if self.protocol == 'UDP':
-            self.listeningPort = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.listeningPort.bind((self.IP,self.port))
+            self.listeningPort = self
 
         if self.protocol == 'TCP Server':
+            #TODO
             pass
 
         if self.protocol == 'TCP Client':
+            #TODO
             pass
 
     def listenThread(self):
         if self.protocol == 'UDP':
-            while True:
-                data, addr = self.listeningPort.recvfrom(65535)
-                self.messageFunction(f"Received command packet from {addr}: {data}")
-                self.processCommandPacket(data)
-                self.commandQueue.append(data)
+            self.messageFunction(f"Listening for UDP commands on {(self.IP,self.port)}",'info')
+            while self.listeningFlag.is_set():
+                try:
+                    data, addr = self.listeningPort.recvfrom(self.maxCommandSize)
+                except socket.timeout:
+                    continue
+                if self.listeningFlag.is_set():
+                    self.messageFunction(f"Received command packet from {addr}: {data}")
+                    self.processCommandPacket(data)
+
+    def stopListening(self):
+        self.listeningFlag.clear()
 
     def processThread(self):
         while True:
@@ -142,4 +157,5 @@ class CommandReceiver(sock):
                 self.processCommandPacket(commandPacket)
 
     def processCommandPacket(self, commandPacket):
-        pdb.set_trace()
+        if self.commandCallback is not None:
+            self.commandCallback(commandPacket)

@@ -38,14 +38,18 @@ from loadConfig import cfgLoader, GLOBAL_CONFIG
 
 from packetDefinitionLib import PacketDefinitionUtility
 from decode import Decoder
+from store import Storage
 from dataStructures import PACKET_TEMPLATES, COMMAND_COMPONENTS, PACKET_STRUCTURES,PACKET_STRUCTURE_COMPONENTS
+from liveTelemetry import LIVETLM
 
 from packetDefinitionEditor import PacketDefinitionEditor
 from telemetrySelector import TelemetryFieldSelector
 from commandBuilder import CommandBuilder
 from commandIDSelector import CommandIDSelector
+from datatags import DataTagConfig
 from command import TCPCommandSocket, UDPCommandSocket
 from packetReceiverItem import PacketReceiverItem
+from childProcess import shutdown_gui_processes
 
 from telemetrySimulation import SimTelemetryReceiver, SimCommandReceiver, SimulatedPacketContainer
 # Colors
@@ -77,8 +81,8 @@ class PacketBehavior(QTableWidgetItem):
         self.triggerComboBox = QComboBox()
         self.triggerComboBox.addItems(['Initial Condition','On Telemetry Value','On Command Received'])
         self.behaviorPlaybackDatabaseSelect = QComboBox()
-        databasePath = Path(cfgLoader.getPath('missionDatabases'))
-        subfolder_names = [x.name for x in databasePath.iterdir() if x.is_dir()]
+        databasePath = Path(cfgLoader.getPath('databases'))
+        subfolder_names = [x.name for x in databasePath.iterdir() if x.is_file()]
         self.behaviorPlaybackDatabaseSelect.addItems(subfolder_names)
         self.playbackTimeField = QDateTimeEdit()
         self.playbackTimeField.setCalendarPopup(True)
@@ -375,8 +379,8 @@ class FieldBehavior(QTreeWidgetItem):
             layout.setContentsMargins(4, 4, 4, 4)
             layout.setSpacing(2)
             self.behaviorPlaybackDatabaseSelect = QComboBox()
-            databasePath = Path(cfgLoader.getPath('missionDatabases'))
-            subfolder_names = [x.name for x in databasePath.iterdir() if x.is_dir()]
+            databasePath = Path(cfgLoader.getPath('databases'))
+            subfolder_names = [x.name for x in databasePath.iterdir() if x.is_file()]
             self.behaviorPlaybackDatabaseSelect.addItems(subfolder_names)
             self.behaviorPlaybackTime = QDateTimeEdit()
             self.behaviorPlaybackTime.setCalendarPopup(True)
@@ -420,7 +424,6 @@ class FieldBehavior(QTreeWidgetItem):
             self.commandDict = {'structure':commandBuilder.commandStructureName,'commandList':commandBuilder.commandList}
 
     def writeSimConfig(self):
-
         self.fieldSimConfig = False
         #write trigger args
         match self.triggerComboBox.currentText():
@@ -436,6 +439,8 @@ class FieldBehavior(QTreeWidgetItem):
                 for field in self.commandDict['commandList']:
                     if field['relevant']:
                         relevantCmdList.append(field)
+                if len(relevantCmdList) == 0:
+                    return False
                 triggerArgs = {"structure":self.commandDict['structure'],"commandList":relevantCmdList}
         
         match self.behaviorComboBox.currentText():
@@ -556,8 +561,8 @@ class SimBehaviorWidget(QDialog):
 
     def populateDatabaseBox(self):
         self.loaded_widget.databaseSelectBox.clear()
-        databasePath = Path(cfgLoader.getPath('missionDatabases'))
-        subfolder_names = [x.name for x in databasePath.iterdir() if x.is_dir()]
+        databasePath = Path(cfgLoader.getPath('databases'))
+        subfolder_names = [x.name for x in databasePath.iterdir() if x.is_file()]
         self.loaded_widget.databaseSelectBox.addItems(subfolder_names)
 
 
@@ -614,11 +619,19 @@ class SimBehaviorWidget(QDialog):
             self.fieldBehaviors[comp['component']] = {}
         
         for packetBehavior in self.packetSimItems:
-            self.packetBehaviors.append(packetBehavior.writeSimConfig())
+            simcfg = packetBehavior.writeSimConfig()
+            if simcfg:
+                self.packetBehaviors.append(simcfg)
     
         for field in self.fieldSimItems:
             if len(field.fieldBehaviors) > 0:
-                self.fieldBehaviors[field.componentName][field.fieldName]=[i.writeSimConfig() for i in field.fieldBehaviors]
+                fieldWiseBehaviors = []
+                for behavior in field.fieldBehaviors:
+                    simcfg = behavior.writeSimConfig()
+                    if not simcfg == False:
+                        fieldWiseBehaviors.append(simcfg)
+                if len(fieldWiseBehaviors) > 0:
+                    self.fieldBehaviors[field.componentName][field.fieldName] = fieldWiseBehaviors
 
         self.simInitialConditions = {
             "enabled":True if self.loaded_widget.simInitConditions.checkState() == Qt.Checked else False,
@@ -806,9 +819,14 @@ class DexMain(QObject):
         self.command = {}
         self.commandLink = None
         self.commandLinkParametersChanged = True
+        
         self.activeSimulationPackets = []
         self.telemetryReceivers = []
         self.activeTelemetryReceivers = []
+
+        self.storage = Storage(self.telemetryMessage)
+        
+        self.childProcesses = []
 
         self.simCommandReceiver = None
         self.simTlmReceiver = None
@@ -839,7 +857,6 @@ class DexMain(QObject):
         # for column in range(self.ui.simulationPacketsTree.columnCount()):
         #     self.ui.simulationPacketsTree.resizeColumnToContents(column)
         self.ui.simulationPacketsTree.setHeaderHidden(False)
-        self.ui.roundTripDelaySpinBox.valueChanged.connect(self.setRoundTripDelay)
         self.populateSimPackets()
         cfg = GLOBAL_CONFIG
         for commandStructure in cfg['commandStructures']:
@@ -868,10 +885,10 @@ class DexMain(QObject):
 
         #telemetry controls
         self.ui.telemetryDefinitionsButton.clicked.connect(self.editTelemetryDefinitions)
-        databasePath = Path(cfgLoader.getPath('missionDatabases'))
-        subfolder_names = [x.name for x in databasePath.iterdir() if x.is_dir()]
-        self.ui.currentActiveDatabase.addItems(subfolder_names)
-        self.ui.currentActiveDatabase.currentTextChanged.connect(self.writeTelemetryConfig)
+        databasePath = Path(cfgLoader.getPath('databases'))
+        self.ui.telemetryAddNewDatabaseButton.clicked.connect(self.addTelemetryDatabase)
+        self.populateTelemetryDatabases()
+        self.ui.currentActiveDatabase.currentTextChanged.connect(self.changeDatabase)
         self.ui.addTelemetryReceiverButton.clicked.connect(self.addTelemetryReceiver)
         self.ui.removePacketInterfaceButton.clicked.connect(self.removeTelemetryReceiver)
         self.ui.packetReceiverTable.setColumnCount(7)  
@@ -895,9 +912,11 @@ class DexMain(QObject):
         self.ui.simulationFloatNoise.valueChanged.connect(self.writeConfigOptions)
         self.ui.simulationDatabaseSizeBox.valueChanged.connect(self.writeConfigOptions)
         self.ui.simPregeneratedPacketsBox.valueChanged.connect(self.writeConfigOptions)
+        self.ui.simulationLightDelay.valueChanged.connect(self.writeConfigOptions)
         self.ui.telemetryLaunchReceiversOnStartupBox.checkStateChanged.connect(self.writeConfigOptions)
         self.ui.staleDataSeconds.valueChanged.connect(self.writeConfigOptions)
         self.ui.fieldDisplayUpdateDelay.valueChanged.connect(self.writeConfigOptions)
+        self.ui.configureDatatagsButton.clicked.connect(self.configureDatatags)
     
     def writeConfigOptions(self):
         cfg = GLOBAL_CONFIG
@@ -910,6 +929,7 @@ class DexMain(QObject):
         cfg['simulationFloatNoise'] = self.ui.simulationFloatNoise.value()
         cfg['simulationDatabaseSize'] = self.ui.simulationDatabaseSizeBox.value()
         cfg['simulationPregeneratedPackets'] = self.ui.simPregeneratedPacketsBox.value()
+        cfg['simulationLightDelay'] = self.ui.simulationLightDelay.value()
         cfg['telemetryLaunchReceiversOnStartup'] = self.ui.telemetryLaunchReceiversOnStartupBox.isChecked()
         cfg['staleDataSeconds'] = self.ui.staleDataSeconds.value()
         cfg['fieldDisplayUpdateDelay'] = self.ui.fieldDisplayUpdateDelay.value()
@@ -926,6 +946,7 @@ class DexMain(QObject):
         self.ui.simulationFloatNoise.setValue(cfg['simulationFloatNoise'])
         self.ui.simulationDatabaseSizeBox.setValue(cfg['simulationDatabaseSize'])
         self.ui.simPregeneratedPacketsBox.setValue(cfg['simulationPregeneratedPackets'])
+        self.ui.simulationLightDelay.setValue(cfg['simulationLightDelay'])
         self.ui.telemetryLaunchReceiversOnStartupBox.setChecked(cfg['telemetryLaunchReceiversOnStartup'])
         self.ui.staleDataSeconds.setValue(cfg['staleDataSeconds'])
         self.ui.fieldDisplayUpdateDelay.setValue(cfg['fieldDisplayUpdateDelay'])
@@ -944,14 +965,12 @@ class DexMain(QObject):
 
     def changeVerbosity(self,text):
         self.messageLevel = text
+
+    def configureDatatags(self):
+        DataTagConfig(self.ui)
     """
     Simulation functions
     """
-
-    def setRoundTripDelay(self):
-        cfg = GLOBAL_CONFIG
-        cfg['simulationRoundTripDelay'] = self.ui.roundTripDelaySpinBox.value()
-        cfgLoader.configWrite(cfg)
 
     def populateSimPackets(self):
         self.simPacketItems = []
@@ -988,7 +1007,12 @@ class DexMain(QObject):
         self.ui.simulationMessageBox.clear()
 
     def beginSimulation(self):
-        self.ui.currentActiveDatabase.setCurrentText("simulation")
+        try:
+            self.ui.currentActiveDatabase.setCurrentText("simulation")
+        except:
+            self.storage.initDatabase("simulation")
+            self.ui.currentActiveDatabase.setCurrentText("simulation")
+        self.changeDatabase()
         for packet in self.activeSimulationPackets:
             packet.stop()
         self.activeSimulationPackets = []
@@ -999,7 +1023,7 @@ class DexMain(QObject):
             self.simTlmReceiver = SimTelemetryReceiver(self.simulationMessage)
         if self.simCommandReceiver is None:
             self.simCommandReceiver = SimCommandReceiver(self.ui.simulationCommandListeningPortBox.value(),self.ui.simulationCommandProtocolSelect.currentText(),self.ui.simulationCommandStructureBox.currentText(),self.simulationMessage)
-        
+
         self.activeSimulationPackets = []
         for row, packet in enumerate(simConfig):
             if packet['packetConfig']['enabled']:
@@ -1011,6 +1035,9 @@ class DexMain(QObject):
         self.ui.simStopButton.setEnabled(True)
 
     def stopSimulation(self):
+        if self.simCommandReceiver is not None:
+            self.simCommandReceiver.stopListening()
+            self.simCommandReceiver = None
         for packet in self.activeSimulationPackets:
             packet.simPacket.stop()
         for packet in self.activeSimulationPackets:
@@ -1059,6 +1086,23 @@ class DexMain(QObject):
         for receiver in receivers:
             row = self.ui.packetReceiverTable.rowCount()
             self.telemetryReceivers.append(PacketReceiverItem(self.ui.packetReceiverTable,row,self,receiver))
+
+    def populateTelemetryDatabases(self):
+        self.ui.currentActiveDatabase.clear()
+        databasePath = cfgLoader.getPath('databases')
+        subfolder_names = [x.name for x in databasePath.iterdir() if x.is_file()]
+        self.ui.currentActiveDatabase.addItems(subfolder_names)
+
+    def addTelemetryDatabase(self):
+        text, ok = QInputDialog.getText(None, "New Database", "Enter Database Name:", QLineEdit.Normal)
+        if ok and text:
+            self.storage.initDatabase(text)
+            self.populateTelemetryDatabases()
+            self.ui.currentActiveDatabase.setCurrentText(text)
+
+    def changeDatabase(self):
+        GLOBAL_CONFIG['storage']['activeDatabase'] = self.ui.currentActiveDatabase.currentText()
+        cfgLoader.configWrite(GLOBAL_CONFIG) 
     
     def writeTelemetryConfig(self):
         cfg = GLOBAL_CONFIG
@@ -1176,6 +1220,7 @@ class DexMain(QObject):
     def buildCommand(self):
         structureSelection =  self.ui.commandStructureTree.currentItem()
         if structureSelection is None:
+            self.commandMessage("Select a command structure to build a command.","Warning")
             return
         if isinstance(structureSelection,CommandStructureComponentItem):
             structureName = structureSelection.parentItem.structureName
@@ -1237,7 +1282,8 @@ class DexMain(QObject):
         cfgLoader.configWrite(currentConfig)
 
     def populateCommandFieldsTable(self):
-
+        self.ui.commandFieldsTable.clearContents()
+        self.ui.commandFieldsTable.setRowCount(0)
         self.commandFieldItems = []
         for field in self.command:
             self.commandFieldItems.append(CommandField(field,self.ui.commandFieldsTable))
@@ -1248,16 +1294,22 @@ class DexMain(QObject):
             structure = structureSelection.parentItem
         else:
             structure = structureSelection
-        #iterate over component items
-
-        commandTableRow = 0
+        componentColors = {}
         for i in range(structure.childCount()):
-            component = structure.child(i)
-            color = component.color
-            for field in component.component.componentDict:
-                for col in range(self.ui.commandFieldsTable.columnCount()):
-                    self.ui.commandFieldsTable.item(commandTableRow,col).setBackground(color)
-                commandTableRow += 1
+            componentItem = structure.child(i)
+            if isinstance(componentItem.component, CommandListItem):
+                componentColors[str(self.commandId)] = componentItem.color
+            else:
+                componentColors[componentItem.component.componentName] = componentItem.color
+
+        for row, field in enumerate(self.command):
+            color = componentColors.get(str(field.get('component')))
+            if color is None:
+                continue
+            for col in range(self.ui.commandFieldsTable.columnCount()):
+                item = self.ui.commandFieldsTable.item(row, col)
+                if item is not None:
+                    item.setBackground(color)
 
     def populateRawCommandBox(self):
         if self.command == {}:
@@ -1283,47 +1335,25 @@ class DexMain(QObject):
 
     def writeDefaultCommandValues(self):
         commandStructure = GLOBAL_CONFIG['commandStructures'][self.currentlyBuiltStructure]
-        fieldNum = 0
-        #headers
-        for hdr in commandStructure['headers']:
-            filePath = cfgLoader.getPath(f'commandDefinitions/{hdr}.hd')
-            with open(filePath,'r') as f:
-                hdrDict = json.load(f)
-
-            for field in hdrDict['fields']:
-                strVal = self.commandFieldItems[fieldNum].valueCell.text()
-                field['defaultValue'] = self.setDefaultValFromTable(strVal,field)
-                fieldNum += 1
-
-            with open(filePath,'w') as f:
-                json.dump(hdrDict,f,indent=4)
-        #command file
-
-        commandPath = cfgLoader.getPath(f'commandDefinitions/{commandStructure['packets']}.cd')
+        commandPath = cfgLoader.getPath(
+            f"commandDefinitions/{commandStructure['packets']}.cd"
+        )
         with open(commandPath,'r') as f:
             commandsDict = json.load(f)
         commandDict = commandsDict[self.commandId]
         if 'arguments' in commandDict:
+            commandFieldValues = {
+                field.field['fieldName']: field.valueCell.text()
+                for field in self.commandFieldItems
+                if str(field.field.get('component')) == str(self.commandId)
+            }
             for arg in commandDict['arguments']:
-                strVal = self.commandFieldItems[fieldNum].valueCell.text()
-                arg['defaultValue'] = self.setDefaultValFromTable(strVal,arg)
-                fieldNum += 1
+                if arg['fieldName'] in commandFieldValues:
+                    arg['defaultValue'] = self.setDefaultValFromTable(
+                        commandFieldValues[arg['fieldName']], arg
+                    )
         with open(commandPath,'w') as f:
             json.dump(commandsDict,f,indent=4)
-
-        #footers
-        for footer in commandStructure['footers']:
-            filePath = cfgLoader.getPath(f'commandDefinitions/{footer}.hd')
-            with open(filePath,'r') as f:
-                footerDict = json.load(f)
-
-            for field in footerDict['fields']:
-                strVal = self.commandFieldItems[fieldNum].valueCell.text()
-                field['defaultValue'] = self.setDefaultValFromTable(strVal,field)
-                fieldNum += 1
-
-            with open(filePath,'w') as f:
-                json.dump(footerDict,f,indent=4)
 
     def setDefaultValFromTable(self,strVal,field):
         if 'int' in field['type']:
@@ -1377,8 +1407,11 @@ class DexMain(QObject):
             #close all active simulations
             self.stopSimulation()
             #close all active packet receivers
-            for receiver in self.activeTelemetryReceivers:
-                receiver.stopListening()
+            for receiver in tuple(self.telemetryReceivers):
+                if receiver.listening.is_set():
+                    receiver.stopListening()
+            shutdown_gui_processes(self.childProcesses)
+            LIVETLM.threadPool.waitForDone()
 
             
         return super().eventFilter(watched, event)

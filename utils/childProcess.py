@@ -15,7 +15,9 @@ def _run_gui_widget(
     args: tuple[Any, ...],
     kwargs: dict[str, Any],
     telemetry_queue: Queue | None,
+    shutdown_event: Any,
 ) -> None:
+    from PySide6.QtCore import QTimer
     from PySide6.QtWidgets import QApplication
 
     app = QApplication([])
@@ -27,8 +29,25 @@ def _run_gui_widget(
         kwargs["telemetry_queue"] = telemetry_queue
 
     widget = widget_class(*args, **kwargs)
-    widget.show()
-    app.exec()
+    shutdown_timer = QTimer(widget)
+
+    def close_on_request() -> None:
+        if shutdown_event.is_set():
+            shutdown_timer.stop()
+            widget.close()
+            app.quit()
+
+    try:
+        widget.show()
+        shutdown_timer.timeout.connect(close_on_request)
+        shutdown_timer.start(100)
+        app.exec()
+    finally:
+        shutdown_timer.stop()
+        if telemetry_queue is not None:
+            LIVETLM.stopListeningToQueue(telemetry_queue)
+            LIVETLM.threadPool.waitForDone()
+        widget.close()
 
 
 def _release_telemetry_queue(process: Process, telemetry_queue: Queue) -> None:
@@ -57,13 +76,15 @@ def launch_gui_process(
             "The telemetry_queue argument is managed by launch_gui_process."
         )
 
-    telemetry_queue = get_context("spawn").Queue() if share_telemetry else None
+    context = get_context("spawn")
+    telemetry_queue = context.Queue() if share_telemetry else None
+    shutdown_event = context.Event()
     if telemetry_queue is not None:
         LIVETLM.registerQueue(telemetry_queue)
 
-    process = get_context("spawn").Process(
+    process = context.Process(
         target=_run_gui_widget,
-        args=(module_name, class_name, args, kwargs, telemetry_queue),
+        args=(module_name, class_name, args, kwargs, telemetry_queue, shutdown_event),
     )
 
     try:
@@ -74,13 +95,46 @@ def launch_gui_process(
             telemetry_queue.cancel_join_thread()
             telemetry_queue.close()
         raise
+    process.shutdown_event = shutdown_event
     if telemetry_queue is not None:
-        Thread(
+        cleanup_thread = Thread(
             target=_release_telemetry_queue,
             args=(process, telemetry_queue),
             daemon=True,
-        ).start()
+        )
+        process.telemetry_cleanup_thread = cleanup_thread
+        cleanup_thread.start()
     return process
+
+
+def shutdown_gui_process(process: Process, timeout: float = 5.0) -> None:
+    if process.is_alive():
+        process.shutdown_event.set()
+        process.join(timeout)
+    else:
+        process.join(timeout=0)
+    if process.is_alive():
+        process.terminate()
+        process.join(timeout)
+    if process.is_alive():
+        raise TimeoutError(f"GUI process {process.pid} did not exit.")
+    cleanup_thread = getattr(process, "telemetry_cleanup_thread", None)
+    if cleanup_thread is not None:
+        cleanup_thread.join(timeout)
+        if cleanup_thread.is_alive():
+            raise TimeoutError(f"GUI process {process.pid} cleanup did not finish.")
+
+
+def shutdown_gui_processes(processes: list[Process]) -> None:
+    errors = []
+    for process in processes:
+        try:
+            shutdown_gui_process(process)
+        except (OSError, TimeoutError) as error:
+            errors.append(f"{process.pid}: {error}")
+    processes.clear()
+    if errors:
+        raise RuntimeError(f"Unable to shut down GUI processes: {'; '.join(errors)}")
 
 
 class ChildProcessManager:

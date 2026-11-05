@@ -31,13 +31,20 @@ ERROR_COLOR = QColor(237,71,59)
 
 from loadConfig import cfgLoader, GLOBAL_CONFIG
 
-class CommandItem(QListWidgetItem):
-    def __init__(self,parentList,commandID,commandDict):
-        self.parentList = parentList
+class CommandItem(QTreeWidgetItem):
+    def __init__(self,structure,commandID,commandDict):
+        self.parentTree = parentTree
         self.commandID = commandID
         self.commandDict = commandDict
         super().__init__(f"{commandID}: {commandDict['commandName']}")
-        parentList.addItem(self)
+        parentTree.addItem(self)
+
+class CommandStructureItem(QTreeWidgetItem):
+    def __init__(self,parentTree,structureName):
+        self.parentTree = parentTree
+        self.structureName = structureName
+        super().__init__(f"{structureName}")
+        parentTree.addItem(self)
 
 class FieldItem():
     def __init__(self,argDict,fieldTable,commandItem=True,relevantFields=False):
@@ -145,12 +152,6 @@ class CommandBuilder(QDialog):
             self.ui.showNoncommandFieldsCheckbox.setChecked(False)
 
 
-        #embed commandId in its appropriate location 
-        if 'packedIdField' in self.commandStructure:
-            componentIndex = self.commandStructure['packetIdField']['componentIndex']
-            fieldIndex = self.commandStructure['packetIdField']['fieldIndex']
-            self.fieldItems[componentIndex][fieldIndex].valueCell.setText(str(commandItem.commandID))
-        
         if not self.validatingArgs:
             self.validatingArgs = True
             self.ui.argumentTable.itemChanged.connect(self.validateField)
@@ -170,6 +171,14 @@ class CommandBuilder(QDialog):
                     i += 1
                     if 'autofill' in fieldItem.argDict:
                         fieldItem.valueCell.setText(str(fieldItem.argDict['value']))
+
+        packetIdField = self.commandStructure.get('packetIdField')
+        if packetIdField is not None:
+            componentIndex = packetIdField['componentIndex']
+            fieldIndex = packetIdField['fieldIndex']
+            self.fieldItems[componentIndex][fieldIndex].valueCell.setText(
+                str(commandItem.commandID)
+            )
 
         self.validateAllFields()
         self.checkAllFieldsValid()
@@ -282,5 +291,4 @@ class CommandBuilder(QDialog):
                 commandList.append(item.argDict)
         self.commandList = commandList
         self.accept()
-
 

@@ -180,10 +180,69 @@ class DataDictionaries():
                 with open(commandFilePath / file_, 'r') as f:
                     componentDict = json.load(f)
                 self.commandComponents['command definitions'][file_[:-3]] = componentDict
+        self.commandStructureComponents = {}
+        self.commandStructureSizes = {}
+        for structureName, structure in GLOBAL_CONFIG['commandStructures'].items():
+            commandDefinitions = self.commandComponents['command definitions'].get(
+                structure['packets'], {}
+            )
+            structureComponents = {}
+            for commandId, command in commandDefinitions.items():
+                components = [
+                    {
+                        'component': component,
+                        'fields': self.commandComponents['static components'][component],
+                    }
+                    for component in structure['headers']
+                ]
+                components.append({
+                    'component': commandId,
+                    'fields': command.get('arguments', []),
+                })
+                components.extend(
+                    {
+                        'component': component,
+                        'fields': self.commandComponents['static components'][component],
+                    }
+                    for component in structure['footers']
+                )
+                structureComponents[commandId] = components
+
+            if not commandDefinitions:
+                structureComponents[structureName] = [
+                    {
+                        'component': component,
+                        'fields': self.commandComponents['static components'][component],
+                    }
+                    for component in structure['headers'] + structure['footers']
+                ]
+            self.commandStructureComponents[structureName] = structureComponents
+
+            staticComponents = structure['headers'] + structure['footers']
+            staticBitLength = sum(
+                field['bitLength']
+                for component in staticComponents
+                for field in self.commandComponents['static components'][component]
+            )
+            if commandDefinitions:
+                self.commandStructureSizes[structureName] = {
+                    commandId: (
+                        staticBitLength
+                        + sum(argument['bitLength'] for argument in command.get('arguments', []))
+                        + 7
+                    ) // 8
+                    for commandId, command in commandDefinitions.items()
+                }
+            else:
+                self.commandStructureSizes[structureName] = {
+                    structureName: (staticBitLength + 7) // 8
+                }
 
 Datadicts = DataDictionaries()
 PACKET_TEMPLATES = Datadicts.packetTemplates
 PACKET_STRUCTURES = Datadicts.packetStructures
 COMMAND_COMPONENTS = Datadicts.commandComponents
 PACKET_STRUCTURE_COMPONENTS = Datadicts.packetStructureComponents
+COMMAND_STRUCTURE_COMPONENTS = Datadicts.commandStructureComponents
 PACKET_STRUCTURE_SIZES = Datadicts.packetStructureSizes
+COMMAND_STRUCTURE_SIZES = Datadicts.commandStructureSizes

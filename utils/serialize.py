@@ -2,7 +2,6 @@ import struct
 
 
 def returnBitstring(field):
-
     fieldType = field['type']
     value = field['value']
     bitLength = field['bitLength']

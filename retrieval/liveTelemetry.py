@@ -20,6 +20,7 @@ class LiveTelemetry(QObject):
         self.threadPool = QThreadPool()
         self.msgFunctions = []
         self._queues = []
+        self._queueListeners = {}
         self._lock = Lock()
 
     def pushPacket(self, packet, *, broadcast=True):
@@ -61,13 +62,29 @@ class LiveTelemetry(QObject):
             args=(packet_queue,),
             daemon=True,
         )
+        with self._lock:
+            self._queueListeners.setdefault(packet_queue, []).append(listener)
         listener.start()
         return listener
 
     def _consumeQueue(self, packet_queue: Any) -> None:
         while True:
             packet = packet_queue.get()
+            if (
+                isinstance(packet, dict)
+                and len(packet) == 1
+                and packet.get("__liveTelemetryStop__") is True
+            ):
+                return
             self.pushPacket(packet, broadcast=False)
+
+    def stopListeningToQueue(self, packet_queue: Any) -> None:
+        with self._lock:
+            listeners = self._queueListeners.pop(packet_queue, [])
+        for listener in listeners:
+            packet_queue.put({"__liveTelemetryStop__": True})
+        for listener in listeners:
+            listener.join()
 
     def registerCallback(
         self,

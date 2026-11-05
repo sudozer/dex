@@ -6,8 +6,6 @@ import struct
 from loadConfig import cfgLoader, GLOBAL_CONFIG
 
 class Autofiller():
-    def __init__(self):
-        pass
 
     def autofillAllFields(self,fieldList):
         self.fieldList = fieldList
@@ -18,12 +16,14 @@ class Autofiller():
     def autofillField(self,field):
         if not 'autofill' in field:
             return field
+        self.field = field
         field['value'] = eval(f"self.{field['autofill']}()")
-        field['bitstring'] = self.bitConvert(field)
+        field['bitstring'] = self.bitConvert()
         return field
 
-    def bitConvert(self,field):
+    def bitConvert(self):
         #ai code cuz I can't be assed with this again
+        field = self.field
         conversionType = field['type']
         bitLength = field['bitLength']
         knownTypes = {
@@ -95,3 +95,6 @@ class Autofiller():
 
     def primarySequenceCount(self):
         return GLOBAL_CONFIG['commandSequenceNumber']
+
+    def overrideDefault(self):
+        return self.field['defaultValue']
