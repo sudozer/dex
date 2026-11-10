@@ -8,13 +8,11 @@ import logging
 
 from loadConfig import cfgLoader, GLOBAL_CONFIG
 from dataStructures import COMMAND_STRUCTURE_SIZES
+from store import Storage
 
-
-LOGGER = logging.getLogger(__name__)
-logging.basicConfig(filename=cfgLoader.getPath(GLOBAL_CONFIG['logBasepath']), encoding='utf-8', level=logging.INFO)
-
-def defaultLog(msg,level):
-    LOGGER.info(msg)
+def storeCommand(storage,command,structure,commandType,serialCommand):
+    storage.setActiveDatabase()
+    storage.storeCommand(command,structure,commandType,serialCommand)
 
 def buildCommandFromDict(commandList):
     commandBits = ''
@@ -50,16 +48,14 @@ def returnBitstring(field):
     return bitstring
     
 class TCPCommandSocket(sock):
-    def __init__(self,IP,Port,messageFunction='log',role='client'):
+    def __init__(self,IP,Port,messageFunction,role='client'):
         super().__init__(socket.AF_INET,socket.SOCK_STREAM)
         self.role =role
         self.IP = IP
         self.Port = Port
         self.autofiller = Autofiller()
-        
-        if messageFunction == 'log':
-            self.messageFunction = defaultLog
         self.messageFunction = messageFunction
+        self.storage = Storage(messageFunction)
         self.settimeout(10.0)
         self.establishTcpConnection()
 
@@ -79,13 +75,13 @@ class TCPCommandSocket(sock):
             except socket.error as E:
                 self.messageFunction(f"Unable to establish connection: {E}",'error')
 
-    def sendCommand(self,command):
+    def sendCommand(self, command, structure, commandType):
         wrappedCommand = buildCommandFromDict(command)
         if self.role == "client":
             if GLOBAL_CONFIG['autofillCommands']:
                 command = self.autofiller.autofillAllFields(command)
-            pass
-
+            #send command
+            storeCommand(self.storage,command,structure,commandType)
 
 class UDPCommandSocket(sock):
     def __init__(self,IP,Port,messageFunction):
@@ -94,8 +90,9 @@ class UDPCommandSocket(sock):
         self.Port = Port
         self.messageFunction = messageFunction
         self.autofill = Autofiller()
+        self.storage = Storage(messageFunction)
 
-    def sendCommand(self,command):
+    def sendCommand(self,command,structure,cmdType):
         try:
             if GLOBAL_CONFIG['autofillCommands']:
                 command = self.autofill.autofillAllFields(command)
@@ -103,6 +100,7 @@ class UDPCommandSocket(sock):
             wrappedCommand = buildCommandFromDict(command)
             self.sendto(wrappedCommand,(self.IP,self.Port))
             self.messageFunction(f"Command sent:\n{wrappedCommand}\n To destination {(self.IP,self.Port)}", 'info')
+            storeCommand(self.storage,command,structure,cmdType,wrappedCommand)
         except Exception as E:
             self.messageFunction(f"Command Failed:\n{E}\n", 'error')
 

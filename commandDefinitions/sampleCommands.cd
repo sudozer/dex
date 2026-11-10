@@ -6,6 +6,7 @@
         "description": "No operation command",
         "arguments": [
             {
+                "argument":true,
                 "fieldName": "arg1",
                 "description": "blah blah arg1",
                 "type": "uint8_t",
@@ -13,6 +14,7 @@
                 "defaultValue": 0
             },
             {
+                "argument":true,
                 "fieldName": "arg2",
                 "description": "blah blah arg2",
                 "type": "uint32_t",
@@ -20,6 +22,7 @@
                 "defaultValue": 12345
             },
             {
+                "argument":true,
                 "fieldName": "arg3",
                 "description": "this is a float argument",
                 "type": "float",
@@ -35,6 +38,7 @@
         "description": "Set a mode from a lookup table",
         "arguments": [
             {
+                "argument":true,
                 "fieldName": "sampleMode",
                 "description": "blah blah arg1",
                 "type": "uint8_t",

@@ -27,7 +27,7 @@ class CommandStructureDialog(QDialog):
         self.layout.addWidget(self.okButton)
         self.setLayout(self.layout)
         self.populateCommandStructures()
-        self.setFixedWidth(500)
+        self.setFixedWidth(300)
         self.show()
 
     def populateCommandStructures(self):
@@ -41,11 +41,12 @@ class CommandStructureDialog(QDialog):
             self.ui.commandList.addItem(commandItem)
 
 class CommandItem(QTreeWidgetItem):
-    def __init__(self, command, parent):
+    def __init__(self, command, commandId, parent):
         super().__init__(parent)
         self.command = command
+        self.commandId = commandId
         self.parentItem = parent
-        cmdText = ""
+        cmdText = f"{self.commandId}: "
         for field in self.command:
             cmdText = cmdText + f"{field['fieldName']}: {field['value']}; "
         self.setText(0,cmdText)
@@ -103,9 +104,12 @@ class DataTagConfig(QDialog):
     def writeConfig(self):
         commandDict = {}
         for structureName,structureItem in self.structureItems.items():
-            commandDict[structureItem.structure]=[]
+            commandDict[structureItem.structure]={}
             for command in structureItem.commands:
-                commandDict[structureItem.structure].append(command.command)
+                if not command.commandId in commandDict[structureItem.structure]:
+                    commandDict[structureItem.structure][command.commandId] = [command.command]
+                else:
+                    commandDict[structureItem.structure][command.commandId].append(command.command)
         dataTagCfg = {
             "tagStartup":self.ui.tagStartupBox.isChecked(),
             "tagShutdown":self.ui.tagShutdownBox.isChecked(),
@@ -122,8 +126,9 @@ class DataTagConfig(QDialog):
             self.structureItems[structure] = CommandStructureItem(structure,self.ui.commandTagTree)
 
         for structureName,structure in self.dataTagCfg['commands'].items():
-            for command in structure:
-                self.addCommandItem(structureName,command)
+            for commandId,commandIdList in structure.items():
+                for command in commandIdList:
+                    self.addCommandItem(structureName, commandId, command)
         
     def addCommand(self):
         structureSelector = CommandStructureDialog(self)
@@ -131,14 +136,16 @@ class DataTagConfig(QDialog):
             selectedStructure = structureSelector.structureBox.currentText()
             commandBuilder = CommandBuilder(selectedStructure, True)
             if commandBuilder.exec() == QDialog.Accepted:
+                commandId = commandBuilder.commandId
                 commandList = [field for field in commandBuilder.commandList if field['relevant']]
                 # Add the selected command to the list
-                self.addCommandItem(selectedStructure,commandList)
+                self.addCommandItem(selectedStructure,commandId,commandList)
 
-    def addCommandItem(self,structure,command):
+    def addCommandItem(self,structure, commandId, command):
         structureItem = self.structureItems[structure]
-        structureItem.commands.append(CommandItem(command,structureItem))
+        structureItem.commands.append(CommandItem(command,commandId, structureItem))
         structureItem.setExpanded(True)
+
     def removeCommand(self):
         selectedCommand = self.ui.commandTagTree.currentItem() 
         if isinstance(selectedCommand,CommandItem):

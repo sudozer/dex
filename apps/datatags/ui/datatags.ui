@@ -95,47 +95,13 @@
           </widget>
          </item>
          <item>
-          <widget class="QTreeWidget" name="commandTagList">
+          <widget class="QTreeWidget" name="commandTagTree">
            <column>
             <property name="text">
              <string notr="true">1</string>
             </property>
            </column>
           </widget>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QVBoxLayout" name="verticalLayout_3">
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>5</number>
-         </property>
-         <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_4">
-           <property name="topMargin">
-            <number>5</number>
-           </property>
-           <item>
-            <widget class="QPushButton" name="addTelemetryButton">
-             <property name="text">
-              <string>Add Tagged Telemetry</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QPushButton" name="removeTelemetryButton">
-             <property name="text">
-              <string>Remove</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item>
-          <widget class="QListWidget" name="telemetryTagList"/>
          </item>
         </layout>
        </item>

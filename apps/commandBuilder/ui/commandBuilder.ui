@@ -77,7 +77,7 @@
            <item>
             <widget class="QCheckBox" name="showNoncommandFieldsCheckbox">
              <property name="text">
-              <string>Show non-command fields</string>
+              <string>Show non-argument fields</string>
              </property>
             </widget>
            </item>

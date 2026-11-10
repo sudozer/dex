@@ -6,7 +6,7 @@ import copy
 import csv
 import logging
 
-from PySide6.QtGui import QColor #for colors
+from PySide6.QtGui import QColor, QIcon #for colors
 from PySide6.QtCore import QFile, Qt, QDateTime, QTimeZone,QEvent, QObject
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtWidgets import (
@@ -50,6 +50,7 @@ from datatags import DataTagConfig
 from command import TCPCommandSocket, UDPCommandSocket
 from packetReceiverItem import PacketReceiverItem
 from childProcess import shutdown_gui_processes
+from datatagView import spawnDatatagViewer
 
 from telemetrySimulation import SimTelemetryReceiver, SimCommandReceiver, SimulatedPacketContainer
 # Colors
@@ -883,11 +884,19 @@ class DexMain(QObject):
         self.populateCommandComponents()
         self.populateCommandStructures()
 
+        #data export controls
+        self.ui.dataStartButton.setIcon(QIcon(str(cfgLoader.getPath("graphics/datatagIcon.png"))))
+        self.ui.dataEndButton.setIcon(QIcon(str(cfgLoader.getPath("graphics/datatagIcon.png"))))
+        self.ui.dataStartButton.clicked.connect(lambda: spawnDatatagViewer(self.ui.exportDateStart))
+        self.ui.dataEndButton.clicked.connect(lambda: spawnDatatagViewer(self.ui.exportDateEnd))
+                
         #telemetry controls
         self.ui.telemetryDefinitionsButton.clicked.connect(self.editTelemetryDefinitions)
         databasePath = Path(cfgLoader.getPath('databases'))
         self.ui.telemetryAddNewDatabaseButton.clicked.connect(self.addTelemetryDatabase)
         self.populateTelemetryDatabases()
+        if GLOBAL_CONFIG['storage']['dataTags']['tagStartup']:
+            self.storage.writeDataTag("SYS","Dex startup")
         self.ui.currentActiveDatabase.currentTextChanged.connect(self.changeDatabase)
         self.ui.addTelemetryReceiverButton.clicked.connect(self.addTelemetryReceiver)
         self.ui.removePacketInterfaceButton.clicked.connect(self.removeTelemetryReceiver)
@@ -898,11 +907,13 @@ class DexMain(QObject):
         self.ui.packetReceiverTable.itemChanged.connect(self.writeTelemetryConfig)
         self.ui.clearTelemetryMessagesButton.clicked.connect(self.clearTelemetryMessageBox)
         self.populateTelemetryReceivers()
+
         
         #config controls
         self.initConfigOptions()
         self.ui.messageLevelBox.currentTextChanged.connect(self.writeConfigOptions)
         self.ui.messageLevelBox.currentTextChanged.connect(self.changeVerbosity)
+        self.ui.leapSecondBox.valueChanged.connect(self.writeConfigOptions)
         self.ui.missionTitleBox.editingFinished.connect(self.setMissionTitle)
         self.ui.missionTitleBox.editingFinished.connect(self.writeConfigOptions)
         self.ui.commandAutofillFields.checkStateChanged.connect(self.writeConfigOptions)
@@ -922,6 +933,7 @@ class DexMain(QObject):
         cfg = GLOBAL_CONFIG
         cfg['messageVerbosity'] = self.ui.messageLevelBox.currentText()
         cfg['missionTitle'] = self.ui.missionTitleBox.text()
+        cfg['leapSeconds'] = self.ui.leapSecondBox.value()
         cfg['autofillCommands'] = self.ui.commandAutofillFields.isChecked()
         cfg['autofillSimPackets'] = self.ui.simAutofillFields.isChecked()
         cfg['simulationSendLimitedPackets'] = self.ui.simSendNumberOfPackets.isChecked()
@@ -933,12 +945,14 @@ class DexMain(QObject):
         cfg['telemetryLaunchReceiversOnStartup'] = self.ui.telemetryLaunchReceiversOnStartupBox.isChecked()
         cfg['staleDataSeconds'] = self.ui.staleDataSeconds.value()
         cfg['fieldDisplayUpdateDelay'] = self.ui.fieldDisplayUpdateDelay.value()
+
         cfgLoader.configWrite(cfg)
 
     def initConfigOptions(self):
         cfg = GLOBAL_CONFIG
         self.ui.messageLevelBox.setCurrentText(cfg['messageVerbosity'])
         self.ui.missionTitleBox.setText(cfg['missionTitle'])
+        self.ui.leapSecondBox.setValue(cfg['leapSeconds'])
         self.ui.commandAutofillFields.setChecked(cfg['autofillCommands'])
         self.ui.simAutofillFields.setChecked(cfg['autofillSimPackets'])
         self.ui.simSendNumberOfPackets.setChecked(cfg['simulationSendLimitedPackets'])
@@ -1092,6 +1106,7 @@ class DexMain(QObject):
         databasePath = cfgLoader.getPath('databases')
         subfolder_names = [x.name for x in databasePath.iterdir() if x.is_file()]
         self.ui.currentActiveDatabase.addItems(subfolder_names)
+        self.ui.currentActiveDatabase.setCurrentText(GLOBAL_CONFIG['storage']['activeDatabase'])
 
     def addTelemetryDatabase(self):
         text, ok = QInputDialog.getText(None, "New Database", "Enter Database Name:", QLineEdit.Normal)
@@ -1240,7 +1255,7 @@ class DexMain(QObject):
     def sendCommand(self):
         if self.commandLinkParametersChanged:
             self.establishCommandLink()
-        self.commandLink.sendCommand(self.command)
+        self.commandLink.sendCommand(self.command,self.currentlyBuiltStructure,self.commandId)
 
     def establishCommandLink(self):
         port = self.ui.commandPortBox.value()
@@ -1412,6 +1427,9 @@ class DexMain(QObject):
                     receiver.stopListening()
             shutdown_gui_processes(self.childProcesses)
             LIVETLM.threadPool.waitForDone()
+            if GLOBAL_CONFIG['storage']['dataTags']['tagShutdown']:
+                self.storage.setActiveDatabase()
+                self.storage.writeDataTag("SYS","Dex Shutdown")
 
             
         return super().eventFilter(watched, event)

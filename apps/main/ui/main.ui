@@ -19,10 +19,16 @@
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <item>
     <layout class="QVBoxLayout" name="verticalLayout">
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <layout class="QHBoxLayout" name="statusLabelLayout"/>
+     </item>
      <item>
       <widget class="QTabWidget" name="tabs">
        <property name="currentIndex">
-        <number>7</number>
+        <number>2</number>
        </property>
        <widget class="QWidget" name="tab">
         <attribute name="title">
@@ -634,12 +640,19 @@
         </attribute>
         <layout class="QHBoxLayout" name="horizontalLayout_4">
          <item>
-          <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="1,5">
            <property name="spacing">
             <number>0</number>
            </property>
            <item>
             <layout class="QVBoxLayout" name="verticalLayout_5">
+             <item>
+              <widget class="QCheckBox" name="boundDatesCheckBox">
+               <property name="text">
+                <string>Bound Dates</string>
+               </property>
+              </widget>
+             </item>
              <item>
               <layout class="QHBoxLayout" name="horizontalLayout_5">
                <property name="topMargin">
@@ -655,11 +668,34 @@
               </layout>
              </item>
              <item>
-              <widget class="QDateTimeEdit" name="exportDateStart">
-               <property name="calendarPopup">
-                <bool>true</bool>
+              <layout class="QHBoxLayout" name="horizontalLayout_38">
+               <property name="topMargin">
+                <number>0</number>
                </property>
-              </widget>
+               <item>
+                <widget class="QDateTimeEdit" name="exportDateStart">
+                 <property name="buttonSymbols">
+                  <enum>QAbstractSpinBox::NoButtons</enum>
+                 </property>
+                 <property name="calendarPopup">
+                  <bool>false</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="dataStartButton">
+                 <property name="maximumSize">
+                  <size>
+                   <width>30</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string/>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </item>
              <item>
               <layout class="QHBoxLayout" name="horizontalLayout_6">
@@ -676,9 +712,49 @@
               </layout>
              </item>
              <item>
-              <widget class="QDateTimeEdit" name="exportDateEnd">
-               <property name="calendarPopup">
-                <bool>true</bool>
+              <layout class="QHBoxLayout" name="horizontalLayout_39">
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QDateTimeEdit" name="exportDateEnd">
+                 <property name="buttonSymbols">
+                  <enum>QAbstractSpinBox::NoButtons</enum>
+                 </property>
+                 <property name="calendarPopup">
+                  <bool>false</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="dataEndButton">
+                 <property name="maximumSize">
+                  <size>
+                   <width>30</width>
+                   <height>16777215</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string/>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_36">
+               <property name="text">
+                <string>Retrieve from databases:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QListWidget" name="databaseList">
+               <property name="maximumSize">
+                <size>
+                 <width>16777215</width>
+                 <height>80</height>
+                </size>
                </property>
               </widget>
              </item>
@@ -1306,6 +1382,49 @@
                    </property>
                    <property name="text">
                     <string>Development</string>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_37">
+                 <property name="topMargin">
+                  <number>5</number>
+                 </property>
+                 <item>
+                  <widget class="QLabel" name="label_35">
+                   <property name="text">
+                    <string>Leap Seconds:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer_23">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item>
+                  <widget class="QSpinBox" name="leapSecondBox">
+                   <property name="minimumSize">
+                    <size>
+                     <width>140</width>
+                     <height>0</height>
+                    </size>
+                   </property>
+                   <property name="toolTip">
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Standard offset between UTC and GPS time. Should be 18 for the forseeable future. If your name is Globnorg, the year is 3000, the global time wizard council has voted to reinstate leap seconds, and this number ever needs to be anything other than 18, I am honored that you are still using my software. Hopefully I bothered to implement this timeshift correctly for you. Probably not&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   </property>
+                   <property name="value">
+                    <number>18</number>
                    </property>
                   </widget>
                  </item>
