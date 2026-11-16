@@ -164,7 +164,7 @@ class Storage():
     def writeDataTag(self,dataTagType,text):
         if self.connection == None:
             self.setActiveDatabase()
-        if not dataTagType in ['MAN','CMD','SYS']:
+        if dataTagType not in ['MAN', 'CMD', 'SYS', 'TLM']:
             self.msgFunction("Supplied dataTag Type not recognized.","warning")
         timestamp = int(datetime.now(timezone.utc).timestamp())
         with self._lock:

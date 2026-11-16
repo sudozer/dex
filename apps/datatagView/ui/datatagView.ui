@@ -127,7 +127,11 @@
         </widget>
        </item>
        <item>
-        <widget class="QDateTimeEdit" name="selectedDatetime"/>
+        <widget class="QDateTimeEdit" name="selectedDatetime">
+         <property name="buttonSymbols">
+          <enum>QAbstractSpinBox::NoButtons</enum>
+         </property>
+        </widget>
        </item>
        <item>
         <spacer name="horizontalSpacer_2">

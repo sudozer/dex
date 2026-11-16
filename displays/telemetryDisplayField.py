@@ -13,7 +13,13 @@ import datetime
 from liveTelemetry import LIVETLM
 from loadConfig import GLOBAL_CONFIG
 
+#colors
 STALE = "(140,140,140)"
+YELLOW_LIMIT = "(240,255,36)"
+RED_LIMIT = "(255,54,54)"
+PROCEDURE_FOCUS = "(72,215,247)"
+PROCEDURE_PASSED = "(7,247,31)"
+
 class ValueFetch(QObject):
     valueUpdate = Signal(dict,str)
     def __init__(self,telemetryField,refreshDelay):
@@ -48,10 +54,11 @@ class ValueFetch(QObject):
         
 
 class TelemetryField(QWidget):
-    def __init__(self,packet,field,timerOverride = None):
+    def __init__(self,packet,field,timerOverride = None,structureName=None):
         super().__init__()
         self.running = True
         self.packet = packet
+        self.structureName = structureName
         self.field = field
         self.fieldKey = f"{field['definitionSource']}__{field['fieldName']}"
         self.prevField = field
@@ -140,7 +147,47 @@ class TelemetryField(QWidget):
         else:
             self.valueLabel.setStyleSheet("color:black")
             self.nameLabel.setStyleSheet("color:black")
+
+    def setBgColor(self,colorString):
+        self.nameLabel.setStyleSheet(f"background-color:rgb{colorString}")
+        self.valueLabel.setStyleSheet(f"background-color:rgb{colorString}")
+
     
     def mouseDoubleClickEvent(self,event):
-        #graph
-        pass
+        from dataStructures import PACKET_STRUCTURE_COMPONENTS
+        from liveGraph import launchGraph
+
+        structure = self.structureName
+        if structure is None:
+            for candidate, packets in PACKET_STRUCTURE_COMPONENTS.items():
+                if self.packet in packets and any(
+                    f'{component["component"]}.{definition["fieldName"]}'
+                    == f'{self.field["definitionSource"]}.{self.field["fieldName"]}'
+                    for component in packets[self.packet]
+                    for definition in component["fields"]
+                ):
+                    structure = candidate
+                    break
+        if structure is None:
+            self.setToolTip(
+                f"Unable to graph {self.field['fieldName']}: telemetry structure "
+                "could not be determined."
+            )
+            return
+        launchGraph(
+            {
+                "name": self.field["fieldName"],
+                "axes": [
+                    {
+                        "fields": [
+                            {
+                                "structure": structure,
+                                "packet": self.packet,
+                                "field": self.field["fieldName"],
+                            }
+                        ]
+                    }
+                ],
+            }
+        )
+        event.accept()

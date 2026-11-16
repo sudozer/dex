@@ -57,7 +57,11 @@ class PacketTab():
             self.scrollLayout.addWidget(componentLabel)
             
             for field in component['fields']:
-                tField = TelemetryField(packetName,field)
+                tField = TelemetryField(
+                    packetName,
+                    field,
+                    structureName=self.structureDisplay.structureName,
+                )
                 self.scrollLayout.addWidget(tField)
                 self.packetFields[componentName].append(tField)
 

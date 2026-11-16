@@ -30,7 +30,7 @@ from PySide6.QtWidgets import (
     QSpinBox,
     QDoubleSpinBox,
     QComboBox,
-    QDateTimeEdit
+    QDateTimeEdit,
 )
 from qt_material import apply_stylesheet
 
@@ -41,6 +41,8 @@ from decode import Decoder
 from store import Storage
 from dataStructures import PACKET_TEMPLATES, COMMAND_COMPONENTS, PACKET_STRUCTURES,PACKET_STRUCTURE_COMPONENTS
 from liveTelemetry import LIVETLM
+from timeWidget import TimeLabel
+from manualDatatagger import ManualDatatagButton
 
 from packetDefinitionEditor import PacketDefinitionEditor
 from telemetrySelector import TelemetryFieldSelector
@@ -89,6 +91,10 @@ class PacketBehavior(QTableWidgetItem):
         self.playbackTimeField.setCalendarPopup(True)
         self.playbackTimeField.setTimeZone(QTimeZone.UTC)
         self.playbackTimeField.setDisplayFormat(GLOBAL_CONFIG['qtDateFormat'])
+        self.datatagButton = QPushButton("")
+        self.datatagButton.setFixedWidth(30)
+        self.datatagButton.setIcon(QIcon(str(cfgLoader.getPath("graphics/datatagIcon.png"))))
+        self.datatagButton.clicked.connect(lambda: spawnDatatagViewer(self.playbackTimeField,self.behaviorPlaybackDatabaseSelect.currentText()))
         self.setFlags(Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsEnabled)
         self.setCheckState(Qt.CheckState.Checked)
 
@@ -98,6 +104,7 @@ class PacketBehavior(QTableWidgetItem):
         layout.setSpacing(6)
         layout.addWidget(self.behaviorPlaybackDatabaseSelect)
         layout.addWidget(self.playbackTimeField)
+        layout.addWidget(self.datatagButton)
 
         self.parentTable.insertRow(row)
         self.parentTable.setItem(row, 0, self)
@@ -281,7 +288,6 @@ class FieldBehavior(QTreeWidgetItem):
        
         self.triggerComboBox.currentTextChanged.connect(self.triggerChanged)
         self.behaviorComboBox.currentTextChanged.connect(self.behaviorChanged)
-      
 
     def populateInitBehavior(self,initBehavior):
         self.setCheckState(0,Qt.CheckState.Unchecked) 
@@ -384,11 +390,16 @@ class FieldBehavior(QTreeWidgetItem):
             subfolder_names = [x.name for x in databasePath.iterdir() if x.is_file()]
             self.behaviorPlaybackDatabaseSelect.addItems(subfolder_names)
             self.behaviorPlaybackTime = QDateTimeEdit()
-            self.behaviorPlaybackTime.setCalendarPopup(True)
+            self.behaviorPlaybackTime.setCalendarPopup(False)
             self.behaviorPlaybackTime.setTimeZone(QTimeZone.UTC)
             self.behaviorPlaybackTime.setDisplayFormat(GLOBAL_CONFIG['qtDateFormat'])
+            self.datatagButton = QPushButton("")
+            self.datatagButton.setIcon(QIcon(str(cfgLoader.getPath("graphics/datatagIcon.png"))))
+            self.datatagButton.setFixedWidth(30)
+            self.datatagButton.clicked.connect(lambda: spawnDatatagViewer(self.behaviorPlaybackTime,self.behaviorPlaybackDatabaseSelect.currentText()))
             layout.addWidget(self.behaviorPlaybackDatabaseSelect)
             layout.addWidget(self.behaviorPlaybackTime)
+            layout.addWidget(self.datatagButton)
             self.parentItem.parentTree.setItemWidget(self,4,container)
 
         if newBehavior == 'Ramp To':
@@ -401,7 +412,7 @@ class FieldBehavior(QTreeWidgetItem):
             self.behaviorRampSeconds = QLineEdit()
             self.behaviorRampSeconds.setPlaceholderText("Ramp Time (s)")
             self.behaviorRampType = QComboBox()
-            self.behaviorRampType.addItems(['Linear','Exponential'])
+            self.behaviorRampType.addItems(['Linear','Exponential','Step'])
             self.behaviorRampCoefficient = QDoubleSpinBox()
             self.behaviorRampCoefficient.setMinimum(0.0001)
             self.behaviorRampCoefficient.setValue(0.1)
@@ -550,7 +561,9 @@ class SimBehaviorWidget(QDialog):
         self.loaded_widget.removePlaybackTriggerButton.clicked.connect(self.removePacketPlaybackTrigger)
         self.loaded_widget.okButton.clicked.connect(self.writeSimulationConfig)
         self.loaded_widget.fieldwiseBehaviorTree.itemSelectionChanged.connect(self.setRemoveBehaviorItem)
-        self.loaded_widget.databaseTimeEdit.setTimeZone(QTimeZone.UTC)
+        self.loaded_widget.initialConditionDateTime.setTimeZone(QTimeZone.UTC)
+        self.loaded_widget.initialConditionDatatagButton.setIcon(QIcon(str(cfgLoader.getPath("graphics/datatagIcon.png"))))
+        self.loaded_widget.initialConditionDatatagButton.clicked.connect(lambda: spawnDatatagViewer(self.loaded_widget.initialConditionDateTime, self.loaded_widget.initialConditionDatabaseBox.currentText()))
         self.populateDatabaseBox()
         self.packetSimItems = []
         self.fieldSimItems = []
@@ -561,10 +574,10 @@ class SimBehaviorWidget(QDialog):
         self.show()
 
     def populateDatabaseBox(self):
-        self.loaded_widget.databaseSelectBox.clear()
+        self.loaded_widget.initialConditionDatabaseBox.clear()
         databasePath = Path(cfgLoader.getPath('databases'))
-        subfolder_names = [x.name for x in databasePath.iterdir() if x.is_file()]
-        self.loaded_widget.databaseSelectBox.addItems(subfolder_names)
+        databases = [x.name for x in databasePath.iterdir() if x.is_file()]
+        self.loaded_widget.initialConditionDatabaseBox.addItems(databases)
 
 
     def populateFields(self):
@@ -586,10 +599,10 @@ class SimBehaviorWidget(QDialog):
 
     def populateInitialConditions(self):
         self.loaded_widget.simInitConditions.setCheckState(Qt.CheckState.Checked if self.simParameterDict['initialConditions']['enabled'] else Qt.CheckState.Unchecked)
-        self.loaded_widget.databaseSelectBox.setCurrentText(self.simParameterDict['initialConditions']['playbackDatabase'])
+        self.loaded_widget.initialConditionDatabaseBox.setCurrentText(self.simParameterDict['initialConditions']['playbackDatabase'])
         qDate = QDateTime.fromString(self.simParameterDict['initialConditions']['playbackTime'],GLOBAL_CONFIG['qtDateFormat'])
         qDate.setTimeZone(QTimeZone.utc())
-        self.loaded_widget.databaseTimeEdit.setDateTime(qDate)
+        self.loaded_widget.initialConditionDateTime.setDateTime(qDate)
 
     def addPacketPlaybackTrigger(self):
         #add a new row to the packet playback table
@@ -636,8 +649,8 @@ class SimBehaviorWidget(QDialog):
 
         self.simInitialConditions = {
             "enabled":True if self.loaded_widget.simInitConditions.checkState() == Qt.Checked else False,
-            "playbackDatabase":self.loaded_widget.databaseSelectBox.currentText(),
-            "playbackTime":self.loaded_widget.databaseTimeEdit.dateTime().toString(GLOBAL_CONFIG['qtDateFormat'])
+            "playbackDatabase":self.loaded_widget.initialConditionDatabaseBox.currentText(),
+            "playbackTime":self.loaded_widget.initialConditionDateTime.dateTime().toString(GLOBAL_CONFIG['qtDateFormat'])
         }
         self.accept()
         pass
@@ -897,6 +910,7 @@ class DexMain(QObject):
         self.populateTelemetryDatabases()
         if GLOBAL_CONFIG['storage']['dataTags']['tagStartup']:
             self.storage.writeDataTag("SYS","Dex startup")
+        LIVETLM.registerTelemetryDatatags(self.storage)
         self.ui.currentActiveDatabase.currentTextChanged.connect(self.changeDatabase)
         self.ui.addTelemetryReceiverButton.clicked.connect(self.addTelemetryReceiver)
         self.ui.removePacketInterfaceButton.clicked.connect(self.removeTelemetryReceiver)
@@ -920,14 +934,18 @@ class DexMain(QObject):
         self.ui.simAutofillFields.checkStateChanged.connect(self.writeConfigOptions)
         self.ui.simSendNumberOfPackets.checkStateChanged.connect(self.setSimPacketNumber)
         self.ui.simulationNumberOfPackets.valueChanged.connect(self.writeConfigOptions)
-        self.ui.simulationFloatNoise.valueChanged.connect(self.writeConfigOptions)
         self.ui.simulationDatabaseSizeBox.valueChanged.connect(self.writeConfigOptions)
-        self.ui.simPregeneratedPacketsBox.valueChanged.connect(self.writeConfigOptions)
         self.ui.simulationLightDelay.valueChanged.connect(self.writeConfigOptions)
         self.ui.telemetryLaunchReceiversOnStartupBox.checkStateChanged.connect(self.writeConfigOptions)
         self.ui.staleDataSeconds.valueChanged.connect(self.writeConfigOptions)
         self.ui.fieldDisplayUpdateDelay.valueChanged.connect(self.writeConfigOptions)
         self.ui.configureDatatagsButton.clicked.connect(self.configureDatatags)
+
+        #status bar
+        self.statusWidgets = [TimeLabel(),ManualDatatagButton(self.messageAllBoxes)]
+        for widget in self.statusWidgets:
+            self.ui.statusLabelLayout.addWidget(widget)
+            self.ui.statusLabelLayout.addStretch()
     
     def writeConfigOptions(self):
         cfg = GLOBAL_CONFIG
@@ -938,9 +956,7 @@ class DexMain(QObject):
         cfg['autofillSimPackets'] = self.ui.simAutofillFields.isChecked()
         cfg['simulationSendLimitedPackets'] = self.ui.simSendNumberOfPackets.isChecked()
         cfg['simulationNumberOfPackets'] = self.ui.simulationNumberOfPackets.value()
-        cfg['simulationFloatNoise'] = self.ui.simulationFloatNoise.value()
         cfg['simulationDatabaseSize'] = self.ui.simulationDatabaseSizeBox.value()
-        cfg['simulationPregeneratedPackets'] = self.ui.simPregeneratedPacketsBox.value()
         cfg['simulationLightDelay'] = self.ui.simulationLightDelay.value()
         cfg['telemetryLaunchReceiversOnStartup'] = self.ui.telemetryLaunchReceiversOnStartupBox.isChecked()
         cfg['staleDataSeconds'] = self.ui.staleDataSeconds.value()
@@ -957,9 +973,7 @@ class DexMain(QObject):
         self.ui.simAutofillFields.setChecked(cfg['autofillSimPackets'])
         self.ui.simSendNumberOfPackets.setChecked(cfg['simulationSendLimitedPackets'])
         self.ui.simulationNumberOfPackets.setValue(cfg['simulationNumberOfPackets'])
-        self.ui.simulationFloatNoise.setValue(cfg['simulationFloatNoise'])
         self.ui.simulationDatabaseSizeBox.setValue(cfg['simulationDatabaseSize'])
-        self.ui.simPregeneratedPacketsBox.setValue(cfg['simulationPregeneratedPackets'])
         self.ui.simulationLightDelay.setValue(cfg['simulationLightDelay'])
         self.ui.telemetryLaunchReceiversOnStartupBox.setChecked(cfg['telemetryLaunchReceiversOnStartup'])
         self.ui.staleDataSeconds.setValue(cfg['staleDataSeconds'])
@@ -981,7 +995,12 @@ class DexMain(QObject):
         self.messageLevel = text
 
     def configureDatatags(self):
-        DataTagConfig(self.ui)
+        dialog = DataTagConfig(self.ui)
+        dialog.finished.connect(
+            lambda result: LIVETLM.registerTelemetryDatatags(self.storage)
+            if result == QDialog.Accepted
+            else None
+        )
     """
     Simulation functions
     """
@@ -1385,6 +1404,11 @@ class DexMain(QObject):
     """
     Miscellaneous
     """
+    def messageAllBoxes(self,text,type_ = "INFO"):
+        self.simulationMessage(text,type_)
+        self.commandMessage(text,type_)
+        self.telemetryMessage(text,type_)
+
     def genericMessage(self,textBox,msg,Level):
         lvlDict = {"debug":0,"info":1,"warning":2,"error":2}
         logLevel = lvlDict[self.messageLevel.lower()]

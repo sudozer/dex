@@ -39,12 +39,25 @@
         </widget>
        </item>
        <item>
-        <widget class="QComboBox" name="databaseSelectBox"/>
+        <widget class="QComboBox" name="initialConditionDatabaseBox"/>
        </item>
        <item>
-        <widget class="QDateTimeEdit" name="databaseTimeEdit">
+        <widget class="QDateTimeEdit" name="initialConditionDateTime">
          <property name="calendarPopup">
           <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="initialConditionDatatagButton">
+         <property name="maximumSize">
+          <size>
+           <width>30</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="text">
+          <string/>
          </property>
         </widget>
        </item>

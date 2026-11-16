@@ -22,8 +22,8 @@ TLM_COLOR=QColor(109,185,247)
 
 def spawnDatatagViewer(destinationWidget,database = None):
     datatagViewer = DatatagView(destinationWidget,database)
-    if datatagViewer.exec() == QDialog.Accepted:
-        pass
+    datatagViewer.exec()
+
 
 class DatatagItem(QListWidgetItem):
     def __init__(self,datatag,listWidget):
@@ -71,7 +71,7 @@ class DatatagView(QDialog):
         self.ui.telemetryCheckBox.checkStateChanged.connect(self.filterDatatagsByType)
         self.ui.systemCheckBox.checkStateChanged.connect(self.filterDatatagsByType)
         self.ui.manualCheckBox.checkStateChanged.connect(self.filterDatatagsByType)
-
+        self.setWindowTitle("Set Time (UTC)")
     def populateDatabaseBox(self):
         self.ui.selectedDatabaseBox.clear()
         databasePath = cfgLoader.getPath('databases')

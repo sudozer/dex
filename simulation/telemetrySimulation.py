@@ -419,6 +419,7 @@ class SimCommandReceiver(CommandReceiver):
         return int(value)
 
     def checkCommandTriggers(self, commandPacket):
+        time.sleep(GLOBAL_CONFIG['simulationLightDelay'])
         with self.triggerLock:
             triggers = tuple(self.commandTriggerRegistry.get(self.structure, ()))
 
@@ -506,7 +507,7 @@ class Field():
         self.packetBehaviors = packetBehaviors
         self.initialConditions = initialConditions
         self.fieldSimulationDict = fieldSimulationDict
-        self.fieldDict['value'] = fieldDict.get('defalutValue',0)
+        self.fieldDict['value'] = fieldDict.get('defaultValue', 0)
         self.prevValue = fieldDict.get('defaultValue',0)
         self.simulatedPacket.simulationMessageFunction.emit(f"Initializing field simulation for {self.component}.{self.fieldDict['fieldName']}","DEBUG")
         self.initReturn()
@@ -558,7 +559,16 @@ class Field():
             self.behaviorGenerator = behaviorRampValue(self.currentBehavior['behaviorArgs'],self.prevValue,self.packetConfig['simulationRate'])
 
         if self.currentBehavior['behaviorType'] == "Playback From Telemetry":
-            self.behaviorGenerator = behaviorPlayBackTelemetry(self.fieldDict,self.currentBehavior['behaviorArgs']['playbackDatabase'],self.currentBehavior['behaviorArgs']['playbackTime'])
+            packetConfig = self.simulatedPacket.simDict['packetConfig']
+            behaviorArgs = self.currentBehavior['behaviorArgs']
+            self.behaviorGenerator = behaviorPlayBackTelemetry(
+                self.fieldDict,
+                behaviorArgs['playbackDatabase'],
+                behaviorArgs['playbackTime'],
+                packetConfig['structure'],
+                packetConfig['packet'],
+                self.simulatedPacket.simulationMessageFunction,
+            )
                     
     def buildValue(self):
         self.prevValue = self.fieldDict['value']
@@ -570,8 +580,12 @@ class Field():
     def returnValue(self):
         try:
             valDict = self.buildValue()
-        except Exception as E:
-            self.simulatedPacket.simulationMessageFunction.emit(f"Unable to build simulated value:\n{self.fieldDict}\nError:\n{E}","ERROR")
+        except Exception as error:
+            self.simulatedPacket.simulationMessageFunction.emit(
+                f"Unable to build simulated value:\n{self.fieldDict}\nError:\n{error}",
+                "ERROR",
+            )
+            raise
         return self.fieldDict | valDict
     
     def registerTriggers(self):
@@ -581,14 +595,6 @@ class Field():
                     self.simulatedPacket.telemetryReceiver.registerTrigger(self.changeBehavior,simPair)
                 if simPair['trigger']['triggerType'] == "On Command Received":
                     self.simulatedPacket.commandReceiver.registerTrigger(self.changeBehavior,simPair)
-        for simPair in self.packetBehaviors:
-            if (
-                simPair['enabled']
-                and simPair['trigger']['triggerType'] == "On Command Received"
-            ):
-                self.simulatedPacket.commandReceiver.registerTrigger(
-                    self.changeBehavior,simPair
-                )
 
 class SimulatedPacket(QObject):
     messageSignal = Signal(str,str)
@@ -613,6 +619,26 @@ class SimulatedPacket(QObject):
         self.packetTemplate = PACKET_STRUCTURE_COMPONENTS[simDict['packetConfig']['structure']][simDict['packetConfig']['packet']]
         self.telemetryTransmitter = SimTelemetryTransmitter(simDict['packetConfig'],self.simulationMessageFunction)
         self.buildFieldList()
+        self.registerPacketTriggers()
+
+    def registerPacketTriggers(self):
+        for simPair in self.simDict['packetBehaviors']:
+            if not simPair['enabled']:
+                continue
+            triggerType = simPair['trigger']['triggerType']
+            if triggerType == "On Telemetry Value":
+                self.telemetryReceiver.registerTrigger(
+                    self.changePacketBehavior, simPair
+                )
+            elif triggerType == "On Command Received":
+                self.commandReceiver.registerTrigger(
+                    self.changePacketBehavior, simPair
+                )
+
+    def changePacketBehavior(self, behaviorDict):
+        with self.queueLock:
+            for field in self.fields:
+                field.changeBehavior(behaviorDict)
 
     def buildFieldList(self):
         if 'packetIdField' in GLOBAL_CONFIG['telemetryStructures'][self.simDict['packetConfig']['structure']]:
@@ -657,6 +683,7 @@ class SimulatedPacket(QObject):
             bitString = bitString + field['rawBits']
         #TODO packet must be a whole number of bytes
         packetBytes = int(bitString, 2).to_bytes(len(bitString)//8, byteorder="big")
+        time.sleep(GLOBAL_CONFIG['simulationLightDelay'])
         self.telemetryTransmitter.send(packetBytes)
     
     @Slot()        
@@ -665,22 +692,31 @@ class SimulatedPacket(QObject):
             currentPacket = self.buildPacket()
             self.simulationMessageFunction.emit(f"Launching simulation thread of structure: {self.simDict['packetConfig']['structure']} packet:{self.simDict['packetConfig']['packet']}","INFO")
             while not self.stopped.wait(1):
-                nextTime = time.time() + self.period
+                lightDelay = max(0.0, float(GLOBAL_CONFIG['simulationLightDelay']))
+                packetInterval = self.period + lightDelay
+                nextTime = time.monotonic()
                 while not self.paused.is_set() and not self.stopped.is_set():
-                    nextTime = nextTime + self.period
+                    nextTime += packetInterval
                     with self.queueLock:
                         self.sendPacket(currentPacket)
                         self.packetsSent += 1
-                    currentPacket = self.buildPacket()
+                        currentPacket = self.buildPacket()
                     if GLOBAL_CONFIG['simulationSendLimitedPackets']:
                         if GLOBAL_CONFIG['simulationNumberOfPackets'] <= self.packetsSent:
                             self.stopped.set()
-                    dwellPeriod = nextTime - time.time()
+                    dwellPeriod = nextTime - time.monotonic()
                     if dwellPeriod > 0:
                         self.stopped.wait(dwellPeriod)
                     else:
                         self.simulationMessageFunction.emit(f"Simulation falling behind: {self.simDict['packetConfig']['structure']}::{self.simDict['packetConfig']['packet']} ","ERROR")
-                        nextTime = time.time()
+                        nextTime = time.monotonic()
+        except Exception as error:
+            self.simulationMessageFunction.emit(
+                f"Simulation stopped after an error for "
+                f"{self.simDict['packetConfig']['structure']}::"
+                f"{self.simDict['packetConfig']['packet']}: {error}",
+                "ERROR",
+            )
             self.simulationMessageFunction.emit(f"Simulation thread completed: {self.simDict['packetConfig']['structure']}::{self.simDict['packetConfig']['packet']}","INFO")
         finally:
             self.telemetryTransmitter.close()

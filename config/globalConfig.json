@@ -63,7 +63,7 @@
     },
     "receivers": [
         {
-            "label": "shrek",
+            "label": "splaser ",
             "telemetryStructure": "splaser",
             "protocol": "UDP",
             "IP": "127.0.0.1",
@@ -71,7 +71,7 @@
             "listening": false
         },
         {
-            "label": "fiona",
+            "label": "sample Receiver",
             "telemetryStructure": "sampleStructure1",
             "protocol": "UDP",
             "IP": "127.0.0.1",
@@ -152,7 +152,23 @@
                         ]
                     ]
                 }
-            }
+            },
+            "telemetry": [
+                {
+                    "comparator": ">=",
+                    "value": 100,
+                    "structure": "sampleStructure1",
+                    "packet": "4101",
+                    "field": "4101.totalTicks"
+                },
+                {
+                    "comparator": ">=",
+                    "value": 5.0,
+                    "structure": "splaser",
+                    "packet": "splaser",
+                    "field": "splaserPacket.target_eci_z"
+                }
+            ]
         }
     },
     "simulation": [
@@ -282,6 +298,28 @@
                 "primaryHeader": {},
                 "secondaryHeader": {},
                 "4101": {
+                    "sampleCount": [
+                        {
+                            "trigger": {
+                                "triggerType": "On Telemetry Value",
+                                "triggerArgs": {
+                                    "telemetryField": "sampleStructure1.4101.4101.totalTicks",
+                                    "comparator": ">=",
+                                    "value": "15"
+                                }
+                            },
+                            "behavior": {
+                                "behaviorType": "Ramp To",
+                                "behaviorArgs": {
+                                    "value": "10",
+                                    "rampSeconds": "30",
+                                    "rampType": "Step",
+                                    "coefficient": 0.1
+                                }
+                            },
+                            "enabled": true
+                        }
+                    ],
                     "totalTicks": [
                         {
                             "trigger": {
@@ -387,7 +425,7 @@
             "initialConditions": {
                 "enabled": false,
                 "playbackDatabase": "simulation",
-                "playbackTime": "2000-01-19-00-00-00"
+                "playbackTime": "2026-11-09-19-49-36"
             }
         }
     ],
@@ -401,5 +439,6 @@
     "simulationLightDelay": 1.1,
     "telemetryLaunchReceiversOnStartup": false,
     "staleDataSeconds": 5,
-    "fieldDisplayUpdateDelay": 2.0
+    "fieldDisplayUpdateDelay": 2.0,
+    "graphingDataPoints": 200
 }

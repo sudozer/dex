@@ -84,6 +84,11 @@ class TelemetryFieldSelector(QDialog):
             self.selectedField = item.text(0)
             self.selectedPacket = item.parent().text(0)
             self.selectedStructure = item.parent().parent().text(0)
+            self.returnDict = {
+                "structure":self.selectedStructure,
+                "packet":self.selectedPacket,
+                "field":self.selectedField
+            }
             self.returnSelection = f"{self.selectedStructure}.{self.selectedPacket}.{self.selectedField}"
             #field returns in the form telemetryStructure.packet.component.field
             self.ui.okButton.setEnabled(True)

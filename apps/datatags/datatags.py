@@ -1,18 +1,33 @@
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import QFile
 from PySide6.QtWidgets import (
+    QWidget,
     QDialog,
+    QLabel,
+    QMessageBox,
     QListWidgetItem,
     QTreeWidgetItem,
     QVBoxLayout,
+    QHBoxLayout,
     QComboBox,
+    QLineEdit,
     QPushButton,
 )
 import pdb
 from loadConfig import GLOBAL_CONFIG, cfgLoader
 from commandBuilder import CommandBuilder
 from telemetrySelector import TelemetryFieldSelector
-from dataStructures import COMMAND_STRUCTURE_COMPONENTS
+from dataStructures import COMMAND_STRUCTURE_COMPONENTS, PACKET_STRUCTURE_COMPONENTS
+
+
+def convertTelemetryValue(value, fieldType):
+    if fieldType == "char":
+        return value
+    if fieldType in ("float", "double"):
+        return float(value)
+    if fieldType in ("int", "uint") or fieldType.endswith("_t"):
+        return int(value)
+    raise ValueError(f"Unsupported telemetry field type {fieldType!r}.")
 
 class CommandStructureDialog(QDialog):
     def __init__(self, parent=None):
@@ -59,10 +74,22 @@ class CommandStructureItem(QTreeWidgetItem):
         self.setText(0,structure)
 
 class TelemetryItem(QListWidgetItem):
-    def __init__(self, telemetry, parent=None):
-        super().__init__(parent)
-        self.telemetry = telemetry
-        self.setText(telemetry)
+    def __init__(self, telemetryField):
+        super().__init__()
+        self.telemetryField = telemetryField
+        self.containerWidget = QWidget()
+        self.layout = QHBoxLayout()
+        self.fieldLabel = QLabel(f"{telemetryField['packet']}.{telemetryField['field']}")
+        self.comparatorBox = QComboBox()
+        self.comparatorBox.addItems(['=','>=','<='])
+        self.valueField = QLineEdit()
+        self.valueField.setPlaceholderText("value")
+        self.layout.setContentsMargins(5, 2, 5, 2)
+        self.layout.addWidget(self.fieldLabel)
+        self.layout.addWidget(self.comparatorBox)
+        self.layout.addWidget(self.valueField)
+        self.containerWidget.setLayout(self.layout)
+        self.setSizeHint(self.containerWidget.sizeHint())
 
 class DataTagConfig(QDialog):
     def __init__(self, parent=None):
@@ -83,9 +110,12 @@ class DataTagConfig(QDialog):
         self.ui.commandTagTree.setHeaderHidden(True)
         self.ui.addCommandButton.clicked.connect(self.addCommand)
         self.ui.removeCommandButton.clicked.connect(self.removeCommand)
+        self.ui.addTelemetryButton.clicked.connect(self.addTelemetry)
+        self.ui.removeTelemetryButton.clicked.connect(self.removeTelemetry)
         self.ui.okButton.clicked.connect(self.writeConfig)
         self.ui.tagAllCommandsBox.stateChanged.connect(self.setCommandLabel)
         self.setWindowTitle("Configure Automatic Datatags")
+        self.telemetryItems = []
         self.show()
         self.initFromConfig()
 
@@ -94,6 +124,7 @@ class DataTagConfig(QDialog):
         self.ui.tagShutdownBox.setChecked(self.dataTagCfg['tagShutdown'])
         self.ui.tagAllCommandsBox.setChecked(self.dataTagCfg['tagAllCommands'])
         self.populateCommandList()
+        self.populateTelemetryList()
 
     def setCommandLabel(self):
         if self.ui.tagAllCommandsBox.isChecked():
@@ -110,11 +141,58 @@ class DataTagConfig(QDialog):
                     commandDict[structureItem.structure][command.commandId] = [command.command]
                 else:
                     commandDict[structureItem.structure][command.commandId].append(command.command)
+
+        telemetry = []
+        for item in self.telemetryItems:
+            rawValue = item.valueField.text()
+            if not rawValue:
+                continue
+
+            telemetryField = item.telemetryField
+            fieldDefinition = None
+            for component in PACKET_STRUCTURE_COMPONENTS[telemetryField["structure"]][telemetryField["packet"]]:
+                for field in component["fields"]:
+                    if f'{component["component"]}.{field["fieldName"]}' == telemetryField["field"]:
+                        fieldDefinition = field
+                        break
+                if fieldDefinition is not None:
+                    break
+
+            if fieldDefinition is None:
+                QMessageBox.warning(
+                    self,
+                    "Invalid telemetry field",
+                    f"Could not find definition for {telemetryField['field']}.",
+                )
+                return
+
+            fieldType = fieldDefinition.get("conversion", {}).get(
+                "convertedType", fieldDefinition["type"]
+            )
+            try:
+                value = convertTelemetryValue(rawValue, fieldType)
+            except (TypeError, ValueError, OverflowError) as error:
+                QMessageBox.warning(
+                    self,
+                    "Invalid telemetry value",
+                    f"{rawValue!r} is not a valid {fieldType} value for "
+                    f"{telemetryField['field']}: {error}",
+                )
+                return
+
+            tDict = {
+                "comparator": item.comparatorBox.currentText(),
+                "value": value,
+            }
+            tDict.update(telemetryField)
+            telemetry.append(tDict)
+                
         dataTagCfg = {
             "tagStartup":self.ui.tagStartupBox.isChecked(),
             "tagShutdown":self.ui.tagShutdownBox.isChecked(),
             "tagAllCommands":self.ui.tagAllCommandsBox.isChecked(),
-            "commands":commandDict
+            "commands":commandDict,
+            "telemetry":telemetry,
         }
         GLOBAL_CONFIG['storage']['dataTags'] = dataTagCfg
         cfgLoader.configWrite(GLOBAL_CONFIG)
@@ -130,6 +208,15 @@ class DataTagConfig(QDialog):
                 for command in commandIdList:
                     self.addCommandItem(structureName, commandId, command)
         
+    def populateTelemetryList(self):
+        for tlmItem in self.dataTagCfg['telemetry']:
+            newTelemetry = TelemetryItem(tlmItem)
+            self.telemetryItems.append(newTelemetry)
+            self.ui.telemetryList.addItem(newTelemetry)
+            self.ui.telemetryList.setItemWidget(newTelemetry, newTelemetry.containerWidget)
+            newTelemetry.comparatorBox.setCurrentText(tlmItem['comparator'])
+            newTelemetry.valueField.setText(str(tlmItem['value']))
+
     def addCommand(self):
         structureSelector = CommandStructureDialog(self)
         if structureSelector.exec() == QDialog.Accepted:
@@ -151,3 +238,17 @@ class DataTagConfig(QDialog):
         if isinstance(selectedCommand,CommandItem):
             selectedCommand.parentItem.commands.remove(selectedCommand)
             selectedCommand.parentItem.removeChild(selectedCommand)
+
+    def addTelemetry(self):
+        telemetrySelector = TelemetryFieldSelector()
+        if telemetrySelector.exec() == QDialog.Accepted:
+            newTelemetry = TelemetryItem(telemetrySelector.returnDict)
+            self.telemetryItems.append(newTelemetry)
+            self.ui.telemetryList.addItem(newTelemetry)
+            self.ui.telemetryList.setItemWidget(newTelemetry, newTelemetry.containerWidget)
+
+    def removeTelemetry(self):
+        selection = self.ui.telemetryList.currentItem()
+        if selection is not None:
+            self.telemetryItems.remove(selection)
+            self.ui.telemetryList.takeItem(self.ui.telemetryList.currentRow())
