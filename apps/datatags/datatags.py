@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
 )
 import pdb
 from loadConfig import GLOBAL_CONFIG, cfgLoader
-from commandBuilder import CommandBuilder
+from commandBuilder import CommandBuilder, CommandStructureDialog
 from telemetrySelector import TelemetryFieldSelector
 from dataStructures import COMMAND_STRUCTURE_COMPONENTS, PACKET_STRUCTURE_COMPONENTS
 
@@ -28,32 +28,6 @@ def convertTelemetryValue(value, fieldType):
     if fieldType in ("int", "uint") or fieldType.endswith("_t"):
         return int(value)
     raise ValueError(f"Unsupported telemetry field type {fieldType!r}.")
-
-class CommandStructureDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Select Command Structure")
-        self.setModal(True)
-        self.layout = QVBoxLayout(self)
-        self.structureBox = QComboBox(self)
-        self.okButton = QPushButton("OK", self)
-        self.okButton.clicked.connect(self.accept)
-        self.layout.addWidget(self.structureBox)
-        self.layout.addWidget(self.okButton)
-        self.setLayout(self.layout)
-        self.populateCommandStructures()
-        self.setFixedWidth(300)
-        self.show()
-
-    def populateCommandStructures(self):
-        self.structureBox.clear()
-        for structure in COMMAND_STRUCTURE_COMPONENTS.keys():
-            self.structureBox.addItem(structure)
-
-    def populateCommandList(self):
-        for command in COMMAND_STRUCTURE_COMPONENTS.keys():
-            commandItem = CommandItem(command)
-            self.ui.commandList.addItem(commandItem)
 
 class CommandItem(QTreeWidgetItem):
     def __init__(self, command, commandId, parent):

@@ -160,13 +160,6 @@
                     "structure": "sampleStructure1",
                     "packet": "4101",
                     "field": "4101.totalTicks"
-                },
-                {
-                    "comparator": ">=",
-                    "value": 5.0,
-                    "structure": "splaser",
-                    "packet": "splaser",
-                    "field": "splaserPacket.target_eci_z"
                 }
             ]
         }
@@ -202,230 +195,38 @@
                 "structure": "sampleStructure1",
                 "packet": "4101"
             },
-            "packetBehaviors": [
-                {
-                    "enabled": false,
-                    "trigger": {
-                        "triggerType": "Initial Condition",
-                        "triggerArgs": {}
-                    },
-                    "behavior": {
-                        "behaviorType": "Playback From Telemetry",
-                        "behaviorArgs": {
-                            "playbackDatabase": "simulation",
-                            "playbackTime": "2000-01-01-05-00-00"
-                        }
-                    }
-                },
-                {
-                    "enabled": false,
-                    "trigger": {
-                        "triggerType": "On Telemetry Value",
-                        "triggerArgs": {
-                            "telemetryField": "sampleStructure1.4101.4101.totalTicks",
-                            "comparator": ">=",
-                            "value": "7"
-                        }
-                    },
-                    "behavior": {
-                        "behaviorType": "Playback From Telemetry",
-                        "behaviorArgs": {
-                            "playbackDatabase": "simulation",
-                            "playbackTime": "2000-01-20-05-00-00"
-                        }
-                    }
-                },
-                {
-                    "enabled": false,
-                    "trigger": {
-                        "triggerType": "On Command Received",
-                        "triggerArgs": {
-                            "structure": "spacecraft commands",
-                            "commandList": [
-                                {
-                                    "fieldName": "dataControl_packetType",
-                                    "type": "uint",
-                                    "bitLength": 4,
-                                    "description": "Secondary header data control fields, per ISS SSP 52050.",
-                                    "defaultValue": 0,
-                                    "component": "secondaryHeader",
-                                    "value": "0",
-                                    "bitstring": "0000",
-                                    "relevant": true
-                                },
-                                {
-                                    "fieldName": "secHeaderId",
-                                    "type": "uint32_t",
-                                    "bitLength": 32,
-                                    "description": "The ISS secondary header ID; used only for fill here.",
-                                    "bitstructType": "u32",
-                                    "defaultValue": 0,
-                                    "component": "secondaryHeader",
-                                    "value": "5",
-                                    "bitstring": "00000000000000000000000000000101",
-                                    "relevant": true
-                                },
-                                {
-                                    "fieldName": "sampleMode",
-                                    "description": "blah blah arg1",
-                                    "type": "uint8_t",
-                                    "bitLength": 8,
-                                    "defaultValue": 0,
-                                    "enumerationTable": {
-                                        "0": "Mode A",
-                                        "1": "Mode B",
-                                        "2": "Mode C",
-                                        "3": "Mode D"
-                                    },
-                                    "component": "2001",
-                                    "value": "2",
-                                    "bitstring": "00000010",
-                                    "relevant": true
-                                }
-                            ]
-                        }
-                    },
-                    "behavior": {
-                        "behaviorType": "Playback From Telemetry",
-                        "behaviorArgs": {
-                            "playbackDatabase": "simulation",
-                            "playbackTime": "2000-01-26-05-00-00"
-                        }
-                    }
-                }
-            ],
+            "packetBehaviors": [],
             "fieldBehaviors": {
                 "primaryHeader": {},
                 "secondaryHeader": {},
-                "4101": {
-                    "sampleCount": [
-                        {
-                            "trigger": {
-                                "triggerType": "On Telemetry Value",
-                                "triggerArgs": {
-                                    "telemetryField": "sampleStructure1.4101.4101.totalTicks",
-                                    "comparator": ">=",
-                                    "value": "15"
-                                }
-                            },
-                            "behavior": {
-                                "behaviorType": "Ramp To",
-                                "behaviorArgs": {
-                                    "value": "10",
-                                    "rampSeconds": "30",
-                                    "rampType": "Step",
-                                    "coefficient": 0.1
-                                }
-                            },
-                            "enabled": true
-                        }
-                    ],
-                    "totalTicks": [
-                        {
-                            "trigger": {
-                                "triggerType": "On Command Received",
-                                "triggerArgs": {
-                                    "structure": "spacecraft commands",
-                                    "commandList": [
-                                        {
-                                            "fieldName": "sampleMode",
-                                            "description": "blah blah arg1",
-                                            "type": "uint8_t",
-                                            "bitLength": 8,
-                                            "defaultValue": 0,
-                                            "enumerationTable": {
-                                                "0": "Mode A",
-                                                "1": "Mode B",
-                                                "2": "Mode C",
-                                                "3": "Mode D"
-                                            },
-                                            "component": "2001",
-                                            "value": "2",
-                                            "bitstring": "00000010",
-                                            "relevant": true
-                                        }
-                                    ]
-                                }
-                            },
-                            "behavior": {
-                                "behaviorType": "Ramp To",
-                                "behaviorArgs": {
-                                    "value": "600",
-                                    "rampSeconds": "669",
-                                    "rampType": "Linear",
-                                    "coefficient": 0.1
-                                }
-                            },
-                            "enabled": true
-                        }
-                    ],
-                    "temperature": [
-                        {
-                            "trigger": {
-                                "triggerType": "On Telemetry Value",
-                                "triggerArgs": {
-                                    "telemetryField": "sampleStructure1.4101.4101.totalTicks",
-                                    "comparator": ">=",
-                                    "value": "8"
-                                }
-                            },
-                            "behavior": {
-                                "behaviorType": "Ramp To",
-                                "behaviorArgs": {
-                                    "value": "50",
-                                    "rampSeconds": "500",
-                                    "rampType": "Exponential",
-                                    "coefficient": 0.01
-                                }
-                            },
-                            "enabled": true
-                        },
-                        {
-                            "trigger": {
-                                "triggerType": "On Telemetry Value",
-                                "triggerArgs": {
-                                    "telemetryField": "sampleStructure1.4101.4101.totalTicks",
-                                    "comparator": ">=",
-                                    "value": "20"
-                                }
-                            },
-                            "behavior": {
-                                "behaviorType": "Hold Static Value",
-                                "behaviorArgs": {
-                                    "value": "7"
-                                }
-                            },
-                            "enabled": false
-                        }
-                    ],
-                    "voltage": [
-                        {
-                            "trigger": {
-                                "triggerType": "On Telemetry Value",
-                                "triggerArgs": {
-                                    "telemetryField": "sampleStructure1.4101.4101.totalTicks",
-                                    "comparator": ">=",
-                                    "value": "20"
-                                }
-                            },
-                            "behavior": {
-                                "behaviorType": "Ramp To",
-                                "behaviorArgs": {
-                                    "value": "30",
-                                    "rampSeconds": "20",
-                                    "rampType": "Linear",
-                                    "coefficient": 0.1
-                                }
-                            },
-                            "enabled": true
-                        }
-                    ]
-                }
+                "4101": {}
             },
             "initialConditions": {
                 "enabled": false,
                 "playbackDatabase": "simulation",
                 "playbackTime": "2026-11-09-19-49-36"
+            }
+        },
+        {
+            "packetConfig": {
+                "enabled": true,
+                "simulationRate": 0.0,
+                "ip": "127.0.0.1",
+                "port": 1,
+                "protocol": "UDP",
+                "structure": "sampleStructure1",
+                "packet": "4100"
+            },
+            "packetBehaviors": [],
+            "fieldBehaviors": {
+                "primaryHeader": {},
+                "secondaryHeader": {},
+                "4100": {}
+            },
+            "initialConditions": {
+                "enabled": false,
+                "initConditionsDatabase": "",
+                "initConditionsDatetime": "2026-11-16-19-10-36"
             }
         }
     ],
@@ -440,5 +241,10 @@
     "telemetryLaunchReceiversOnStartup": false,
     "staleDataSeconds": 5,
     "fieldDisplayUpdateDelay": 2.0,
-    "graphingDataPoints": 200
+    "graphingDataPoints": 200,
+    "exportFieldDefaultValue": "N/A",
+    "capDataWindows": true,
+    "dataWindowDurationCap": 3600,
+    "defaultExportPath": "C:\\Users\\jmgrego2\\Desktop\\vmshare\\dex\\exportData",
+    "exportDataWindowBoundaries": "None"
 }

@@ -24,12 +24,39 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDateTimeEdit
 )
-from dataStructures import COMMAND_COMPONENTS
+from dataStructures import COMMAND_COMPONENTS, COMMAND_STRUCTURE_COMPONENTS
 from packetDefinitionLib import PacketDefinitionUtility
 from autofill import Autofiller
 ERROR_COLOR = QColor(237,71,59)
 
 from loadConfig import cfgLoader, GLOBAL_CONFIG
+
+class CommandStructureDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Select Command Structure")
+        self.setModal(True)
+        self.layout = QVBoxLayout(self)
+        self.structureBox = QComboBox(self)
+        self.okButton = QPushButton("OK", self)
+        self.okButton.clicked.connect(self.accept)
+        self.layout.addWidget(self.structureBox)
+        self.layout.addWidget(self.okButton)
+        self.setLayout(self.layout)
+        self.populateCommandStructures()
+        self.setFixedWidth(300)
+        self.show()
+
+    def populateCommandStructures(self):
+        self.structureBox.clear()
+        for structure in COMMAND_STRUCTURE_COMPONENTS.keys():
+            self.structureBox.addItem(structure)
+
+    def populateCommandList(self):
+        for command in COMMAND_STRUCTURE_COMPONENTS.keys():
+            commandItem = CommandItem(command)
+            self.ui.commandList.addItem(commandItem)
+
 
 class CommandItem(QListWidgetItem):
     def __init__(self,parentList,commandID,commandDict):

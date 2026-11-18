@@ -20,6 +20,8 @@ SYS_COLOR=QColor(247,232,163)
 MAN_COLOR=QColor(245,125,165)
 TLM_COLOR=QColor(109,185,247)
 
+DATATAG_TIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
+
 def spawnDatatagViewer(destinationWidget,database = None):
     datatagViewer = DatatagView(destinationWidget,database)
     datatagViewer.exec()
@@ -30,7 +32,7 @@ class DatatagItem(QListWidgetItem):
         self.listWidget = listWidget
         self.datatag = datatag
         self.time_ = datetime.fromtimestamp(datatag[0], tz = timezone.utc)
-        strTime = self.time_.isoformat(timespec='seconds')
+        strTime = self.time_.strftime(DATATAG_TIME_FORMAT)
         super().__init__(listWidget)
         self.setText(f"{strTime} :: {datatag[2]}")
         match datatag[1]:

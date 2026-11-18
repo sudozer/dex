@@ -47,6 +47,7 @@ from manualDatatagger import ManualDatatagButton
 from packetDefinitionEditor import PacketDefinitionEditor
 from telemetrySelector import TelemetryFieldSelector
 from commandBuilder import CommandBuilder
+from exportItems import DataWindowItem, ExportFieldItem
 from commandIDSelector import CommandIDSelector
 from datatags import DataTagConfig
 from command import TCPCommandSocket, UDPCommandSocket
@@ -146,7 +147,6 @@ class PacketBehavior(QTableWidgetItem):
         qDate = QDateTime.fromString(behaviorArgs['playbackTime'],GLOBAL_CONFIG['qtDateFormat'])
         qDate.setTimeZone(QTimeZone.utc())
         self.playbackTimeField.setDateTime(qDate)
-
         
     def triggerChanged(self, newTrigger):
         self.parentTable.setItem(self.row(),2,QTableWidgetItem(""))
@@ -768,7 +768,6 @@ class StaticListItem(QListWidgetItem):
         self.setBackground(COMMAND_HEADER)
         self.parentList.addItem(self)
 
-
 class CommandListItem(QListWidgetItem):
     #the unique command objects in the command components list
     def __init__(self,componentName,componentDict,parentList):
@@ -902,7 +901,23 @@ class DexMain(QObject):
         self.ui.dataEndButton.setIcon(QIcon(str(cfgLoader.getPath("graphics/datatagIcon.png"))))
         self.ui.dataStartButton.clicked.connect(lambda: spawnDatatagViewer(self.ui.exportDateStart))
         self.ui.dataEndButton.clicked.connect(lambda: spawnDatatagViewer(self.ui.exportDateEnd))
-                
+        self.ui.exportDataWindowsTable.setHorizontalHeaderLabels(['Label','Open','', 'Close',''])
+        self.ui.exportDataWindowsTable.verticalHeader().setVisible(False)
+        self.populateExportDatabaseList()
+        self.exportDataWindows = []
+        self.populateDataWindows()
+        self.ui.exportAddWindowButton.clicked.connect(self.addDataWindow)
+        self.ui.exportRemoveWindowButton.clicked.connect(self.removeDataWindow)
+        self.ui.browseExportPath.clicked.connect(self.browseExportPath)
+        self.ui.addSecondaryTimestamp.clicked.connect(self.addExportTimestamp)
+        self.ui.addExportField.clicked.connect(self.addExportTelemetryField)
+        self.ui.removeExportField.clicked.connect(self.removeExportTelemetryField)
+        self.ui.exportFilePath.setText(str(cfgLoader.getPath('exportData')))
+        self.ui.startingBoundCheckbox.checkStateChanged.connect(self.exportBounds)
+        self.ui.endingBoundCheckbox.checkStateChanged.connect(self.exportBounds)
+        self.ui.exportDateStart.setSpecialValueText("Unbound")
+        self.ui.exportDateEnd.setSpecialValueText("Unbound")
+
         #telemetry controls
         self.ui.telemetryDefinitionsButton.clicked.connect(self.editTelemetryDefinitions)
         databasePath = Path(cfgLoader.getPath('databases'))
@@ -922,6 +937,11 @@ class DexMain(QObject):
         self.ui.clearTelemetryMessagesButton.clicked.connect(self.clearTelemetryMessageBox)
         self.populateTelemetryReceivers()
 
+        #status bar
+        self.statusWidgets = [TimeLabel(),ManualDatatagButton(self.messageAllBoxes)]
+        for widget in self.statusWidgets:
+            self.ui.statusLabelLayout.addWidget(widget)
+        self.ui.statusLabelLayout.addStretch()
         
         #config controls
         self.initConfigOptions()
@@ -940,13 +960,12 @@ class DexMain(QObject):
         self.ui.staleDataSeconds.valueChanged.connect(self.writeConfigOptions)
         self.ui.fieldDisplayUpdateDelay.valueChanged.connect(self.writeConfigOptions)
         self.ui.configureDatatagsButton.clicked.connect(self.configureDatatags)
+        self.ui.exportFieldDefault.editingFinished.connect(self.writeConfigOptions)
+        self.ui.dataWindowCap.valueChanged.connect(self.writeConfigOptions)
+        self.ui.dataWindowDurationCapCheckbox.checkStateChanged.connect(self.writeConfigOptions)
+        self.ui.defaultExportPath.editingFinished.connect(self.writeConfigOptions)
+        self.ui.dataWindowHandlingBox.currentTextChanged.connect(self.writeConfigOptions)
 
-        #status bar
-        self.statusWidgets = [TimeLabel(),ManualDatatagButton(self.messageAllBoxes)]
-        for widget in self.statusWidgets:
-            self.ui.statusLabelLayout.addWidget(widget)
-            self.ui.statusLabelLayout.addStretch()
-    
     def writeConfigOptions(self):
         cfg = GLOBAL_CONFIG
         cfg['messageVerbosity'] = self.ui.messageLevelBox.currentText()
@@ -961,7 +980,11 @@ class DexMain(QObject):
         cfg['telemetryLaunchReceiversOnStartup'] = self.ui.telemetryLaunchReceiversOnStartupBox.isChecked()
         cfg['staleDataSeconds'] = self.ui.staleDataSeconds.value()
         cfg['fieldDisplayUpdateDelay'] = self.ui.fieldDisplayUpdateDelay.value()
-
+        cfg['exportFieldDefaultValue'] = self.ui.exportFieldDefault.text()
+        cfg['capDataWindows'] = self.ui.dataWindowDurationCapCheckbox.isChecked()
+        cfg['dataWindowDurationCap'] = self.ui.dataWindowCap.value()
+        cfg['defaultExportPath'] = self.ui.defaultExportPath.text()
+        cfg['exportDataWindowBoundaries'] = self.ui.dataWindowHandlingBox.currentText()
         cfgLoader.configWrite(cfg)
 
     def initConfigOptions(self):
@@ -979,6 +1002,11 @@ class DexMain(QObject):
         self.ui.staleDataSeconds.setValue(cfg['staleDataSeconds'])
         self.ui.fieldDisplayUpdateDelay.setValue(cfg['fieldDisplayUpdateDelay'])
         self.ui.simulationNumberOfPackets.setEnabled(cfg['simulationSendLimitedPackets'])
+        self.ui.exportFieldDefault.setText(cfg['exportFieldDefaultValue'])
+        self.ui.dataWindowDurationCapCheckbox.setChecked(cfg['capDataWindows'])
+        self.ui.dataWindowCap.setValue(cfg['dataWindowDurationCap'])
+        self.ui.defaultExportPath.setText(cfg['defaultExportPath'])
+        self.ui.dataWindowHandlingBox.setCurrentText(cfg['exportDataWindowBoundaries'])
         self.messageLevel = cfg['messageVerbosity']
 
     def setMissionTitle(self):
@@ -1400,6 +1428,92 @@ class DexMain(QObject):
     def launchCommandLog(self):
         #TODO write a command log
         pass
+
+    """
+    Export functions
+    """
+
+    def populateExportDatabaseList(self):
+        self.exportDbItems = []
+        dbPath = cfgLoader.getPath('databases')
+        databases = [x.name for x in dbPath.iterdir() if x.is_file()]
+        for db in databases:
+            newItem = QListWidgetItem(db)
+            newItem.setFlags(newItem.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+            newItem.setCheckState(Qt.CheckState.Checked)
+            self.ui.exportDatabaseList.addItem(newItem)
+            self.exportDbItems.append(newItem)
+    
+    def addExportTelemetryField(self,telemetryField):
+        pass
+
+    def removeExportTelemetryField(self):
+        pass
+
+    def addExportTimestamp(self):
+        pass
+
+    def browseExportPath(self):
+        pass
+
+    def addDataWindow(self):
+        self.exportDataWindows.append(DataWindowItem(self.ui.exportDataWindowsTable))
+
+    def exportBounds(self):
+        if not self.ui.startingBoundCheckbox.isChecked():
+            self.ui.exportDateStart.setDateTime(self.ui.exportDateStart.minimumDateTime())
+        if not self.ui.endingBoundCheckbox.isChecked():
+            self.ui.exportDateEnd.setDateTime(self.ui.exportDateEnd.minimumDateTime())
+    
+    def writeExportConfig(self):
+        exportDict = {
+            "dataWindows":[],
+            "tlmList":[]
+        }
+        for i,dataWindow in enumerate(self.exportDataWindows):
+            try:
+                windowDict = {}
+                windowDict['label'] = dataWindow.text()
+                windowDict['enabled'] = dataWindow.checkState() == Qt.CheckState.Checked
+                windowDict['open'] = {"option":dataWindow.openOptions.currentText()}
+                windowDict['close'] = {"option":dataWindow.closeOptions.currentText()}
+
+                match windowDict['open']['option']:
+                    case "On Command":
+                        windowDict['open'].update({"commandStructure":dataWindow.openCmdStructure,"commandId":dataWindow.openCmdId,"commandList":dataWindow.openCommandList})
+                    case "On Telemetry":
+                        windowDict['open'].update({'tlmString':dataWindow.openTelemetryButton.text(),'comparator':dataWindow.openComparatorBox.currentText(),'value':dataWindow.openValField.text()})
+
+                match windowDict['close']['option']:
+                    case "On Command":
+                        windowDict['close'].update({"commandStructure":dataWindow.closeCmdStructure,"commandId":dataWindow.closeCmdId,"commandList":dataWindow.closeCommandList})
+                    case "On Telemetry":
+                        windowDict['close'].update({'tlmString':dataWindow.closeTelemetryButton.text(),'comparator':dataWindow.closeComparatorBox.currentText(),'value':dataWindow.closeValField.text()})
+                    case "Duration (s)":
+                        windowDict['close'].update({'duration':dataWindow.closeDuration.value()})
+                
+                exportDict['dataWindows'].append(windowDict)
+            except Exception as E:
+                self.exportMessage(f"Unable to process dataWindow {i}\n{E}","ERROR")
+        
+    def populateDataWindows(self):
+        pass
+
+    def removeDataWindow(self):
+        row = self.ui.exportDataWindowsTable.currentRow()
+        if row > -1:
+            removeItem = self.ui.exportDataWindowsTable.item(row,0)
+            self.ui.exportDataWindowsTable.removeRow(row)
+            self.exportDataWindows.remove(removeItem)
+
+    def exportMessage(self,message,type_="INFO"):
+        self.genericMessage(self.ui.exportMessageBox,message,type_)      
+
+    def clearExportMessageBox(self):
+        self.ui.exportMessageBox.clear()
+
+    
+
 
     """
     Miscellaneous
